@@ -3,7 +3,7 @@ import Link from "next/link";
 import TazaPie from "./TazaPie";
 
 /**
- * Secciones estáticas de la página de inicio.
+ * Secciones compartidas de las páginas públicas (proceso, visita y pie).
  *
  * Imágenes: las de "grano verde", "enfriado", el local y los videos se generaron con Kling AI;
  * "tueste" y "tu taza" son fotografías de Wikimedia Commons con licencia libre (créditos en el pie).
@@ -36,13 +36,21 @@ const PROCESO = [
   },
 ];
 
-export function Proceso() {
+/** El proceso del tueste en 4 pasos. En el Inicio lleva un enlace a la página Nosotros. */
+export function Proceso({ conEnlace = false }: { conEnlace?: boolean }) {
   return (
     <section className="section" id="tueste" aria-labelledby="tueste-titulo">
       <div className="wrap">
         <div className="head" data-revelar>
           <h2 id="tueste-titulo">Del grano verde a tu taza</h2>
-          <p>El mismo lote se sigue desde que llega en saco hasta que sale en bolsa con su código.</p>
+          <div>
+            <p>El mismo lote se sigue desde que llega en saco hasta que sale en bolsa con su código.</p>
+            {conEnlace && (
+              <Link href="/nosotros" className="link head__link">
+                Conoce nuestra historia →
+              </Link>
+            )}
+          </div>
         </div>
         <ol className="process" style={{ listStyle: "none", margin: 0, padding: 0 }}>
           {PROCESO.map((p, i) => (
@@ -113,12 +121,12 @@ export function PieInicio() {
         <p className="foot__line">
           Cafés de origen boliviano, tostados por lote en Sucre y enviados a tu casa.
         </p>
-        <a href="#cafes" className="btn btn--light">
+        <Link href="/tienda" className="btn btn--light">
           Comprar café
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
           </svg>
-        </a>
+        </Link>
       </TazaPie>
       <div className="wrap foot__bottom">
         <div className="foot__cols">
@@ -134,7 +142,8 @@ export function PieInicio() {
           <div>
             <h3>Tienda</h3>
             <ul>
-              <li><a href="#cafes" className="link">Cafés de origen</a></li>
+              <li><Link href="/tienda" className="link">Cafés de origen</Link></li>
+              <li><Link href="/nosotros" className="link">Nosotros</Link></li>
               <li><Link href="/club" className="link">Club Grano y Aroma</Link></li>
               <li><Link href="/subastas" className="link">Subastas de micro-lotes</Link></li>
             </ul>

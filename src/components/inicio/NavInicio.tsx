@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 
 const ENLACES = [
-  { href: "#cafes", label: "Cafés" },
-  { href: "#tueste", label: "Tueste" },
+  { href: "/tienda", label: "Tienda" },
+  { href: "/nosotros", label: "Nosotros" },
   { href: "/club", label: "Club" },
   { href: "/subastas", label: "Subastas" },
-  { href: "#visita", label: "Visita" },
 ];
 
 export default function NavInicio() {
   const cantidad = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const abrirCarrito = useCartStore((s) => s.toggleCart);
+  const ruta = usePathname();
+  const esActual = (href: string) => ruta === href || ruta.startsWith(href + "/");
 
   return (
     <header className="nav">
@@ -21,22 +23,16 @@ export default function NavInicio() {
         <a className="skip-link" href="#contenido">
           Saltar al contenido
         </a>
-        <a href="#top" className="nav__brand">
+        <Link href="/" className="nav__brand">
           Grano y Aroma
-        </a>
+        </Link>
         <nav aria-label="Principal">
           <ul className="nav__links">
             {ENLACES.map((e) => (
               <li key={e.href}>
-                {e.href.startsWith("/") ? (
-                  <Link href={e.href} className="link">
-                    {e.label}
-                  </Link>
-                ) : (
-                  <a href={e.href} className="link">
-                    {e.label}
-                  </a>
-                )}
+                <Link href={e.href} className="link" aria-current={esActual(e.href) ? "page" : undefined}>
+                  {e.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -57,9 +53,9 @@ export default function NavInicio() {
             </svg>
             {cantidad > 0 && <span className="cart-btn__count">{cantidad}</span>}
           </button>
-          <a href="#cafes" className="btn btn--primary">
+          <Link href="/tienda" className="btn btn--primary">
             Comprar café
-          </a>
+          </Link>
         </div>
       </div>
     </header>

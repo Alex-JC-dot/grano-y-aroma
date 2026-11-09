@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const CONSULTA_REDUCIR = "(prefers-reduced-motion: reduce)";
@@ -201,12 +202,12 @@ export default function HeroScroll({ precioDesde }: { precioDesde: string }) {
             <p className="hero__fact">
               Cafés de origen boliviano con su lote rastreable, desde {precioDesde}.
             </p>
-            <a href="#cafes" className="btn btn--primary">
+            <Link href="/tienda" className="btn btn--primary">
               Comprar café
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
               </svg>
-            </a>
+            </Link>
           </div>
 
           <div className="hero__steps" aria-live="polite">

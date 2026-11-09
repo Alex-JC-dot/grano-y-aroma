@@ -1,0 +1,72 @@
+/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
+import Link from "next/link";
+import { products } from "@/lib/data";
+import TarjetaCafe from "@/components/tienda/TarjetaCafe";
+import BolsaVisual from "@/components/tienda/BolsaVisual";
+
+/** Inicio: tres cafés destacados con enlace a la tienda completa. */
+export function Destacados() {
+  // Los tres de mayor puntaje de catación.
+  const destacados = [...products].sort((a, b) => b.cuppingScore - a.cuppingScore).slice(0, 3);
+
+  return (
+    <section className="section" id="cafes" aria-labelledby="cafes-titulo">
+      <div className="wrap">
+        <div className="head" data-revelar>
+          <h2 id="cafes-titulo">Cafés de origen, tostados en Sucre</h2>
+          <div>
+            <p>Cada bolsa indica su finca, su altura y el código del lote con el que se tostó.</p>
+            <Link href="/tienda" className="link head__link">
+              Ver los {products.length} cafés →
+            </Link>
+          </div>
+        </div>
+        <div className="cards cards--3">
+          {destacados.map((p, i) => (
+            <TarjetaCafe key={p.id} producto={p} indice={i} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Inicio: adelantos del Club y de las Subastas, cada uno con su página. */
+export function ClubYSubastas() {
+  const [a, b] = products;
+
+  return (
+    <section className="section" aria-label="Club y subastas">
+      <div className="wrap duo">
+        <Link href="/club" className="duo__item" data-revelar>
+          <div className="duo__visual duo__visual--club" aria-hidden="true">
+            <BolsaVisual producto={a} />
+            <BolsaVisual producto={b} />
+          </div>
+          <div className="duo__texto">
+            <p className="duo__etiqueta">Club Grano y Aroma</p>
+            <h2>Café fresco en tu puerta cada 15 o 30 días</h2>
+            <p>Elige la frecuencia y la molienda, y pausa cuando quieras. Desde Bs. 89 por entrega.</p>
+            <span className="link duo__mas">Conocer el Club →</span>
+          </div>
+        </Link>
+        <Link href="/subastas" className="duo__item" data-revelar style={{ "--i": 1 } as React.CSSProperties}>
+          <div className="duo__visual">
+            <img
+              src="/images/home/microlote.webp"
+              alt="Granos de café verde derramados de un saco de yute"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div className="duo__texto">
+            <p className="duo__etiqueta">Subastas de micro-lotes</p>
+            <h2>Lotes únicos de Chuquisaca, al mejor postor</h2>
+            <p>Puja en vivo por cafés de producción limitada con puntaje de catación de 87 o más.</p>
+            <span className="link duo__mas">Ver las subastas →</span>
+          </div>
+        </Link>
+      </div>
+    </section>
+  );
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * Hace aparecer los bloques marcados con `data-revelar` cuando entran en pantalla:
@@ -11,11 +12,14 @@ import { useEffect } from "react";
  * componente marca <html data-revelar-activo="on">, y no lo hace con "reducir movimiento".
  */
 export default function RevelarAlScroll() {
+  // El layout no se vuelve a montar al navegar entre páginas: se reobserva en cada ruta.
+  const ruta = usePathname();
+
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const raiz = document.documentElement;
-    const elementos = Array.from(document.querySelectorAll<HTMLElement>("[data-revelar]"));
+    const elementos = Array.from(document.querySelectorAll<HTMLElement>("[data-revelar]:not(.is-visible)"));
     if (!elementos.length) return;
 
     const observador = new IntersectionObserver(
@@ -32,11 +36,10 @@ export default function RevelarAlScroll() {
 
     raiz.dataset.revelarActivo = "on";
     elementos.forEach((el) => observador.observe(el));
-    return () => {
-      observador.disconnect();
-      delete raiz.dataset.revelarActivo;
-    };
-  }, []);
+    // Al cambiar de página solo se deja de observar: el interruptor de <html> se mantiene para
+    // que los bloques de la página nueva no aparezcan y desaparezcan (parpadeo).
+    return () => observador.disconnect();
+  }, [ruta]);
 
   return null;
 }
