@@ -4,6 +4,7 @@ import NavInicio from "@/components/inicio/NavInicio";
 import HeroScroll from "@/components/inicio/HeroScroll";
 import CafesOrigen from "@/components/inicio/CafesOrigen";
 import { Proceso, Visita, PieInicio } from "@/components/inicio/SeccionesInicio";
+import RevelarAlScroll from "@/components/inicio/RevelarAlScroll";
 import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export default function Inicio() {
         <Visita />
       </main>
       <PieInicio />
+      <RevelarAlScroll />
     </div>
   );
 }

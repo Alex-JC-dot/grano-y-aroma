@@ -1,11 +1,11 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
-import SacoPie from "./SacoPie";
+import TazaPie from "./TazaPie";
 
 /**
  * Secciones estáticas de la página de inicio.
  *
- * Imágenes: las de "grano verde", "enfriado", el local y las animaciones se generaron con Kling AI;
+ * Imágenes: las de "grano verde", "enfriado", el local y los videos se generaron con Kling AI;
  * "tueste" y "tu taza" son fotografías de Wikimedia Commons con licencia libre (créditos en el pie).
  */
 
@@ -40,13 +40,13 @@ export function Proceso() {
   return (
     <section className="section" id="tueste" aria-labelledby="tueste-titulo">
       <div className="wrap">
-        <div className="head">
+        <div className="head" data-revelar>
           <h2 id="tueste-titulo">Del grano verde a tu taza</h2>
           <p>El mismo lote se sigue desde que llega en saco hasta que sale en bolsa con su código.</p>
         </div>
         <ol className="process" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {PROCESO.map((p) => (
-            <li key={p.titulo} className="process__item">
+          {PROCESO.map((p, i) => (
+            <li key={p.titulo} className="process__item" data-revelar style={{ "--i": i } as React.CSSProperties}>
               <figure>
                 <img src={p.img} alt={p.alt} loading="lazy" decoding="async" />
               </figure>
@@ -66,7 +66,7 @@ export function Visita() {
   return (
     <section className="section" id="visita" aria-labelledby="visita-titulo">
       <div className="wrap visit">
-        <div className="visit__panel">
+        <div className="visit__panel" data-revelar>
           <h2 id="visita-titulo">Visítanos en Sucre</h2>
           <p className="visit__place">
             <a href={MAPA} className="link" target="_blank" rel="noreferrer">
@@ -87,7 +87,7 @@ export function Visita() {
             Ver la zona en el mapa
           </a>
         </div>
-        <figure className="visit__photo">
+        <figure className="visit__photo" data-revelar style={{ "--i": 1 } as React.CSSProperties}>
           <img
             src="/images/home/local.webp"
             alt="La barra del local: máquina de espresso, molinos y bolsas de café en repisas bajo vigas de madera"
@@ -108,19 +108,18 @@ const CREDITOS = [
 export function PieInicio() {
   return (
     <footer className="foot" id="contacto">
-      <SacoPie />
-      <div className="wrap foot__close">
-        <p className="foot__name">Grano y Aroma</p>
-        <div className="foot__cta">
-          <p className="foot__line">Café de especialidad tostado en Sucre.</p>
-          <a href="#cafes" className="btn btn--primary">
-            Comprar café
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-          </a>
-        </div>
-      </div>
+      <TazaPie>
+        <h2 className="foot__title">Del tostador a tu taza</h2>
+        <p className="foot__line">
+          Cafés de origen boliviano, tostados por lote en Sucre y enviados a tu casa.
+        </p>
+        <a href="#cafes" className="btn btn--light">
+          Comprar café
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </a>
+      </TazaPie>
       <div className="wrap foot__bottom">
         <div className="foot__cols">
           <div>

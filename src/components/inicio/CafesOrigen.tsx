@@ -24,14 +24,14 @@ export default function CafesOrigen() {
   return (
     <section className="section" id="cafes" aria-labelledby="cafes-titulo">
       <div className="wrap">
-        <div className="head">
+        <div className="head" data-revelar>
           <h2 id="cafes-titulo">Cafés de origen, tostados en Sucre</h2>
           <p>Cada bolsa indica su finca, su altura y el código del lote con el que se tostó.</p>
         </div>
 
         <ul className="rows">
-          {products.map((p) => (
-            <li key={p.id} className="row">
+          {products.map((p, i) => (
+            <li key={p.id} className="row" data-revelar style={{ "--i": i } as React.CSSProperties}>
               <div className="row__name">
                 <h3>{p.name}</h3>
                 <p>

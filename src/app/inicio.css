@@ -451,14 +451,17 @@ body:has(.inicio) {
 .inicio .foot { padding: 0 0 40px; }
 
 /*
- * Cierre (opción B): una banda panorámica de borde a borde con el video del saco, sin nada
- * encima; debajo, el nombre grande y el botón.
+ * Cierre: banda oscura a todo el ancho con la taza humeante a la derecha (video en loop) y el
+ * texto en crema sobre la zona oscura de la izquierda. Es la única sección oscura de la página.
  */
-.inicio .foot__band {
+.inicio .foot__dark {
+  --dark: #0e0703; /* el negro cálido del propio video */
+  --on-dark: #f3ebe1;
   position: relative;
-  height: clamp(340px, 40vw, 720px); /* panorámico: ~2.5 veces más ancho que alto */
+  height: clamp(480px, 50vw, 860px);
   overflow: hidden;
-  background: #d6c8b6; /* tono del video mientras carga */
+  background: var(--dark);
+  color: var(--on-dark);
 }
 .inicio .foot__video {
   position: absolute;
@@ -467,51 +470,54 @@ body:has(.inicio) {
   height: 100%;
   display: block;
   object-fit: cover;
-  object-position: 50% 72%; /* al recortar arriba y abajo, que se vean los granos */
+  object-position: 70% 50%; /* al recortar, la taza queda a la vista */
 }
-/* Solo un fundido fino arriba y abajo, para que la banda no corte en seco con el crema. */
-.inicio .foot__fade {
+/* Refuerzo suave a la izquierda por si en pantallas angostas la taza se acerca al texto */
+.inicio .foot__dark::after {
+  content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, var(--bg) 0%, rgba(230, 222, 212, 0) 9%),
-    linear-gradient(0deg, var(--bg) 0%, rgba(230, 222, 212, 0) 9%);
+  background: linear-gradient(90deg, rgba(14, 7, 3, 0.7) 0%, rgba(14, 7, 3, 0.35) 32%, rgba(14, 7, 3, 0) 55%);
 }
-
-.inicio .foot__close {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: 24px;
-  align-items: end;
-  padding: 56px 0 72px;
+.inicio .foot__dark-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
 }
-.inicio .foot__name {
-  grid-column: 1 / span 8;
+.inicio .foot__title {
   margin: 0;
-  font: 400 clamp(56px, 8.4vw, 144px) / 1 var(--f-display);
-  letter-spacing: -0.04em;
-  padding-bottom: 0.12em; /* espacio para la "y" */
-  white-space: nowrap;
+  max-width: 9ch;
+  font: 400 clamp(48px, 5.6vw, 96px) / 1 var(--f-display);
+  letter-spacing: -0.035em;
+  color: var(--on-dark);
 }
-.inicio .foot__cta {
-  grid-column: 9 / span 4;
-  justify-self: end;
-  text-align: right;
-  padding-bottom: 0.9vw;
+.inicio .foot__line {
+  margin: 24px 0 32px;
+  max-width: 34ch;
+  font-size: 18px;
+  line-height: 1.55;
+  color: rgba(243, 235, 225, 0.82);
 }
-.inicio .foot__line { margin: 0 0 20px; font-size: 18px; }
+.inicio .btn--light { background: var(--on-dark); color: #2a1f1a; }
+.inicio .btn--light:hover { background: #ffffff; }
+.inicio .foot__dark :focus-visible { outline-color: var(--on-dark); }
 
-@media (max-width: 1023px) {
-  .inicio .foot__close { display: block; }
-  .inicio .foot__cta { justify-self: stretch; text-align: left; margin-top: 24px; padding: 0; }
-}
+.inicio .foot__bottom { padding-top: 72px; }
+
 @media (max-width: 767px) {
-  .inicio .foot__band { height: auto; aspect-ratio: 4 / 3; }
-  .inicio .foot__video { object-position: 58% 60%; } /* en vertical: la boca del saco y los granos */
-  .inicio .foot__close { padding: 40px 0 48px; }
-  .inicio .foot__name { font-size: clamp(48px, 14vw, 72px); white-space: normal; }
-  .inicio .foot__cta .btn { width: 100%; }
+  /* En celular: la taza arriba y el texto debajo, sobre el mismo negro del video */
+  .inicio .foot__dark { height: auto; display: flex; flex-direction: column; }
+  .inicio .foot__dark::after { display: none; }
+  .inicio .foot__video { position: relative; inset: auto; aspect-ratio: 4 / 3; height: auto; object-position: 82% 50%; }
+  .inicio .foot__dark-content { padding: 32px 0 56px; }
+  .inicio .foot__title { font-size: clamp(40px, 11vw, 56px); }
+  .inicio .foot__dark-content .btn { width: 100%; }
+  .inicio .foot__bottom { padding-top: 48px; }
 }
 .inicio .foot__cols {
   display: grid;
@@ -552,4 +558,16 @@ body:has(.inicio) {
   }
   .inicio .step { opacity: 1; transform: none; position: static; display: none; }
   .inicio .step.is-active { display: block; }
+}
+
+/* Aparición al hacer scroll (RevelarAlScroll): corta, una sola vez, por bloques */
+html[data-revelar-activo="on"] .inicio [data-revelar] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  transition-delay: calc(min(var(--i, 0), 6) * 80ms);
+}
+html[data-revelar-activo="on"] .inicio [data-revelar].is-visible {
+  opacity: 1;
+  transform: none;
 }

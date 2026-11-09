@@ -3,15 +3,13 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
 /**
- * Cierre de la página: un saco de yute del que se derraman granos verdes, a todo el ancho,
- * como una banda panorámica sin nada encima (opción B). El nombre y el botón van debajo.
+ * Cierre de la página: banda oscura a todo el ancho con una taza de café humeante a la
+ * derecha (video de Kling) y el texto en crema sobre la zona oscura de la izquierda.
  *
- * Es el video de Kling en 1080p, volteado en espejo y sin audio (public/pie/saco.webm y .mp4,
- * ~0.3-0.7 MB). Como aquí no depende del scroll, se usa un <video> normal: calidad completa
- * y 24 fotogramas por segundo. Se reproduce una vez, a su velocidad original (5 s), cuando
- * la sección entra en pantalla, y queda en el último fotograma.
- * El video solo se descarga cuando el pie está cerca. Con "reducir movimiento" se muestra
- * directamente la imagen final.
+ * El video es un loop de 4 s sin salto (el final se funde con el inicio), en 1080p y sin
+ * audio: public/pie/taza.webm (~100 KB) y .mp4 (~390 KB). Se descarga cuando el pie está
+ * cerca, se reproduce mientras la sección está en pantalla y se pausa al salir.
+ * Con "reducir movimiento" queda la imagen fija.
  */
 
 const CONSULTA_REDUCIR = "(prefers-reduced-motion: reduce)";
@@ -21,7 +19,7 @@ function suscribirReducir(alCambiar: () => void) {
   return () => mq.removeEventListener("change", alCambiar);
 }
 
-export default function SacoPie() {
+export default function TazaPie({ children }: { children: React.ReactNode }) {
   const seccionRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const reducir = useSyncExternalStore(
@@ -35,9 +33,6 @@ export default function SacoPie() {
     const video = videoRef.current;
     if (!seccion || !video || reducir) return;
 
-    let reproducido = false;
-
-    // Empieza a descargar cuando el pie está a ~1 pantalla.
     const cerca = new IntersectionObserver(
       (e) => {
         if (e.some((x) => x.isIntersecting)) {
@@ -49,18 +44,17 @@ export default function SacoPie() {
       { rootMargin: "100% 0px" },
     );
 
-    // Se reproduce una vez cuando se ve al menos un tercio de la sección.
     const aLaVista = new IntersectionObserver(
       (e) => {
-        if (!reproducido && e.some((x) => x.isIntersecting)) {
-          reproducido = true;
+        if (e.some((x) => x.isIntersecting)) {
           video.play().catch(() => {
-            // Si el navegador bloquea la reproducción, queda la imagen inicial: no es un error.
+            // Si el navegador bloquea la reproducción, queda la imagen fija: no es un error.
           });
-          aLaVista.disconnect();
+        } else {
+          video.pause();
         }
       },
-      { threshold: 0.35 },
+      { threshold: 0.2 },
     );
 
     cerca.observe(seccion);
@@ -72,24 +66,25 @@ export default function SacoPie() {
   }, [reducir]);
 
   return (
-    <div ref={seccionRef} className="foot__band">
+    <div ref={seccionRef} className="foot__dark">
       <video
         ref={videoRef}
         className="foot__video"
         muted
+        loop
         playsInline
         preload="none"
-        poster={reducir ? "/pie/saco-final.webp" : "/pie/saco-inicio.webp"}
-        aria-label="Granos de café verde se derraman de un saco de yute"
+        poster="/pie/taza-poster.webp"
+        aria-label="Una taza de capuchino humeante con arte latte sobre una mesa de madera oscura"
       >
         {!reducir && (
           <>
-            <source src="/pie/saco.webm" type="video/webm" />
-            <source src="/pie/saco.mp4" type="video/mp4" />
+            <source src="/pie/taza.webm" type="video/webm" />
+            <source src="/pie/taza.mp4" type="video/mp4" />
           </>
         )}
       </video>
-      <div className="foot__fade" aria-hidden="true" />
+      <div className="wrap foot__dark-content">{children}</div>
     </div>
   );
 }
