@@ -10,7 +10,7 @@ const ENLACES = [
   { href: "/nosotros", label: "Nosotros" },
   { href: "/club", label: "Club" },
   { href: "/subastas", label: "Subastas" },
-  { href: "#contacto", label: "Contáctanos" }, // la sección está en el pie de todas las páginas
+  { href: "/#contacto", label: "Contáctanos" }, // sección del Inicio; desde otras páginas lleva ahí
 ];
 
 /** Barra: la marca a la izquierda, los enlaces al centro y carrito + "Comprar café" a la derecha. */
@@ -30,7 +30,7 @@ export default function NavInicio() {
   }, [menu]);
 
   const enlace = (e: (typeof ENLACES)[number]) =>
-    e.href.startsWith("#") ? (
+    e.href.includes("#") ? (
       <a href={e.href} className="link" onClick={() => setMenu(false)}>
         {e.label}
       </a>

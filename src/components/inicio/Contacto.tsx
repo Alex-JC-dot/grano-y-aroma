@@ -1,9 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 /**
- * Sección "Contáctanos" (va en el pie, bajo la taza, en todas las páginas públicas).
+ * Sección "Contáctanos": va en el pie, bajo la taza, pero solo se muestra en el Inicio.
  * Valida al enviar y muestra cada error bajo su campo.
  *
  * Pendiente: guardar el mensaje en Supabase (tabla de mensajes de contacto). Hasta entonces
@@ -16,6 +17,7 @@ type Campos = { nombre: string; email: string; telefono: string; motivo: string;
 const VACIO: Campos = { nombre: "", email: "", telefono: "", motivo: "", mensaje: "" };
 
 export default function Contacto() {
+  const ruta = usePathname();
   const [c, setC] = useState<Campos>(VACIO);
   const [err, setErr] = useState<Partial<Record<keyof Campos, string>>>({});
   const [enviado, setEnviado] = useState<string | null>(null);
@@ -42,6 +44,8 @@ export default function Contacto() {
   const error = (k: keyof Campos) => err[k] && <p id={`ct-${k}-e`} className="contacto__error">{err[k]}</p>;
   const cambiar = (k: keyof Campos) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setC((v) => ({ ...v, [k]: e.target.value }));
+
+  if (ruta !== "/") return null;
 
   return (
     <section className="contacto" id="contacto" aria-labelledby="contacto-titulo">
