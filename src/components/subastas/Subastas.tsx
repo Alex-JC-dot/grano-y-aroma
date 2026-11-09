@@ -93,6 +93,7 @@ export default function Subastas() {
             <div data-revelar style={{ "--i": 1 } as React.CSSProperties}>
               <VideoUnaVez
                 nombre="subasta-saco"
+                bucle
                 descripcion="Una pala de madera saca granos de café verde de un saco de yute"
               />
             </div>
