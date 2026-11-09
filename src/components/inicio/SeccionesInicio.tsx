@@ -108,20 +108,19 @@ const CREDITOS = [
 export function PieInicio() {
   return (
     <footer className="foot" id="contacto">
-      <SacoPie>
-        <p className="foot__name">
-          Grano y
-          <br />
-          Aroma
-        </p>
-        <p className="foot__line">Café de especialidad tostado en Sucre.</p>
-        <a href="#cafes" className="btn btn--primary">
-          Comprar café
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        </a>
-      </SacoPie>
+      <SacoPie />
+      <div className="wrap foot__close">
+        <p className="foot__name">Grano y Aroma</p>
+        <div className="foot__cta">
+          <p className="foot__line">Café de especialidad tostado en Sucre.</p>
+          <a href="#cafes" className="btn btn--primary">
+            Comprar café
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </a>
+        </div>
+      </div>
       <div className="wrap foot__bottom">
         <div className="foot__cols">
           <div>

@@ -4,7 +4,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 
 /**
  * Cierre de la página: un saco de yute del que se derraman granos verdes, a todo el ancho,
- * con el nombre y el botón encima (lo que se pasa como children).
+ * como una banda panorámica sin nada encima (opción B). El nombre y el botón van debajo.
  *
  * Es el video de Kling en 1080p, volteado en espejo y sin audio (public/pie/saco.webm y .mp4,
  * ~0.3-0.7 MB). Como aquí no depende del scroll, se usa un <video> normal: calidad completa
@@ -21,7 +21,7 @@ function suscribirReducir(alCambiar: () => void) {
   return () => mq.removeEventListener("change", alCambiar);
 }
 
-export default function SacoPie({ children }: { children: React.ReactNode }) {
+export default function SacoPie() {
   const seccionRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const reducir = useSyncExternalStore(
@@ -72,7 +72,7 @@ export default function SacoPie({ children }: { children: React.ReactNode }) {
   }, [reducir]);
 
   return (
-    <div ref={seccionRef} className="foot__hero">
+    <div ref={seccionRef} className="foot__band">
       <video
         ref={videoRef}
         className="foot__video"
@@ -89,8 +89,7 @@ export default function SacoPie({ children }: { children: React.ReactNode }) {
           </>
         )}
       </video>
-      <div className="foot__veil" aria-hidden="true" />
-      <div className="wrap foot__hero-content">{children}</div>
+      <div className="foot__fade" aria-hidden="true" />
     </div>
   );
 }

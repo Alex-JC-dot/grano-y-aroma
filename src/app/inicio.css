@@ -450,12 +450,15 @@ body:has(.inicio) {
 /* Pie */
 .inicio .foot { padding: 0 0 40px; }
 
-/* Cierre a todo el ancho: el saco de fondo, el nombre y el botón encima */
-.inicio .foot__hero {
+/*
+ * Cierre (opción B): una banda panorámica de borde a borde con el video del saco, sin nada
+ * encima; debajo, el nombre grande y el botón.
+ */
+.inicio .foot__band {
   position: relative;
-  height: clamp(520px, 80svh, 780px);
+  height: clamp(340px, 40vw, 720px); /* panorámico: ~2.5 veces más ancho que alto */
   overflow: hidden;
-  background: #d6c8b6; /* tono del video mientras cargan las imágenes */
+  background: #d6c8b6; /* tono del video mientras carga */
 }
 .inicio .foot__video {
   position: absolute;
@@ -464,54 +467,51 @@ body:has(.inicio) {
   height: 100%;
   display: block;
   object-fit: cover;
-  object-position: 68% 50%; /* el saco a la vista al recortar */
+  object-position: 50% 72%; /* al recortar arriba y abajo, que se vean los granos */
 }
-/*
- * Velo para que el texto resalte sin desenfocar el saco:
- * - arriba, del crema de la página a transparente (sin línea dura con la sección anterior);
- * - a la izquierda, un velo crema detrás del nombre que se desvanece hacia el saco.
- */
-.inicio .foot__veil {
+/* Solo un fundido fino arriba y abajo, para que la banda no corte en seco con el crema. */
+.inicio .foot__fade {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, var(--bg) 0%, rgba(230, 222, 212, 0) 22%),
-    linear-gradient(0deg, var(--bg) 0%, rgba(230, 222, 212, 0) 20%),
-    linear-gradient(90deg, rgba(230, 222, 212, 0.92) 0%, rgba(230, 222, 212, 0.75) 30%, rgba(230, 222, 212, 0) 58%);
+    linear-gradient(180deg, var(--bg) 0%, rgba(230, 222, 212, 0) 9%),
+    linear-gradient(0deg, var(--bg) 0%, rgba(230, 222, 212, 0) 9%);
 }
-.inicio .foot__hero-content {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
+
+.inicio .foot__close {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 24px;
+  align-items: end;
+  padding: 56px 0 72px;
 }
 .inicio .foot__name {
+  grid-column: 1 / span 8;
   margin: 0;
-  font: 400 clamp(64px, 9vw, 152px) / 0.98 var(--f-display);
+  font: 400 clamp(56px, 8.4vw, 144px) / 1 var(--f-display);
   letter-spacing: -0.04em;
   padding-bottom: 0.12em; /* espacio para la "y" */
+  white-space: nowrap;
 }
-.inicio .foot__line { margin: 8px 0 28px; font-size: 18px; }
+.inicio .foot__cta {
+  grid-column: 9 / span 4;
+  justify-self: end;
+  text-align: right;
+  padding-bottom: 0.9vw;
+}
+.inicio .foot__line { margin: 0 0 20px; font-size: 18px; }
 
-.inicio .foot__bottom { padding-top: 72px; }
-
+@media (max-width: 1023px) {
+  .inicio .foot__close { display: block; }
+  .inicio .foot__cta { justify-self: stretch; text-align: left; margin-top: 24px; padding: 0; }
+}
 @media (max-width: 767px) {
-  .inicio .foot__hero { height: 88svh; }
-  .inicio .foot__video { object-position: 55% 50%; } /* en vertical: la boca del saco y los granos */
-  /* En celular el texto va arriba: el velo baja desde arriba y deja el saco abajo a la vista */
-  .inicio .foot__veil {
-    background:
-      linear-gradient(180deg, var(--bg) 0%, rgba(230, 222, 212, 0.9) 34%, rgba(230, 222, 212, 0) 62%),
-      linear-gradient(0deg, var(--bg) 0%, rgba(230, 222, 212, 0) 16%);
-  }
-  .inicio .foot__hero-content { justify-content: flex-start; padding-top: 56px; }
-  .inicio .foot__name { font-size: clamp(56px, 17vw, 80px); }
-  .inicio .foot__hero-content .btn { width: 100%; }
-  .inicio .foot__bottom { padding-top: 48px; }
+  .inicio .foot__band { height: auto; aspect-ratio: 4 / 3; }
+  .inicio .foot__video { object-position: 58% 60%; } /* en vertical: la boca del saco y los granos */
+  .inicio .foot__close { padding: 40px 0 48px; }
+  .inicio .foot__name { font-size: clamp(48px, 14vw, 72px); white-space: normal; }
+  .inicio .foot__cta .btn { width: 100%; }
 }
 .inicio .foot__cols {
   display: grid;
