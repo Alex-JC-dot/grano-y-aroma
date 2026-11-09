@@ -137,7 +137,8 @@ function ruta(o: Origen) {
   return `M${x} ${y} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${SX} ${SY}`;
 }
 
-export default function MapaOrigenes() {
+/** `conRegiones`: muestra las fotos de las dos regiones bajo el mapa (en Nosotros, no en el Inicio). */
+export default function MapaOrigenes({ conRegiones = false }: { conRegiones?: boolean }) {
   const [elegido, setElegido] = useState("villa-serrano");
   const o = TODOS.find((x) => x.id === elegido)!;
   const cafes = o.region ? products.filter((c) => c.region.includes(o.region!)) : [];
@@ -224,6 +225,7 @@ export default function MapaOrigenes() {
         </div>
 
         {/* Las dos regiones de origen, lado a lado: al tocar una, el mapa salta a ese origen */}
+        {conRegiones && (
         <div className="regiones" data-revelar>
           {REGIONES.map((r) => (
             <button
@@ -240,6 +242,7 @@ export default function MapaOrigenes() {
             </button>
           ))}
         </div>
+        )}
       </div>
     </section>
   );

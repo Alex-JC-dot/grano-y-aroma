@@ -44,7 +44,7 @@ export default function PaginaNosotros() {
           </figure>
         </div>
       </section>
-      <MapaOrigenes />
+      <MapaOrigenes conRegiones />
       <Proceso />
       <Visita />
     </>
