@@ -165,7 +165,7 @@ export function PieInicio() {
         </Link>
       </TazaPie>
       <Contacto />
-      <div className="wrap foot__bottom">
+      <div className="wrap foot__bottom foot--desliza" data-revelar>
         <div className="foot__cols">
           <div>
             <h3>Visita</h3>

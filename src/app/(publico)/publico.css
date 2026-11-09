@@ -653,3 +653,19 @@ html[data-revelar-activo="on"] .inicio [data-revelar][data-visible] {
   .inicio .contacto__fila { grid-template-columns: 1fr; }
 }
 .inicio .contacto__datos a { color: inherit; }
+
+/*
+ * Pie: al llegar, entra deslizándose desde la izquierda, columna por columna, y se queda.
+ * El contenedor no se mueve (solo se marca visible); se mueven sus columnas y la línea legal.
+ */
+html[data-revelar-activo="on"] .inicio .foot--desliza[data-revelar] { opacity: 1; transform: none; transition: none; }
+html[data-revelar-activo="on"] .inicio .foot--desliza :is(.foot__cols > div, .foot__legal) {
+  opacity: 0;
+  transform: translateX(-72px);
+  transition: opacity 0.9s var(--ease), transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+html[data-revelar-activo="on"] .inicio .foot--desliza .foot__cols > div:nth-child(2) { transition-delay: 0.12s; }
+html[data-revelar-activo="on"] .inicio .foot--desliza .foot__cols > div:nth-child(3) { transition-delay: 0.24s; }
+html[data-revelar-activo="on"] .inicio .foot--desliza .foot__legal { transition-delay: 0.36s; }
+html[data-revelar-activo="on"] .inicio .foot--desliza[data-visible] :is(.foot__cols > div, .foot__legal) { opacity: 1; transform: none; }
+.inicio .foot { overflow-x: clip; }

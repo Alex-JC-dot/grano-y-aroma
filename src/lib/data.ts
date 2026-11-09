@@ -234,9 +234,9 @@ const PRUEBA: Product[] =
   process.env.NODE_ENV === "production"
     ? []
     : [
-        { ...articulo("x1", "Starbucks Mocha (prueba)", "molido", "Bolsa de 250 g", "Producto de prueba de una marca de terceros.", 99, "/images/tienda/prueba/sb-mocha.webp"), prueba: true },
-        { ...articulo("x2", "Starbucks Frappuccino (prueba)", "accesorio", "Botella de 281 ml", "Producto de prueba de una marca de terceros.", 25, "/images/tienda/prueba/sb-frappuccino.webp"), prueba: true },
-        { ...articulo("x3", "Starbucks Mocha crema (prueba)", "jarabe", "Envase de 500 ml", "Producto de prueba de una marca de terceros.", 55, "/images/tienda/prueba/sb-crema.webp"), prueba: true },
+        { ...articulo("x1", "Starbucks Mocha", "molido", "Bolsa de 250 g", "Producto de prueba de una marca de terceros.", 99, "/images/tienda/prueba/sb-mocha.webp"), prueba: true },
+        { ...articulo("x2", "Starbucks Frappuccino", "accesorio", "Botella de 281 ml", "Producto de prueba de una marca de terceros.", 25, "/images/tienda/prueba/sb-frappuccino.webp"), prueba: true },
+        { ...articulo("x3", "Starbucks Mocha crema", "jarabe", "Envase de 500 ml", "Producto de prueba de una marca de terceros.", 55, "/images/tienda/prueba/sb-crema.webp"), prueba: true },
       ];
 
 export const products: Product[] = [...catalogo, ...PRUEBA];
