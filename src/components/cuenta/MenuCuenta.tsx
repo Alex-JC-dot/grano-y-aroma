@@ -6,13 +6,15 @@ import { useAuth } from "@/store/authStore";
 import { PANELES } from "@/lib/supabase";
 
 /**
- * Ícono de cuenta en la barra. Solo aparece cuando hay sesión (antes no se ofrece entrar:
- * la cuenta se pide cuando una acción la necesita).
+ * Cuenta en la barra: sin sesión, un "Entrar" discreto que abre la ventana de cuenta; con
+ * sesión, la inicial con su menú. Las acciones que guardan datos también piden la cuenta solas.
  */
 export default function MenuCuenta() {
   const session = useAuth((s) => s.session);
   const perfil = useAuth((s) => s.perfil);
   const salir = useAuth((s) => s.salir);
+  const cargando = useAuth((s) => s.cargando);
+  const pedirCuenta = useAuth((s) => s.pedirCuenta);
   const [abierto, setAbierto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -28,7 +30,14 @@ export default function MenuCuenta() {
     };
   }, [abierto]);
 
-  if (!session) return null;
+  if (!session) {
+    if (cargando) return null;
+    return (
+      <button type="button" className="menu-cuenta__entrar" onClick={() => pedirCuenta("Entra o crea tu cuenta para ver tus pedidos, puntos y suscripción.")}>
+        Entrar
+      </button>
+    );
+  }
   const nombre = perfil?.nombre || session.user.email?.split("@")[0] || "Mi cuenta";
   const panel = perfil ? PANELES[perfil.rol][0] : undefined;
 
