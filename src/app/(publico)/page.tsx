@@ -1,6 +1,7 @@
 import HeroScroll from "@/components/inicio/HeroScroll";
 import { Destacados, ClubYSubastas } from "@/components/inicio/AdelantosInicio";
 import { Proceso } from "@/components/inicio/SeccionesInicio";
+import MapaOrigenes from "@/components/inicio/MapaOrigenes";
 import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export default function Inicio() {
     <>
       <HeroScroll precioDesde={precioDesde} />
       <Destacados />
+      <MapaOrigenes />
       <Proceso conEnlace />
       <ClubYSubastas />
     </>

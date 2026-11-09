@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Proceso, Visita } from "@/components/inicio/SeccionesInicio";
+import MapaOrigenes from "@/components/inicio/MapaOrigenes";
 
 export const metadata: Metadata = {
   title: "Nosotros: tostaduría y cafetería en Sucre · Grano y Aroma",
@@ -43,6 +44,7 @@ export default function PaginaNosotros() {
           </figure>
         </div>
       </section>
+      <MapaOrigenes />
       <Proceso />
       <Visita />
     </>
