@@ -45,6 +45,7 @@ export function FormularioCuenta({
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [verClave, setVerClave] = useState(false);
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,8 +67,13 @@ export function FormularioCuenta({
           options: { data: { nombre: nombre.trim() } },
         });
         if (error) throw error;
-        if (data.session) alTerminar();
-        else {
+        if (data.session) {
+          useAuth.getState().avisar(
+            `¡Bienvenido, ${nombre.trim().split(" ")[0]}!`,
+            "Tu cuenta se creó correctamente. Ya puedes seguir con lo que estabas haciendo.",
+          );
+          alTerminar();
+        } else {
           setAviso("Te enviamos un correo para confirmar tu cuenta. Ábrelo y luego entra con tu contraseña.");
           setModo("entrar");
         }
@@ -112,13 +118,33 @@ export function FormularioCuenta({
       </div>
       <div className="carrito__campo">
         <label htmlFor="cu-clave">Contraseña</label>
-        <input
-          id="cu-clave"
-          type="password"
-          autoComplete={modo === "entrar" ? "current-password" : "new-password"}
-          value={clave}
-          onChange={(e) => setClave(e.target.value)}
-        />
+        <div className="cuenta-form__clave">
+          <input
+            id="cu-clave"
+            type={verClave ? "text" : "password"}
+            autoComplete={modo === "entrar" ? "current-password" : "new-password"}
+            value={clave}
+            onChange={(e) => setClave(e.target.value)}
+          />
+          <button
+            type="button"
+            className="cuenta-form__ojo"
+            aria-label={verClave ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-pressed={verClave}
+            onClick={() => setVerClave((v) => !v)}
+          >
+            {verClave ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A9.8 9.8 0 0112 5c5 0 9 4.5 10 7a13 13 0 01-3.2 4.3M6.2 6.2C3.9 7.6 2.5 9.8 2 12c1 2.5 5 7 10 7a9.6 9.6 0 004.3-1" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <path d="M2 12c1-2.5 5-7 10-7s9 4.5 10 7c-1 2.5-5 7-10 7S3 14.5 2 12z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
 
       {error && <p className="carrito__error" role="alert">{error}</p>}

@@ -13,6 +13,10 @@ interface AuthStore {
   perfil: Perfil | null;
   cargando: boolean;
   modal: { motivo: string } | null;
+  /** Mensaje breve de confirmación (p. ej. "cuenta creada"), visible aunque la ventana se cierre. */
+  aviso: { titulo: string; texto: string } | null;
+  avisar: (titulo: string, texto: string) => void;
+  limpiarAviso: () => void;
   _resolver: ((ok: boolean) => void) | null;
   iniciar: () => () => void;
   cargarPerfil: () => Promise<void>;
@@ -26,7 +30,10 @@ export const useAuth = create<AuthStore>((set, get) => ({
   perfil: null,
   cargando: true,
   modal: null,
+  aviso: null,
   _resolver: null,
+  avisar: (titulo, texto) => set({ aviso: { titulo, texto } }),
+  limpiarAviso: () => set({ aviso: null }),
 
   iniciar: () => {
     supabase.auth.getSession().then(({ data }) => {

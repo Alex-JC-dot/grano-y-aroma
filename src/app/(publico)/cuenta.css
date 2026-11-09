@@ -66,3 +66,22 @@
 .cuenta-form .segmentado button { flex: 1; height: 40px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: 500 15px var(--font-figtree), system-ui, sans-serif; cursor: pointer; }
 .cuenta-form .segmentado button.is-on { background: #2a1f1a; color: #e6ded4; }
 .cuenta-form .btn { display: inline-flex; align-items: center; justify-content: center; height: 48px; border: 0; border-radius: 6px; background: #7a4a2c; color: #fff; font: 500 16px var(--font-figtree), system-ui, sans-serif; cursor: pointer; }
+
+/* Ver / ocultar contraseña */
+.cuenta-form__clave { position: relative; }
+.cuenta-form__clave input { padding-right: 52px; }
+.cuenta-form__ojo { position: absolute; top: 4px; right: 4px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 4px; background: transparent; color: #65574c; cursor: pointer; }
+.cuenta-form__ojo:hover { color: #2a1f1a; background: rgba(42, 31, 26, 0.06); }
+.cuenta-form__ojo:focus-visible { outline: 2px solid #7a4a2c; outline-offset: 1px; }
+
+/* Aviso de cuenta creada */
+.aviso-cuenta { position: fixed; right: 24px; bottom: 24px; z-index: 60; width: min(100% - 32px, 380px); display: flex; gap: 14px; align-items: flex-start; padding: 18px 48px 18px 18px; border-radius: 10px; background: #2f5a25; color: #f1ece4; box-shadow: 0 18px 40px rgba(42, 31, 26, 0.35); animation: aviso-cuenta-entra 0.45s cubic-bezier(0.16, 1, 0.3, 1); font-family: var(--font-figtree), system-ui, sans-serif; }
+.aviso-cuenta svg { flex: none; margin-top: 2px; }
+.aviso-cuenta div { display: flex; flex-direction: column; gap: 4px; }
+.aviso-cuenta strong { font: 400 20px/1.2 var(--font-fraunces), Georgia, serif; }
+.aviso-cuenta span { font-size: 15px; line-height: 1.45; color: rgba(241, 236, 228, 0.88); }
+.aviso-cuenta__cerrar { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 22px; cursor: pointer; }
+.aviso-cuenta__cerrar:hover { background: rgba(255, 255, 255, 0.12); }
+@keyframes aviso-cuenta-entra { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .aviso-cuenta { animation: none; } }
+@media (max-width: 600px) { .aviso-cuenta { right: 16px; bottom: 16px; } }
