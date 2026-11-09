@@ -22,10 +22,13 @@ export default function VideoUnaVez({
   nombre,
   descripcion,
   className = "",
+  bucle = false,
 }: {
   nombre: string;
   descripcion: string;
   className?: string;
+  /** En bucle: se reproduce mientras está en pantalla y se pausa al salir. */
+  bucle?: boolean;
 }) {
   const marcoRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -66,7 +69,9 @@ export default function VideoUnaVez({
           video.play().catch(() => {
             // Si el navegador bloquea la reproducción queda la imagen: no es un error.
           });
-          aLaVista.disconnect();
+          if (!bucle) aLaVista.disconnect();
+        } else if (bucle) {
+          video.pause();
         }
       },
       { threshold: 0.4 },
@@ -77,7 +82,7 @@ export default function VideoUnaVez({
       cerca.disconnect();
       aLaVista.disconnect();
     };
-  }, [reducir]);
+  }, [reducir, bucle]);
 
   const base = `/video/${nombre}`;
   return (
@@ -85,6 +90,7 @@ export default function VideoUnaVez({
       <video
         ref={videoRef}
         muted
+        loop={bucle}
         playsInline
         preload="none"
         poster={reducir ? `${base}-final.webp` : `${base}-inicio.webp`}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AsiTrabajamos, Visita } from "@/components/inicio/SeccionesInicio";
+import VideoUnaVez from "@/components/inicio/VideoUnaVez";
+import Galeria from "@/components/nosotros/Galeria";
 import MapaOrigenes from "@/components/inicio/MapaOrigenes";
 import Cifras from "@/components/nosotros/Cifras";
 import CurvaTueste from "@/components/nosotros/CurvaTueste";
@@ -36,20 +38,20 @@ export default function PaginaNosotros() {
           </div>
         </div>
         <div className="wrap">
-          <figure className="banda-foto banda-foto--alta" data-revelar>
-            {/* eslint-disable-next-line @next/next/no-img-element -- export estático */}
-            <img
-              src="/images/origen/sucre.webp"
-              alt="Techos de tejas y fachadas blancas de una ciudad colonial con un campanario, frente a los cerros al atardecer"
-              decoding="async"
+          <div className="banda-video" data-revelar>
+            <VideoUnaVez
+              nombre="tostadora"
+              bucle
+              descripcion="Granos recién tostados caen del tambor de la tostadora a la bandeja de enfriado"
             />
-          </figure>
+          </div>
         </div>
       </section>
       <Cifras />
       <MapaOrigenes conRegiones />
       <AsiTrabajamos />
       <CurvaTueste />
+      <Galeria />
       <Visita />
     </>
   );

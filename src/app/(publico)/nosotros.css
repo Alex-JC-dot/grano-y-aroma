@@ -68,3 +68,21 @@ html[data-revelar-activo="on"] .inicio .curva:not([data-visible]) .curva__hitos 
   .inicio .curva__eje { font-size: 13px; }
   .inicio .curva__etiqueta-etapa { font-size: 14px; }
 }
+
+/* Video de la tostadora bajo la presentación */
+.inicio .banda-video { margin-top: 72px; }
+.inicio .banda-video .video-marco { aspect-ratio: 21 / 9; }
+@media (max-width: 767px) { .inicio .banda-video { margin-top: 40px; } .inicio .banda-video .video-marco { aspect-ratio: 4 / 3; } }
+
+/* Galería de la cafetería: una foto ancha y dos verticales */
+.inicio .galeria { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 24px; }
+.inicio .galeria__foto { margin: 0; aspect-ratio: 3 / 4; border-radius: var(--r-card); overflow: hidden; }
+.inicio .galeria__foto--ancha { aspect-ratio: auto; position: relative; }
+.inicio .galeria__foto--ancha img { position: absolute; inset: 0; }
+.inicio .galeria__foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s var(--ease); }
+.inicio .galeria__foto:hover img { transform: scale(1.03); }
+@media (max-width: 767px) {
+  .inicio .galeria { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .inicio .galeria__foto--ancha { grid-column: 1 / -1; aspect-ratio: 4 / 3; }
+  .inicio .galeria__foto--ancha img { position: static; }
+}
