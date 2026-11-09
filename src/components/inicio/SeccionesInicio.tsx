@@ -1,17 +1,18 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
+import SacoPie from "./SacoPie";
 
 /**
  * Secciones estáticas de la página de inicio.
  *
- * Las fotos son provisionales (licencias libres de Wikimedia Commons, listadas en el pie) hasta
- * tener fotos propias del local y del tueste.
+ * Imágenes: las de "grano verde", "enfriado", el local y las animaciones se generaron con Kling AI;
+ * "tueste" y "tu taza" son fotografías de Wikimedia Commons con licencia libre (créditos en el pie).
  */
 
 const PROCESO = [
   {
-    img: "/images/home/verde.webp",
-    alt: "Una mano revisa granos de café verde en una canasta",
+    img: "/images/home/verde-kling.webp",
+    alt: "Un saco abierto lleno de granos de café verde con una cuchara de metal",
     titulo: "Grano verde",
     texto: "Llega en sacos desde la finca. Lo pesamos y lo registramos con su origen y su fecha de llegada.",
   },
@@ -22,8 +23,8 @@ const PROCESO = [
     texto: "Tostamos por lotes pequeños y sacamos muestras para seguir el color del grano en cada minuto.",
   },
   {
-    img: "/images/home/enfriado.webp",
-    alt: "Granos recién tostados girando en la bandeja de enfriado",
+    img: "/images/home/enfriado-kling.webp",
+    alt: "Granos recién tostados en la bandeja de enfriado de la tostadora",
     titulo: "Enfriado",
     texto: "El grano baja a temperatura ambiente en la bandeja y reposa antes de entrar en su bolsa.",
   },
@@ -88,8 +89,8 @@ export function Visita() {
         </div>
         <figure className="visit__photo">
           <img
-            src="/images/home/barista.webp"
-            alt="Un barista prensa café molido en el portafiltro junto a la máquina de espresso"
+            src="/images/home/local.webp"
+            alt="La barra del local: máquina de espresso, molinos y bolsas de café en repisas bajo vigas de madera"
             loading="lazy"
             decoding="async"
           />
@@ -100,20 +101,22 @@ export function Visita() {
 }
 
 const CREDITOS = [
-  { que: "Grano verde", autor: "Joshua Newton", lic: "CC0", url: "https://commons.wikimedia.org/wiki/File:Joshua_Newton_2016-10-01_(Unsplash_XpyD7z6AP4g).jpg" },
   { que: "Tueste", autor: "Jameswasswa", lic: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Closer_look_at_the_coffee_beans_from_the_coffee_roasting_machine_looking_at_their_progress.jpg" },
-  { que: "Enfriado", autor: "Alex Jones", lic: "CC0", url: "https://commons.wikimedia.org/wiki/File:Alex_Jones_2014_(Unsplash).jpg" },
   { que: "Tu taza", autor: "Kim Sanso", lic: "CC0", url: "https://commons.wikimedia.org/wiki/File:Manual_drip_(pour-over)_coffee.jpg" },
-  { que: "Barista", autor: "Shixart1985", lic: "CC BY 2.0", url: "https://commons.wikimedia.org/wiki/File:Barista_prepares_espresso_at_coffee_shop.jpg" },
 ];
 
 export function PieInicio() {
   return (
     <footer className="foot" id="contacto">
       <div className="wrap">
-        <p className="foot__name" aria-hidden="true">
-          Grano y Aroma
-        </p>
+        <div className="foot__top">
+          <p className="foot__name" aria-hidden="true">
+            Grano y
+            <br />
+            Aroma
+          </p>
+          <SacoPie />
+        </div>
         <div className="foot__cols">
           <div>
             <h3>Visita</h3>
@@ -144,7 +147,7 @@ export function PieInicio() {
         <div className="foot__legal">
           <span>© 2026 Grano y Aroma · Proyecto de Ingeniería de Software, USFX</span>
           <details className="credits">
-            <summary>Fotografías vía Wikimedia Commons</summary>
+            <summary>Imágenes generadas con Kling AI y fotografías vía Wikimedia Commons</summary>
             <ul>
               {CREDITOS.map((c) => (
                 <li key={c.que}>

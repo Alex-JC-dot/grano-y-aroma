@@ -449,10 +449,33 @@ body:has(.inicio) {
 
 /* Pie */
 .inicio .foot { padding: 96px 0 40px; border-top: 1px solid var(--line); }
+/* Fila superior: el nombre en dos líneas a la izquierda, el saco animado a la derecha */
+.inicio .foot__top {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 24px;
+  align-items: end;
+  margin-bottom: 72px;
+}
 .inicio .foot__name {
-  margin: 0 0 64px;
-  font: 400 clamp(56px, 11vw, 168px) / 1.05 var(--f-display);
+  grid-column: 1 / span 6;
+  margin: 0;
+  font: 400 clamp(64px, 9vw, 152px) / 0.98 var(--f-display);
   letter-spacing: -0.04em;
+  padding-bottom: 0.12em; /* espacio para la "y" */
+}
+.inicio .foot__media {
+  grid-column: 7 / span 6;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: #d6c8b6; /* tono del video mientras cargan las imágenes */
+}
+.inicio .foot__media canvas { display: block; width: 100%; height: 100%; }
+
+@media (max-width: 767px) {
+  .inicio .foot__top { display: block; margin-bottom: 48px; }
+  .inicio .foot__name { margin-bottom: 24px; font-size: clamp(56px, 17vw, 80px); }
 }
 .inicio .foot__cols {
   display: grid;
