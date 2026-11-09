@@ -63,59 +63,57 @@
   background: var(--surface);
 }
 .inicio .bolsa img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.inicio .bolsa--panel {
+/*
+ * Bolsa compuesta: la foto de la bolsa kraft (franja en blanco) centrada sobre el crema, y
+ * encima la franja del color del café con su nombre y lote, y la marca impresa en el kraft.
+ * La franja de la foto ocupa del 51,8 % al 73,2 % de su alto (medido sobre la imagen).
+ */
+.inicio .bolsa--compuesta {
+  container-type: inline-size; /* el texto se escala con la bolsa, no con la pantalla */
   display: grid;
   place-items: center;
   background: radial-gradient(120% 90% at 30% 15%, rgba(255, 255, 255, 0.35), transparent 60%), var(--surface);
 }
-/* Bolsa kraft hecha con CSS: cuerpo, pliegue del cierre y etiqueta del color del café */
-.inicio .bolsa__cuerpo {
+.inicio .bolsa__foto {
   position: relative;
-  width: 46%;
-  aspect-ratio: 3 / 4.3;
-  background: linear-gradient(180deg, #c9a77c 0%, #b8935f 100%);
-  border-radius: 4px 4px 6px 6px;
-  box-shadow: 0 18px 30px -18px rgba(42, 31, 26, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 16%;
+  width: 56%; /* = 85 % del alto del cuadro, con la proporción 600 × 906 de la foto */
+  aspect-ratio: 600 / 906;
+  filter: drop-shadow(0 18px 18px rgba(42, 31, 26, 0.22));
 }
-.inicio .bolsa__cuerpo::before {
-  content: "";
+.inicio .bolsa__foto img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.inicio .bolsa__marca {
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 9%;
-  background: rgba(42, 31, 26, 0.12);
-  border-radius: 4px 4px 0 0;
+  top: 30%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: 400 clamp(7px, 3.6cqi, 22px) / 1 var(--f-display);
+  color: #3b2a1f;
+  mix-blend-mode: multiply; /* parece impreso sobre el kraft */
+  opacity: 0.85;
+  white-space: nowrap;
 }
-.inicio .bolsa__marca { font: 400 clamp(9px, 0.85vw, 13px) / 1 var(--f-display); color: #3b2a1f; }
-.inicio .bolsa__etiqueta {
-  margin-top: 12%;
-  width: 100%;
-  padding: 12% 8%;
-  background: var(--etiqueta);
-  color: #fbf6ef;
+.inicio .bolsa__franja {
+  position: absolute;
+  top: 51.8%;
+  height: 21.4%;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 0.6em;
+  padding: 0 8%;
+  background: var(--etiqueta);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  color: #fbf6ef;
   text-align: center;
 }
-.inicio .bolsa__nombre { font: 400 16px / 1.15 var(--f-display); }
-.inicio .bolsa__lote { font-size: 10px; letter-spacing: 0.04em; opacity: 0.85; }
-/*
- * El texto de la bolsa se escala con el tamaño de la propia bolsa (unidades cqi), no con el
- * de la pantalla: así se lee igual en una tarjeta, en la ficha grande o en las bolsas chicas
- * del Club. En bolsas muy pequeñas se oculta el código de lote.
- */
-.inicio .bolsa--panel { container-type: inline-size; }
-.inicio .bolsa--panel .bolsa__marca { font-size: clamp(7px, 3.2cqi, 20px); white-space: nowrap; }
-.inicio .bolsa--panel .bolsa__nombre { font-size: clamp(9px, 4cqi, 26px); }
-.inicio .bolsa--panel .bolsa__lote { font-size: clamp(7px, 2.4cqi, 13px); }
+.inicio .bolsa__nombre { font: 400 clamp(9px, 4.4cqi, 28px) / 1.12 var(--f-display); }
+.inicio .bolsa__lote { font-size: clamp(7px, 2.3cqi, 13px); letter-spacing: 0.05em; opacity: 0.85; }
 @container (max-width: 240px) {
   .inicio .bolsa__lote { display: none; }
-  .inicio .bolsa__etiqueta { padding: 10% 6%; }
 }
 
 /* ---------- Filtros de la tienda ---------- */

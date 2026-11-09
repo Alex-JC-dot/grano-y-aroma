@@ -3,11 +3,14 @@ import type { Product } from "@/lib/types";
 import { colorDe } from "@/lib/catalogo";
 
 /**
- * La "foto" de la bolsa de un café.
+ * La bolsa de un café.
  *
- * Mientras no estén las fotos de las bolsas, dibuja un panel crema con la etiqueta del color
- * del café (el nombre y el código de lote como texto real). Cuando exista la foto en
- * `/images/bolsas/<id>.webp`, basta con pasar `foto` y se muestra la imagen.
+ * Usa una sola foto de bolsa kraft con la franja en blanco (public/images/tienda/bolsa-base.webp,
+ * generada con Kling y limpiada) y le pone encima, con HTML, la franja del color del café, su
+ * nombre, su código de lote y la marca impresa en el kraft. Así una imagen sirve para todos
+ * los cafés, también los que se agreguen después desde Supabase.
+ *
+ * Si algún café tiene su propia foto, se pasa en `foto` y se muestra tal cual.
  */
 export default function BolsaVisual({
   producto,
@@ -18,9 +21,11 @@ export default function BolsaVisual({
   foto?: string;
   grande?: boolean;
 }) {
+  const clase = `bolsa${grande ? " bolsa--grande" : ""}`;
+
   if (foto) {
     return (
-      <div className={`bolsa${grande ? " bolsa--grande" : ""}`}>
+      <div className={clase}>
         <img src={foto} alt={`Bolsa de café ${producto.name}`} loading="lazy" decoding="async" />
       </div>
     );
@@ -28,14 +33,15 @@ export default function BolsaVisual({
 
   return (
     <div
-      className={`bolsa bolsa--panel${grande ? " bolsa--grande" : ""}`}
+      className={`${clase} bolsa--compuesta`}
       style={{ "--etiqueta": colorDe(producto) } as React.CSSProperties}
       role="img"
-      aria-label={`Bolsa de café ${producto.name}`}
+      aria-label={`Bolsa de café ${producto.name}, lote ${producto.lotCode}`}
     >
-      <div className="bolsa__cuerpo" aria-hidden="true">
+      <div className="bolsa__foto" aria-hidden="true">
+        <img src="/images/tienda/bolsa-base.webp" alt="" loading="lazy" decoding="async" />
         <span className="bolsa__marca">Grano y Aroma</span>
-        <span className="bolsa__etiqueta">
+        <span className="bolsa__franja">
           <span className="bolsa__nombre">{producto.name}</span>
           <span className="bolsa__lote">{producto.lotCode}</span>
         </span>
