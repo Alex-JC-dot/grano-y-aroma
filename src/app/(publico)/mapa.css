@@ -27,7 +27,7 @@
   transition-delay: calc(var(--i, 0) * 180ms + 300ms), 0s, 0s;
 }
 .inicio .mapa__ruta.is-on { opacity: 1; stroke-width: 2.5; }
-html[data-revelar-activo="on"] .inicio .mapa:not(.is-visible) .mapa__ruta { stroke-dashoffset: 1; }
+html[data-revelar-activo="on"] .inicio .mapa:not([data-visible]) .mapa__ruta { stroke-dashoffset: 1; }
 
 /* Puntos: botones HTML sobre el SVG (con foco de teclado y nombre) */
 .inicio .mapa__punto {
@@ -99,4 +99,42 @@ html[data-revelar-activo="on"] .inicio .mapa:not(.is-visible) .mapa__ruta { stro
 }
 @media (prefers-reduced-motion: reduce) {
   .inicio .mapa__punto.is-on .mapa__marca, .inicio .mapa__foto img { animation: none; }
+}
+
+/* Las dos regiones bajo el mapa */
+.inicio .regiones { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+.inicio .region {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--surface);
+  text-align: left;
+  font: inherit;
+}
+.inicio .region img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s var(--ease); }
+.inicio .region:hover img { transform: scale(1.03); }
+.inicio .region__texto {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  border-radius: var(--r-btn);
+  background: rgba(230, 222, 212, 0.94);
+  color: var(--ink);
+}
+.inicio .region__nombre { font: 400 22px/1.15 var(--f-display); }
+.inicio .region__detalle { font-size: 14px; color: var(--muted); }
+.inicio .region.is-on { box-shadow: 0 0 0 2px var(--ink); }
+.inicio .region.is-on .region__texto { background: var(--ink); color: var(--bg); }
+.inicio .region.is-on .region__detalle { color: rgba(230, 222, 212, 0.8); }
+@media (max-width: 767px) {
+  .inicio .regiones { grid-template-columns: 1fr; gap: 16px; }
+  .inicio .region__nombre { font-size: 19px; }
 }

@@ -19,14 +19,16 @@ export default function RevelarAlScroll() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const raiz = document.documentElement;
-    const elementos = Array.from(document.querySelectorAll<HTMLElement>("[data-revelar]:not(.is-visible)"));
+    const elementos = Array.from(document.querySelectorAll<HTMLElement>("[data-revelar]:not([data-visible])"));
     if (!elementos.length) return;
 
     const observador = new IntersectionObserver(
       (entradas) => {
         for (const e of entradas) {
           if (e.isIntersecting) {
-            e.target.classList.add("is-visible");
+            // Atributo propio (no una clase): React reescribe className al volver a renderizar
+            // y borraría la marca, dejando el bloque invisible.
+            e.target.setAttribute("data-visible", "");
             observador.unobserve(e.target);
           }
         }

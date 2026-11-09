@@ -567,7 +567,7 @@ html[data-revelar-activo="on"] .inicio [data-revelar] {
   transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
   transition-delay: calc(min(var(--i, 0), 6) * 80ms);
 }
-html[data-revelar-activo="on"] .inicio [data-revelar].is-visible {
+html[data-revelar-activo="on"] .inicio [data-revelar][data-visible] {
   opacity: 1;
   transform: none;
 }

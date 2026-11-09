@@ -108,6 +108,25 @@ const ORIGENES: Origen[] = [
 ];
 
 const TODOS = [...ORIGENES, SUCRE];
+
+const REGIONES = [
+  {
+    id: "yungas",
+    nombre: "Yungas, La Paz",
+    detalle: "Caranavi y Coroico · 1.400 a 1.600 msnm",
+    foto: "/images/origen/coroico.webp",
+    alt: "Cerros verdes de los Yungas con neblina en el valle, al amanecer",
+    origenes: ["caranavi", "coroico"],
+  },
+  {
+    id: "chuquisaca",
+    nombre: "Valles de Chuquisaca",
+    detalle: "Villa Serrano y Padilla · 1.680 a 1.920 msnm",
+    foto: "/images/origen/chuquisaca.webp",
+    alt: "Valles de Chuquisaca con una rama de cafeto con cerezas rojas",
+    origenes: ["villa-serrano", "padilla"],
+  },
+];
 const [SX, SY] = p(SUCRE.lon, SUCRE.lat).map(Number);
 
 // Ruta curva de un origen a Sucre.
@@ -202,6 +221,24 @@ export default function MapaOrigenes() {
               </Link>
             )}
           </div>
+        </div>
+
+        {/* Las dos regiones de origen, lado a lado: al tocar una, el mapa salta a ese origen */}
+        <div className="regiones" data-revelar>
+          {REGIONES.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              className={`region${r.origenes.includes(elegido) ? " is-on" : ""}`}
+              onClick={() => setElegido(r.origenes[0])}
+            >
+              <img src={r.foto} alt={r.alt} loading="lazy" decoding="async" />
+              <span className="region__texto">
+                <span className="region__nombre">{r.nombre}</span>
+                <span className="region__detalle">{r.detalle}</span>
+              </span>
+            </button>
+          ))}
         </div>
       </div>
     </section>
