@@ -1,0 +1,178 @@
+/* Estilos del Club y de las Subastas, con los tokens de publico.css. */
+
+.inicio .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.inicio .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font: 500 14px/1.3 var(--f-text);
+  color: var(--muted);
+}
+.inicio .head__titulo { grid-column: 1 / span 7; }
+.inicio .head__titulo h1 { margin: 0; font: 400 clamp(40px, 4.4vw, 68px) / 1.02 var(--f-display); letter-spacing: -0.03em; }
+
+.inicio .btn--peligro { background: transparent; color: #8a2f25; border-color: rgba(138, 47, 37, 0.45); }
+.inicio .btn--peligro:hover { border-color: #8a2f25; }
+
+/* ---------- Club ---------- */
+.inicio .club__bolsas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 32px; }
+
+.inicio .panel { background: var(--surface); border-radius: var(--r-card); padding: 32px; }
+.inicio .panel__cabeza { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.inicio .panel__cabeza h2 { margin: 0; font: 400 30px/1.15 var(--f-display); }
+.inicio .estado {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font: 500 13px/1 var(--f-text);
+  text-transform: capitalize;
+  background: rgba(70, 110, 60, 0.15);
+  color: #2f5a25;
+}
+.inicio .estado--pausada { background: rgba(196, 149, 47, 0.18); color: #6e4f0d; }
+.inicio .estado--cancelada { background: rgba(138, 47, 37, 0.14); color: #8a2f25; }
+.inicio .panel__datos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 0 0 20px; }
+.inicio .panel__datos div { background: var(--bg); border-radius: var(--r-btn); padding: 16px; }
+.inicio .panel__datos dt { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.inicio .panel__datos dd { margin: 0; font: 400 20px/1.2 var(--f-display); }
+.inicio .panel__nota { margin: 0 0 24px; }
+.inicio .panel__acciones { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 20px; border-top: 1px solid var(--line); }
+.inicio .panel__acciones .btn--peligro { margin-left: auto; }
+
+.inicio .planes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; border: 0; padding: 0; margin: 0 0 40px; }
+.inicio .plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 28px;
+  border: 1px solid rgba(42, 31, 26, 0.25);
+  border-radius: var(--r-card);
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.inicio .plan:hover { border-color: var(--ink); transform: translateY(-2px); }
+.inicio .plan.is-on { border: 2px solid var(--accent); padding: 27px; background: rgba(122, 74, 44, 0.06); }
+.inicio .plan input { position: absolute; opacity: 0; pointer-events: none; }
+.inicio .plan:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+.inicio .plan__sello { position: absolute; top: 24px; right: 24px; padding: 5px 10px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: 500 12px/1 var(--f-text); }
+.inicio .plan__nombre { font: 400 30px/1.1 var(--f-display); }
+.inicio .plan__cada { color: var(--muted); }
+.inicio .plan__precio { margin-top: 14px; font: 400 34px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.inicio .plan__precio small { font: 400 15px var(--f-text); color: var(--muted); }
+.inicio .plan__ahorro { font-size: 14px; color: #2f5a25; }
+
+.inicio .preferencias { display: grid; grid-template-columns: auto 1fr; gap: 24px 48px; margin-bottom: 40px; }
+.inicio .resumen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border-radius: var(--r-card);
+}
+.inicio .resumen p { margin: 0; }
+.inicio .resumen__mensaje { min-height: 24px; margin: 16px 0 0; color: #2f5a25; font-weight: 500; }
+
+.inicio .pasos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; list-style: none; padding: 0; margin: 0 0 48px; }
+.inicio .paso { padding-top: 20px; border-top: 1px solid var(--line); }
+.inicio .paso__num { font: 400 15px var(--f-text); color: var(--muted); font-variant-numeric: tabular-nums; }
+.inicio .paso h3 { margin: 10px 0 8px; font: 400 26px/1.2 var(--f-display); }
+.inicio .paso p { margin: 0; }
+.inicio .beneficios { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; padding: 0; margin: 0; }
+.inicio .beneficios li { padding: 10px 16px; border-radius: 999px; background: var(--surface); font-size: 15px; }
+
+@media (max-width: 1023px) {
+  .inicio .panel__datos { grid-template-columns: repeat(2, 1fr); }
+  .inicio .preferencias { grid-template-columns: 1fr; }
+}
+@media (max-width: 767px) {
+  .inicio .panel { padding: 24px 20px; }
+  .inicio .planes, .inicio .pasos { grid-template-columns: 1fr; }
+  .inicio .resumen { flex-direction: column; align-items: stretch; }
+  .inicio .panel__acciones .btn { width: 100%; }
+  .inicio .panel__acciones .btn--peligro { margin-left: 0; }
+}
+
+/* ---------- Subastas ---------- */
+.inicio .en-vivo {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #b3261e;
+  box-shadow: 0 0 0 0 rgba(179, 38, 30, 0.5);
+  animation: en-vivo 2s infinite;
+}
+@keyframes en-vivo {
+  0% { box-shadow: 0 0 0 0 rgba(179, 38, 30, 0.45); }
+  70% { box-shadow: 0 0 0 8px rgba(179, 38, 30, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(179, 38, 30, 0); }
+}
+
+.inicio .lotes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.inicio .lote { display: flex; flex-direction: column; background: var(--surface); border-radius: var(--r-card); overflow: hidden; }
+.inicio .lote.is-cerrada { opacity: 0.7; }
+.inicio .lote__visual { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+.inicio .lote__visual img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s var(--ease); }
+.inicio .lote:hover .lote__visual img { transform: scale(1.03); }
+.inicio .lote__reloj {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(230, 222, 212, 0.94);
+  color: var(--ink);
+  font: 500 13px/1 var(--f-text);
+  font-variant-numeric: tabular-nums;
+}
+.inicio .lote__reloj.is-urgente { background: #b3261e; color: #fff; }
+.inicio .lote__cuerpo { padding: 24px; display: flex; flex-direction: column; flex: 1; }
+.inicio .lote__origen { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+.inicio .lote__titulo { margin: 0 0 10px; font: 400 24px/1.2 var(--f-display); letter-spacing: -0.015em; }
+.inicio .lote__desc { margin: 0 0 20px; font-size: 15px; }
+.inicio .lote__puja { display: flex; justify-content: space-between; gap: 12px; padding: 16px; background: var(--bg); border-radius: var(--r-btn); margin-bottom: 14px; }
+.inicio .lote__etiqueta { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.inicio .lote__monto { font: 400 28px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.inicio .lote__lider { text-align: right; font-size: 14px; }
+.inicio .lote__historial { list-style: none; margin: 0 0 18px; padding: 0; font-size: 14px; }
+.inicio .lote__historial li { display: grid; grid-template-columns: 1fr auto 52px; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.inicio .lote__historial li:first-child { font-weight: 500; }
+.inicio .lote__hora { color: var(--muted); text-align: right; }
+.inicio .lote__form { margin-top: auto; }
+.inicio .lote__form label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+.inicio .lote__fila { display: flex; gap: 10px; }
+.inicio .lote__fila input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(42, 31, 26, 0.3);
+  border-radius: var(--r-btn);
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 16px var(--f-text);
+}
+.inicio .lote__fila input[aria-invalid="true"] { border-color: #b3261e; }
+.inicio .lote__aviso { min-height: 22px; margin: 8px 0 0; font-size: 14px; color: #2f5a25; }
+.inicio .lote__aviso.is-error { color: #b3261e; }
+.inicio .lote__resultado { margin-top: auto; padding: 14px 16px; background: var(--bg); border-radius: var(--r-btn); font-weight: 500; }
+
+@media (max-width: 1023px) { .inicio .lotes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 679px) { .inicio .lotes { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .inicio .en-vivo { animation: none; } }
+
+/* Cuando el título va dentro de un bloque (con su etiqueta encima), ese bloque toma la columna */
+.inicio .intro > div:first-child { grid-column: 1 / span 6; }
+.inicio .intro > div:first-child h1 { margin: 0; font: 400 clamp(40px, 4.4vw, 68px) / 1.04 var(--f-display); letter-spacing: -0.03em; }

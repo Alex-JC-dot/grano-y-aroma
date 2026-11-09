@@ -102,15 +102,20 @@
   gap: 6px;
   text-align: center;
 }
-.inicio .bolsa__nombre { font: 400 clamp(11px, 1.05vw, 16px) / 1.15 var(--f-display); }
-.inicio .bolsa__lote { font-size: clamp(8px, 0.6vw, 10px); letter-spacing: 0.04em; opacity: 0.85; }
-.inicio .bolsa--grande .bolsa__marca { font-size: clamp(12px, 1.3vw, 20px); }
-.inicio .bolsa--grande .bolsa__nombre { font-size: clamp(15px, 1.7vw, 26px); }
-.inicio .bolsa--grande .bolsa__lote { font-size: clamp(10px, 0.9vw, 13px); }
-@media (max-width: 599px) {
-  .inicio .bolsa__marca { font-size: 12px; }
-  .inicio .bolsa__nombre { font-size: 15px; }
-  .inicio .bolsa__lote { font-size: 10px; }
+.inicio .bolsa__nombre { font: 400 16px / 1.15 var(--f-display); }
+.inicio .bolsa__lote { font-size: 10px; letter-spacing: 0.04em; opacity: 0.85; }
+/*
+ * El texto de la bolsa se escala con el tamaño de la propia bolsa (unidades cqi), no con el
+ * de la pantalla: así se lee igual en una tarjeta, en la ficha grande o en las bolsas chicas
+ * del Club. En bolsas muy pequeñas se oculta el código de lote.
+ */
+.inicio .bolsa--panel { container-type: inline-size; }
+.inicio .bolsa--panel .bolsa__marca { font-size: clamp(7px, 3.2cqi, 20px); white-space: nowrap; }
+.inicio .bolsa--panel .bolsa__nombre { font-size: clamp(9px, 4cqi, 26px); }
+.inicio .bolsa--panel .bolsa__lote { font-size: clamp(7px, 2.4cqi, 13px); }
+@container (max-width: 240px) {
+  .inicio .bolsa__lote { display: none; }
+  .inicio .bolsa__etiqueta { padding: 10% 6%; }
 }
 
 /* ---------- Filtros de la tienda ---------- */
