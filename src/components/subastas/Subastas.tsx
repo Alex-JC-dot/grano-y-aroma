@@ -28,23 +28,30 @@ export default function Subastas() {
   const [montos, setMontos] = useState<Record<string, string>>({});
   const [avisos, setAvisos] = useState<Record<string, { texto: string; error: boolean }>>({});
   const [pestana, setPestana] = useState<Pestana>("vivo");
-  const [superado, setSuperado] = useState<string | null>(null);
-  const programados = useRef(new Set<string>());
+  const [toast, setToast] = useState<{ titulo: string; texto: string; tipo: "ok" | "superado" } | null>(null);
+  // Cuántas veces respondió ya un rival en cada lote (máximo 2, para que se pueda ganar).
+  const respuestas = useRef<Record<string, number>>({});
+  const esperando = useRef(new Set<string>());
+  // Pujas que había al abrir la página: el monto solo destella con pujas nuevas.
+  const [pujasIniciales] = useState(() => Object.fromEntries(auctions.map((a) => [a.id, a.bids.length])));
 
   // Simula a otros postores: cuando vas primero en un lote, a los 8-14 s alguien te supera
   // (solo una vez por lote) y aparece el aviso "Te superaron" (RF-13). Con Supabase llegará
   // en tiempo real desde las pujas de otros usuarios.
   useEffect(() => {
     for (const a of auctions) {
-      if (a.currentBidder !== "Tú" || a.timeLeftSeconds === 0 || programados.current.has(a.id)) continue;
-      programados.current.add(a.id);
+      if (a.currentBidder !== "Tú" || a.timeLeftSeconds === 0 || esperando.current.has(a.id)) continue;
+      if ((respuestas.current[a.id] ?? 0) >= 2) continue;
+      esperando.current.add(a.id);
       const rival = ["Café Mirador SCZ", "Roasters del Sur", "El Grano Fino", "Tienda Selecta"][Math.floor(Math.random() * 4)];
       window.setTimeout(() => {
+        esperando.current.delete(a.id);
         const lote = useAuctionStore.getState().auctions.find((x) => x.id === a.id);
         if (!lote || lote.currentBidder !== "Tú" || lote.timeLeftSeconds === 0) return;
+        respuestas.current[a.id] = (respuestas.current[a.id] ?? 0) + 1;
         const monto = lote.currentBid + INCREMENTO * 2;
         if (useAuctionStore.getState().placeBid(a.id, rival, monto)) {
-          setSuperado(`${rival} pujó ${formatBs(monto)} en ${lote.productName.split(" — ")[0]}. Puedes volver a pujar.`);
+          setToast({ tipo: "superado", titulo: "Te superaron", texto: `${rival} pujó ${formatBs(monto)} en ${lote.productName.split(" — ")[0]}. Puedes volver a pujar.` });
           setAvisos((x) => ({ ...x, [a.id]: { texto: "Te superaron. Vuelve a pujar si quieres el lote.", error: true } }));
         }
       }, 8000 + Math.random() * 6000);
@@ -52,10 +59,10 @@ export default function Subastas() {
   }, [auctions]);
 
   useEffect(() => {
-    if (!superado) return;
-    const id = window.setTimeout(() => setSuperado(null), 7000);
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 7000);
     return () => window.clearTimeout(id);
-  }, [superado]);
+  }, [toast]);
 
   useEffect(() => {
     const id = setInterval(tickTimers, 1000);
@@ -72,6 +79,7 @@ export default function Subastas() {
       return;
     }
     if (placeBid(id, "Tú", monto)) {
+      setToast({ tipo: "ok", titulo: "Vas primero", texto: `Tu puja de ${formatBs(monto)} va primera en ${lote.productName.split(" — ")[0]}.` });
       setAvisos((a) => ({ ...a, [id]: { texto: `Tu puja de ${formatBs(monto)} va primera.`, error: false } }));
       setMontos((m) => ({ ...m, [id]: "" }));
     }
@@ -136,7 +144,7 @@ export default function Subastas() {
                     <div className="lote__puja">
                       <div>
                         <span className="lote__etiqueta">{a.bids.length ? "Puja actual" : "Precio de salida"}</span>
-                        <span className="lote__monto">{formatBs(a.bids.length ? a.currentBid : a.basePrice)}</span>
+                        <span key={a.currentBid} className={`lote__monto${a.bids.length > (pujasIniciales[a.id] ?? 0) ? " lote__monto--nuevo" : ""}`}>{formatBs(a.bids.length ? a.currentBid : a.basePrice)}</span>
                       </div>
                       <div className="lote__lider">
                         <span className="lote__etiqueta">{a.bids.length === 1 ? "1 puja" : `${a.bids.length} pujas`} · {a.cuppingScore.toLocaleString("es-BO", { minimumFractionDigits: 1 })} puntos</span>
@@ -203,11 +211,11 @@ export default function Subastas() {
 
       <ComoFunciona />
 
-      {superado && (
-        <div className="toast" role="alert">
-          <strong>Te superaron</strong>
-          <span>{superado}</span>
-          <button type="button" className="toast__cerrar" aria-label="Cerrar aviso" onClick={() => setSuperado(null)}>×</button>
+      {toast && (
+        <div className={`toast${toast.tipo === "ok" ? " toast--ok" : ""}`} role={toast.tipo === "ok" ? "status" : "alert"}>
+          <strong>{toast.titulo}</strong>
+          <span>{toast.texto}</span>
+          <button type="button" className="toast__cerrar" aria-label="Cerrar aviso" onClick={() => setToast(null)}>×</button>
         </div>
       )}
     </>

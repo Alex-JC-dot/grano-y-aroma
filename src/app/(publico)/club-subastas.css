@@ -354,3 +354,12 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
   .inicio .lote-graficos { grid-template-columns: 1fr; }
   .inicio .lote-grafico { padding: 20px 16px; }
 }
+
+/* El monto destella cuando cambia la puja; aviso verde para la propia puja */
+.inicio .lote__monto--nuevo { display: inline-block; animation: monto-destello 1.2s var(--ease); border-radius: 4px; }
+@keyframes monto-destello {
+  0% { background: rgba(196, 149, 47, 0.45); transform: scale(1.06); }
+  100% { background: transparent; transform: none; }
+}
+.inicio .toast--ok { background: #2f5a25; }
+@media (prefers-reduced-motion: reduce) { .inicio .lote__monto--nuevo { animation: none; } }
