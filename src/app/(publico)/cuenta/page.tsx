@@ -6,7 +6,15 @@ import { useAuth } from "@/store/authStore";
 import { supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 
-type Pedido = { id: number; codigo: string; canal: string; estado: string; total: number; creado_en: string };
+type Pedido = {
+  id: number;
+  codigo: string;
+  canal: string;
+  estado: string;
+  total: number;
+  creado_en: string;
+  pedido_items: { cantidad: number; molienda: string | null; productos: { nombre: string } | null }[];
+};
 
 const ESTADO: Record<string, string> = {
   recibido: "Recibido",
@@ -25,9 +33,10 @@ export default function PaginaCuenta() {
     if (!session) return;
     supabase
       .from("pedidos")
-      .select("id, codigo, canal, estado, total, creado_en")
+      .select("id, codigo, canal, estado, total, creado_en, pedido_items(cantidad, molienda, productos(nombre))")
+      .eq("cliente_id", session.user.id)
       .order("creado_en", { ascending: false })
-      .then(({ data }) => setPedidos((data as Pedido[]) ?? []));
+      .then(({ data }) => setPedidos((data as unknown as Pedido[]) ?? []));
   }, [session]);
 
   return (
@@ -82,12 +91,17 @@ export default function PaginaCuenta() {
               <div className="tabla-pujas">
                 <table>
                   <thead>
-                    <tr><th scope="col">Pedido</th><th scope="col">Fecha</th><th scope="col">Estado</th><th scope="col" className="num">Total</th></tr>
+                    <tr><th scope="col">Pedido</th><th scope="col">Productos</th><th scope="col">Fecha</th><th scope="col">Estado</th><th scope="col" className="num">Total</th></tr>
                   </thead>
                   <tbody>
                     {pedidos.map((p) => (
                       <tr key={p.id}>
                         <td>{p.codigo}</td>
+                        <td>
+                          {p.pedido_items
+                            .map((i) => `${i.cantidad} × ${i.productos?.nombre ?? "Producto"}${i.molienda && i.molienda !== "Única" ? ` (${i.molienda})` : ""}`)
+                            .join(", ")}
+                        </td>
                         <td>{new Date(p.creado_en).toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" })}</td>
                         <td>{ESTADO[p.estado] ?? p.estado}</td>
                         <td className="num">{formatBs(Number(p.total))}</td>

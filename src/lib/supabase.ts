@@ -44,6 +44,8 @@ export function mensajeDeError(e: unknown): string {
   if (/already registered|already been registered/i.test(m)) return "Ese correo ya tiene una cuenta. Entra con tu contraseña.";
   if (/password should be at least/i.test(m)) return "La contraseña debe tener al menos 6 caracteres.";
   if (/rate limit/i.test(m)) return "Demasiados intentos. Espera un minuto y vuelve a probar.";
+  if (/Producto .+ no disponible/i.test(m)) return "Uno de los productos ya no está disponible. Quítalo del carrito y vuelve a intentar.";
+  if (/Necesitas iniciar sesión/i.test(m)) return "Tu sesión se cerró. Entra de nuevo.";
   if (/fetch|network/i.test(m)) return "No pudimos conectar con el servidor. Revisa tu conexión.";
   return m;
 }

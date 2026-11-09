@@ -117,3 +117,4 @@
 /* En la miniatura del carrito solo la franja de color: el texto no se leería */
 .carrito__mini .bolsa__marca,
 .carrito__mini .bolsa__franja > span { display: none; }
+.carrito__fila { display: flex; flex-wrap: wrap; gap: 12px; }
