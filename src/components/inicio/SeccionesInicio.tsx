@@ -70,6 +70,40 @@ export function Proceso({ conEnlace = false }: { conEnlace?: boolean }) {
   );
 }
 
+const TRABAJO = [
+  { img: "/images/nosotros/recepcion.webp", alt: "Sacos de yute con café verde y una etiqueta de lote", titulo: "Recibimos el lote", texto: "Cada saco llega con su etiqueta: finca, variedad y fecha. Lo pesamos y lo guardamos en bodega." },
+  { img: "/images/nosotros/tostadora.webp", alt: "Granos recién tostados cayendo a la bandeja de enfriado de la tostadora", titulo: "Lo tostamos", texto: "Tostamos en tandas pequeñas y registramos la curva de cada tueste." },
+  { img: "/images/nosotros/catacion.webp", alt: "Mesa de catación con tazas, cucharas y muestras de grano", titulo: "Lo catamos", texto: "Cada lote pasa por la mesa de catación y recibe su puntaje antes de salir a la venta." },
+  { img: "/images/nosotros/embolsado.webp", alt: "Bolsas kraft de café sobre una mesa de trabajo junto a una balanza", titulo: "Lo embolsamos", texto: "Pesamos cada bolsa y le ponemos el código del lote para que puedas rastrearla." },
+];
+
+/** Nosotros: cómo trabajamos un lote, con fotos propias de esta página. */
+export function AsiTrabajamos() {
+  return (
+    <section className="section" id="trabajo" aria-labelledby="trabajo-titulo">
+      <div className="wrap">
+        <div className="head" data-revelar>
+          <h2 id="trabajo-titulo">Así trabajamos cada lote</h2>
+          <div>
+            <p>Cada lote pasa por cuatro pasos y queda registrado en cada uno.</p>
+          </div>
+        </div>
+        <ol className="process" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {TRABAJO.map((p, i) => (
+            <li key={p.titulo} className="process__item" data-revelar style={{ "--i": i } as React.CSSProperties}>
+              <figure>
+                <img src={p.img} alt={p.alt} loading="lazy" decoding="async" />
+              </figure>
+              <h3>{p.titulo}</h3>
+              <p>{p.texto}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
 const MAPA = "https://www.openstreetmap.org/search?query=Centro%20hist%C3%B3rico%2C%20Sucre%2C%20Bolivia";
 
 export function Visita() {

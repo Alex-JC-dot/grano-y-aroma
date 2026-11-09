@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
 import { useState } from "react";
-import { products } from "@/lib/data";
+import { cafes as TODOS_LOS_CAFES } from "@/lib/catalogo";
 import { formatBs } from "@/lib/utils";
 import { rutaCafe } from "@/lib/catalogo";
 
@@ -141,14 +141,14 @@ function ruta(o: Origen) {
 export default function MapaOrigenes({ conRegiones = false }: { conRegiones?: boolean }) {
   const [elegido, setElegido] = useState("villa-serrano");
   const o = TODOS.find((x) => x.id === elegido)!;
-  const cafes = o.region ? products.filter((c) => c.region.includes(o.region!)) : [];
+  const cafes = o.region ? TODOS_LOS_CAFES.filter((c) => c.region.includes(o.region!)) : [];
   const alturas = cafes.map((c) => c.altitude);
 
   return (
     <section className="section" id="origenes" aria-labelledby="origenes-titulo">
       <div className="wrap">
         <div className="head" data-revelar>
-          <h2 id="origenes-titulo">{products.length} cafés, cuatro orígenes</h2>
+          <h2 id="origenes-titulo">{TODOS_LOS_CAFES.length} cafés, cuatro orígenes</h2>
           <div>
             <p>Toca un punto del mapa para ver de dónde viene cada café y cómo es ese lugar.</p>
           </div>

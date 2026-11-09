@@ -133,7 +133,7 @@ export default function CartDrawer() {
                     </div>
                     <div className="carrito__info">
                       <p className="carrito__nombre">{it.name}</p>
-                      <p className="carrito__detalle">{it.selectedGrind} · {formatBs(it.price)}</p>
+                      <p className="carrito__detalle">{it.selectedGrind === "Única" ? it.presentacion : it.selectedGrind} · {formatBs(it.price)}</p>
                       <div className="carrito__acciones">
                         <div className="cantidad cantidad--sm">
                           <button type="button" aria-label={`Quitar uno de ${it.name}`} onClick={() => updateQuantity(it.id, it.selectedGrind, it.quantity - 1)}>−</button>

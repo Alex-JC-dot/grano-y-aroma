@@ -1,6 +1,6 @@
 import { Product, Auction, POSItem, InventoryItem, Order } from "./types";
 
-export const products: Product[] = [
+const catalogo: Product[] = [
   {
     id: "p1",
     name: "Villa Serrano Natural",
@@ -106,7 +106,140 @@ export const products: Product[] = [
     imageUrl: "/images/coffee-6.jpg",
     isAuctionEligible: true,
   },
+
+  // ---- Más allá del grano (precios de demostración) ----
+  {
+    id: "p7",
+    name: "Padilla Washed molido",
+    categoria: "molido",
+    presentacion: "Frasco de vidrio de 250 g",
+    origin: "Chuquisaca",
+    region: "Padilla",
+    altitude: 1750,
+    roastLevel: "Medio",
+    flavorProfile: ["Chocolate", "Caramelo", "Nuez"],
+    grindTypes: ["Molienda media (filtro)", "Molienda fina (espresso)"],
+    lotCode: "PAD-2025-WAS-003",
+    cuppingScore: 86.0,
+    cuppingNotes: "El mismo lote Padilla Washed, molido el día del envío y sellado en frasco de vidrio.",
+    roastDate: "2025-10-03",
+    price: 85,
+    stock: 40,
+    imageUrl: "",
+    foto: { src: "/images/tienda/frasco.webp", etiqueta: { x: 31, y: 47, w: 45, h: 28, tono: "oscuro", texto: "Café molido" } },
+  },
+  {
+    id: "p8",
+    name: "Jarabe de caramelo",
+    categoria: "jarabe",
+    presentacion: "Botella con dosificador, 500 ml",
+    origin: "",
+    region: "",
+    altitude: 0,
+    roastLevel: "Medio",
+    flavorProfile: [],
+    grindTypes: ["Única"],
+    lotCode: "",
+    cuppingScore: 0,
+    cuppingNotes: "Caramelo de azúcar tostada para lattes y capuchinos. Una pulsación por taza.",
+    roastDate: "",
+    price: 65,
+    stock: 24,
+    imageUrl: "",
+    foto: { src: "/images/tienda/jarabe.webp", etiqueta: { x: 36, y: 43, w: 28, h: 38, tono: "claro", texto: "Jarabe de caramelo" } },
+  },
+  {
+    id: "p9",
+    name: "Vaso reutilizable para llevar",
+    categoria: "accesorio",
+    presentacion: "350 ml, tapa y faja de silicona",
+    origin: "",
+    region: "",
+    altitude: 0,
+    roastLevel: "Medio",
+    flavorProfile: [],
+    grindTypes: ["Única"],
+    lotCode: "",
+    cuppingScore: 0,
+    cuppingNotes: "Reutilizable y lavable, para llevar tu café de todos los días sin vasos desechables.",
+    roastDate: "",
+    price: 55,
+    stock: 30,
+    imageUrl: "",
+    foto: { src: "/images/tienda/vaso.webp", etiqueta: { x: 32, y: 44, w: 40, h: 21, tono: "oscuro", texto: "Para llevar" } },
+  },
+  {
+    id: "p10",
+    name: "Mandil de barista",
+    categoria: "accesorio",
+    presentacion: "Lona de algodón, tiras de cuero",
+    origin: "",
+    region: "",
+    altitude: 0,
+    roastLevel: "Medio",
+    flavorProfile: [],
+    grindTypes: ["Única"],
+    lotCode: "",
+    cuppingScore: 0,
+    cuppingNotes: "Lona de algodón resistente, bolsillos al frente y tiras de cuero ajustables.",
+    roastDate: "",
+    price: 160,
+    stock: 12,
+    imageUrl: "",
+    foto: { src: "/images/tienda/mandil.webp", etiqueta: { x: 38, y: 37, w: 19, h: 10, tono: "oscuro", texto: "" } },
+  },
+  {
+    id: "p11",
+    name: "Vasos compostables con portavasos",
+    categoria: "accesorio",
+    presentacion: "Paquete de 25 vasos de 8 oz y 10 portavasos",
+    origin: "",
+    region: "",
+    altitude: 0,
+    roastLevel: "Medio",
+    flavorProfile: [],
+    grindTypes: ["Única"],
+    lotCode: "",
+    cuppingScore: 0,
+    cuppingNotes: "Vasos de papel compostables con tapa y portavasos de cartón, para oficinas y eventos.",
+    roastDate: "",
+    price: 45,
+    stock: 50,
+    imageUrl: "",
+    foto: { src: "/images/tienda/vasos-papel.webp" },
+  },
+  articulo("p12", "Taza de cerámica Grano y Aroma", "accesorio", "Taza de 350 ml, apta para lavavajillas", "La taza de nuestra barra, con el sello de la casa.", 60, "/images/tienda/taza.webp"),
+  articulo("p13", "Vasos de papel Grano y Aroma", "accesorio", "Paquete de 50 vasos de 12 oz", "Vasos de doble pared para servir café para llevar en tu oficina o evento.", 70, "/images/tienda/vasos-marca.webp"),
+  articulo("p14", "Kit para llevar: vaso y bolsa", "accesorio", "Vaso con tapa y bolsa kraft de 250 g", "Un vaso para llevar y una bolsa de café de la casa, listos para regalar.", 120, "/images/tienda/kit-llevar.webp"),
+  articulo("p15", "Cafetera de goteo", "equipo", "Programable, jarra de vidrio de 1,2 L", "Prepara hasta 10 tazas de café filtrado. Ideal para el café en grano molido medio.", 680, "/images/tienda/cafetera-goteo.webp"),
+  articulo("p16", "Máquina de espresso con molino", "equipo", "Molino integrado, vaporizador de leche", "Muele el grano justo antes de cada espresso. Dos tazas a la vez.", 4900, "/images/tienda/cafetera-espresso.webp"),
+  articulo("p17", "Cafetera moka", "equipo", "Aluminio, 6 tazas", "La cafetera italiana de estufa, para un café intenso con molienda fina.", 190, "/images/tienda/moka.webp"),
+
 ];
+
+/** Producto que no es café: sin origen, tueste ni lote. */
+function articulo(id: string, name: string, categoria: Product["categoria"], presentacion: string, descripcion: string, price: number, foto: string): Product {
+  return {
+    id, name, categoria, presentacion, price,
+    origin: "", region: "", altitude: 0, roastLevel: "Medio", flavorProfile: [], grindTypes: ["Única"],
+    lotCode: "", cuppingScore: 0, cuppingNotes: descripcion, roastDate: "", stock: 20, imageUrl: "",
+    foto: { src: foto },
+  };
+}
+
+// PRUEBA: productos de una marca de terceros, solo para ver el diseño en local (npm run dev).
+// En el build de producción esta rama se elimina del código, y sus fotos (public/images/tienda/prueba)
+// están en .gitignore, así que no se publican. Borrar este bloque cuando ya no haga falta.
+const PRUEBA: Product[] =
+  process.env.NODE_ENV === "production"
+    ? []
+    : [
+        { ...articulo("x1", "Starbucks Mocha (prueba)", "molido", "Bolsa de 250 g", "Producto de prueba de una marca de terceros.", 99, "/images/tienda/prueba/sb-mocha.webp"), prueba: true },
+        { ...articulo("x2", "Starbucks Frappuccino (prueba)", "accesorio", "Botella de 281 ml", "Producto de prueba de una marca de terceros.", 25, "/images/tienda/prueba/sb-frappuccino.webp"), prueba: true },
+        { ...articulo("x3", "Starbucks Mocha crema (prueba)", "jarabe", "Envase de 500 ml", "Producto de prueba de una marca de terceros.", 55, "/images/tienda/prueba/sb-crema.webp"), prueba: true },
+      ];
+
+export const products: Product[] = [...catalogo, ...PRUEBA];
 
 export const auctions: Auction[] = [
   {

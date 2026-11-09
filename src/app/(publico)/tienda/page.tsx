@@ -13,7 +13,7 @@ export default function PaginaTienda() {
       <div className="wrap">
         <div className="head" data-revelar>
           <h1 id="tienda-titulo">Tienda de café</h1>
-          <p>Cafés de origen boliviano, tostados por lote en Sucre. Cada bolsa trae el código de su lote.</p>
+          <p>Cafés de origen boliviano tostados en Sucre, y todo lo que necesitas para prepararlos en casa.</p>
         </div>
         <Catalogo />
       </div>

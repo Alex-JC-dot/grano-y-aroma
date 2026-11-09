@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { formatBs } from "@/lib/utils";
-import { rutaCafe } from "@/lib/catalogo";
+import { esCafe, rutaCafe } from "@/lib/catalogo";
 import { useCartStore } from "@/store/cartStore";
 import BolsaVisual from "./BolsaVisual";
 
@@ -24,6 +24,7 @@ export default function TarjetaCafe({
 }) {
   const agregar = useCartStore((s) => s.addItem);
   const [agregado, setAgregado] = useState(false);
+  const cafe = esCafe(producto);
 
   const alAgregar = () => {
     agregar(producto, producto.grindTypes[0]);
@@ -42,18 +43,22 @@ export default function TarjetaCafe({
       </Link>
       <div className="card__body">
         <p className="card__origen">
-          {producto.region} · {producto.altitude.toLocaleString("es-BO")} msnm
+          {cafe
+            ? `${producto.region} · ${producto.altitude.toLocaleString("es-BO")} msnm${producto.categoria === "molido" ? " · Molido" : ""}`
+            : producto.presentacion}
         </p>
         <h3 className="card__titulo">
           <Link href={rutaCafe(producto)}>{producto.name}</Link>
         </h3>
-        <p className="card__notas">{producto.flavorProfile.join(" · ")}</p>
+        <p className="card__notas">{cafe ? producto.flavorProfile.join(" · ") : producto.cuppingNotes}</p>
         <div className="card__pie">
           <div>
             <span className="card__precio">{formatBs(producto.price)}</span>
-            <span className="card__puntaje">
-              {producto.cuppingScore.toLocaleString("es-BO", { minimumFractionDigits: 1 })} puntos
-            </span>
+            {cafe && (
+              <span className="card__puntaje">
+                {producto.cuppingScore.toLocaleString("es-BO", { minimumFractionDigits: 1 })} puntos
+              </span>
+            )}
           </div>
           <button
             type="button"

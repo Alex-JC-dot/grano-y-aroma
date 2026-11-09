@@ -14,11 +14,11 @@ import VideoUnaVez from "@/components/inicio/VideoUnaVez";
 
 const INCREMENTO = 20;
 
-// Una imagen distinta por lote (provisionales hasta tener fotos de cada micro-lote).
+// Una imagen por lote (generadas con Kling).
 const IMAGENES: Record<string, { src: string; alt: string }> = {
-  a1: { src: "/images/home/microlote.webp", alt: "Granos de café verde derramados de un saco de yute" },
-  a2: { src: "/images/home/verde-kling.webp", alt: "Saco abierto con granos de café verde y una cuchara" },
-  a3: { src: "/images/home/tueste.webp", alt: "Muestra de granos en el muestreador de una tostadora" },
+  a1: { src: "/images/subastas/gesha.webp", alt: "Rama de cafeto con cerezas rojas maduras sobre un valle al amanecer" },
+  a2: { src: "/images/subastas/bourbon.webp", alt: "Cerezas de café secándose al sol en camas elevadas" },
+  a3: { src: "/images/subastas/reserva.webp", alt: "Muestra de café verde en una bandeja de madera junto a una lupa" },
 };
 
 export default function Subastas() {

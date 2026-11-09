@@ -23,6 +23,27 @@ export default function BolsaVisual({
 }) {
   const clase = `bolsa${grande ? " bolsa--grande" : ""}`;
 
+  // Producto con foto propia (frasco, jarabe, vaso…): la foto y, sobre su etiqueta en blanco,
+  // la marca y el nombre escritos con HTML.
+  if (producto.foto) {
+    const { src, etiqueta: e } = producto.foto;
+    return (
+      <div className={`${clase} bolsa--foto`} role="img" aria-label={`${producto.name}${producto.presentacion ? `, ${producto.presentacion.toLowerCase()}` : ""}`}>
+        <img src={src} alt="" loading="lazy" decoding="async" />
+        {e && (
+          <span
+            className={`etiqueta etiqueta--${e.tono}`}
+            style={{ left: `${e.x}%`, top: `${e.y}%`, width: `${e.w}%`, height: `${e.h}%` }}
+            aria-hidden="true"
+          >
+            <span className="etiqueta__marca">Grano y Aroma</span>
+            {e.texto && <span className="etiqueta__texto">{e.texto}</span>}
+          </span>
+        )}
+      </div>
+    );
+  }
+
   if (foto) {
     return (
       <div className={clase}>

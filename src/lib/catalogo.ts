@@ -56,7 +56,8 @@ export function colorDe(p: Pick<Product, "id">): string {
 }
 
 /** Opciones de los filtros de la tienda, sacadas de los propios productos. */
-export function opcionesDeFiltro(lista: Product[] = products) {
+export function opcionesDeFiltro(todos: Product[] = products) {
+  const lista = todos.filter(esCafe);
   const unicos = (xs: string[]) => [...new Set(xs)].sort((a, b) => a.localeCompare(b, "es"));
   return {
     origenes: unicos(lista.map((p) => p.origin)),
@@ -67,4 +68,24 @@ export function opcionesDeFiltro(lista: Product[] = products) {
 
 export function formatoFecha(iso: string): string {
   return new Date(iso + "T12:00:00").toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** Café en grano o molido (tienen origen, tueste, lote y puntaje). */
+export function esCafe(p: Pick<Product, "categoria" | "origin">): boolean {
+  return (!p.categoria || p.categoria === "grano" || p.categoria === "molido") && !!p.origin;
+}
+
+export const cafes = products.filter(esCafe);
+
+export const CATEGORIAS: { id: "todos" | NonNullable<Product["categoria"]>; label: string }[] = [
+  { id: "todos", label: "Todo" },
+  { id: "grano", label: "Café en grano" },
+  { id: "molido", label: "Café molido" },
+  { id: "jarabe", label: "Jarabes" },
+  { id: "equipo", label: "Equipos" },
+  { id: "accesorio", label: "Accesorios" },
+];
+
+export function categoriaDe(p: Pick<Product, "categoria">) {
+  return p.categoria ?? "grano";
 }

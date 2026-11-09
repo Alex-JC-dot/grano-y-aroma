@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
-import { products } from "@/lib/data";
+import { cafes } from "@/lib/catalogo";
 import TarjetaCafe from "@/components/tienda/TarjetaCafe";
 
 /** Inicio: tres cafés destacados con enlace a la tienda completa. */
 export function Destacados() {
   // Los tres de mayor puntaje de catación.
-  const destacados = [...products].sort((a, b) => b.cuppingScore - a.cuppingScore).slice(0, 3);
+  const destacados = [...cafes].sort((a, b) => b.cuppingScore - a.cuppingScore).slice(0, 3);
 
   return (
     <section className="section" id="cafes" aria-labelledby="cafes-titulo">
@@ -16,7 +16,7 @@ export function Destacados() {
           <div>
             <p>Cada bolsa indica su finca, su altura y el código del lote con el que se tostó.</p>
             <Link href="/tienda" className="link head__link">
-              Ver los {products.length} cafés →
+              Ver toda la tienda →
             </Link>
           </div>
         </div>

@@ -6,7 +6,13 @@ import { useEffect, useState } from "react";
 import { products } from "@/lib/data";
 import type { Product } from "@/lib/types";
 import { formatBs } from "@/lib/utils";
-import { buscarCafe, formatoFecha, imagenOrigen } from "@/lib/catalogo";
+import {
+  buscarCafe,
+  categoriaDe,
+  esCafe,
+  formatoFecha,
+  imagenOrigen,
+} from "@/lib/catalogo";
 import { useCartStore } from "@/store/cartStore";
 import BolsaVisual from "./BolsaVisual";
 import TarjetaCafe from "./TarjetaCafe";
@@ -41,17 +47,27 @@ function Ficha({ cafe }: { cafe: Product }) {
   const [cantidad, setCantidad] = useState(1);
 
   useEffect(() => {
-    document.title = `${cafe.name}: café de ${cafe.region} · Grano y Aroma`;
+    document.title = cafe.region ? `${cafe.name}: café de ${cafe.region} · Grano y Aroma` : `${cafe.name} · Grano y Aroma`;
   }, [cafe]);
 
   const alAgregar = () => {
-    for (let i = 0; i < cantidad; i++) agregar(cafe, molienda || cafe.grindTypes[0]);
+    for (let i = 0; i < cantidad; i++)
+      agregar(cafe, molienda || cafe.grindTypes[0]);
     abrirCarrito();
   };
 
-  const otros = products.filter((p) => p.id !== cafe.id).slice(0, 3);
+  const esDeCafe = esCafe(cafe);
+  // Primero los de la misma categoría, después el resto.
+  const otros = [
+    ...products.filter(
+      (p) => p.id !== cafe.id && categoriaDe(p) === categoriaDe(cafe),
+    ),
+    ...products.filter((p) => categoriaDe(p) !== categoriaDe(cafe)),
+  ].slice(0, 3);
   const origen = imagenOrigen(cafe);
-  const puntaje = cafe.cuppingScore.toLocaleString("es-BO", { minimumFractionDigits: 1 });
+  const puntaje = cafe.cuppingScore.toLocaleString("es-BO", {
+    minimumFractionDigits: 1,
+  });
 
   return (
     <>
@@ -72,7 +88,9 @@ function Ficha({ cafe }: { cafe: Product }) {
 
             <div className="ficha__info">
               <p className="ficha__origen">
-                {cafe.region}, {cafe.origin} · {cafe.altitude.toLocaleString("es-BO")} msnm
+                {esDeCafe
+                  ? `${cafe.region}, ${cafe.origin} · ${cafe.altitude.toLocaleString("es-BO")} msnm`
+                  : cafe.presentacion}
               </p>
               <h1 id="ficha-titulo" className="ficha__titulo">
                 {cafe.name}
@@ -82,79 +100,120 @@ function Ficha({ cafe }: { cafe: Product }) {
               <div className="ficha__compra">
                 <p className="ficha__precio">{formatBs(cafe.price)}</p>
 
-                <label className="campo">
-                  <span>Molienda</span>
-                  <select value={molienda} onChange={(e) => setMolienda(e.target.value)}>
-                    {cafe.grindTypes.map((g) => (
-                      <option key={g}>{g}</option>
-                    ))}
-                  </select>
-                </label>
+                {esDeCafe && cafe.grindTypes.length > 1 && (
+                  <label className="campo">
+                    <span>Molienda</span>
+                    <select
+                      value={molienda}
+                      onChange={(e) => setMolienda(e.target.value)}
+                    >
+                      {cafe.grindTypes.map((g) => (
+                        <option key={g}>{g}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
 
                 <div className="campo">
                   <span id="cantidad-label">Cantidad</span>
-                  <div className="cantidad" role="group" aria-labelledby="cantidad-label">
-                    <button type="button" aria-label="Quitar una" onClick={() => setCantidad((c) => Math.max(1, c - 1))}>
+                  <div
+                    className="cantidad"
+                    role="group"
+                    aria-labelledby="cantidad-label"
+                  >
+                    <button
+                      type="button"
+                      aria-label="Quitar una"
+                      onClick={() => setCantidad((c) => Math.max(1, c - 1))}
+                    >
                       −
                     </button>
                     <output aria-live="polite">{cantidad}</output>
-                    <button type="button" aria-label="Agregar una" onClick={() => setCantidad((c) => Math.min(10, c + 1))}>
+                    <button
+                      type="button"
+                      aria-label="Agregar una"
+                      onClick={() => setCantidad((c) => Math.min(10, c + 1))}
+                    >
                       +
                     </button>
                   </div>
                 </div>
 
-                <button type="button" className="btn btn--primary ficha__agregar" onClick={alAgregar}>
+                <button
+                  type="button"
+                  className="btn btn--primary ficha__agregar"
+                  onClick={alAgregar}
+                >
                   Agregar al carrito · {formatBs(cafe.price * cantidad)}
                 </button>
               </div>
 
-              <h2 className="ficha__subtitulo">Trazabilidad del lote</h2>
-              <dl className="ficha__datos">
-                <dt>Código de lote</dt>
-                <dd>{cafe.lotCode}</dd>
-                <dt>Finca / región</dt>
-                <dd>
-                  {cafe.region}, {cafe.origin}
-                </dd>
-                <dt>Altura</dt>
-                <dd>{cafe.altitude.toLocaleString("es-BO")} msnm</dd>
-                <dt>Fecha de tueste</dt>
-                <dd>{formatoFecha(cafe.roastDate)}</dd>
-                <dt>Tueste</dt>
-                <dd>{cafe.roastLevel}</dd>
-                <dt>Perfil de sabor</dt>
-                <dd>{cafe.flavorProfile.join(", ")}</dd>
-                <dt>Puntaje de catación</dt>
-                <dd>{puntaje} puntos</dd>
-              </dl>
+              {esDeCafe && (
+                <>
+                  <h2 className="ficha__subtitulo">Trazabilidad del lote</h2>
+                  <dl className="ficha__datos">
+                    <dt>Código de lote</dt>
+                    <dd>{cafe.lotCode}</dd>
+                    <dt>Finca / región</dt>
+                    <dd>
+                      {cafe.region}, {cafe.origin}
+                    </dd>
+                    <dt>Altura</dt>
+                    <dd>{cafe.altitude.toLocaleString("es-BO")} msnm</dd>
+                    <dt>Fecha de tueste</dt>
+                    <dd>{formatoFecha(cafe.roastDate)}</dd>
+                    <dt>Tueste</dt>
+                    <dd>{cafe.roastLevel}</dd>
+                    <dt>Perfil de sabor</dt>
+                    <dd>{cafe.flavorProfile.join(", ")}</dd>
+                    <dt>Puntaje de catación</dt>
+                    <dd>{puntaje} puntos</dd>
+                  </dl>
+                </>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      <section className="section section--tight" aria-labelledby="origen-titulo">
-        <div className="wrap">
-          <div className="head">
-            <h2 id="origen-titulo">De dónde viene este café</h2>
-            <div>
-              <p>
-                {cafe.region}, {cafe.origin} · {cafe.altitude.toLocaleString("es-BO")} msnm. Compramos el
-                grano verde por lote y lo tostamos en Sucre.
-              </p>
+      {esDeCafe && (
+        <section
+          className="section section--tight"
+          aria-labelledby="origen-titulo"
+        >
+          <div className="wrap">
+            <div className="head">
+              <h2 id="origen-titulo">De dónde viene este café</h2>
+              <div>
+                <p>
+                  {cafe.region}, {cafe.origin} ·{" "}
+                  {cafe.altitude.toLocaleString("es-BO")} msnm. Compramos el
+                  grano verde por lote y lo tostamos en Sucre.
+                </p>
+              </div>
             </div>
+            <figure className="banda-foto">
+              {/* eslint-disable-next-line @next/next/no-img-element -- export estático */}
+              <img
+                src={origen.src}
+                alt={origen.alt}
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
           </div>
-          <figure className="banda-foto">
-            {/* eslint-disable-next-line @next/next/no-img-element -- export estático */}
-            <img src={origen.src} alt={origen.alt} loading="lazy" decoding="async" />
-          </figure>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <section className="section section--tight" aria-labelledby="otros-titulo">
+      <section
+        className="section section--tight"
+        aria-labelledby="otros-titulo"
+      >
         <div className="wrap">
           <div className="head">
-            <h2 id="otros-titulo">Otros cafés</h2>
+            <h2 id="otros-titulo">
+              {esDeCafe ? "Otros cafés" : "También te puede gustar"}
+            </h2>
             <div>
               <Link href="/tienda" className="link head__link">
                 Ver la tienda →

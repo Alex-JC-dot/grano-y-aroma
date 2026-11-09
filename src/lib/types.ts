@@ -17,6 +17,25 @@ export interface Product {
   stock: number;
   imageUrl: string;
   isAuctionEligible?: boolean;
+  /** Sin categoría = café en grano. Los que no son café no usan origen, tueste ni lote. */
+  categoria?: Categoria;
+  /** Foto propia del producto (si no tiene, se muestra la bolsa con la franja de color). */
+  foto?: FotoProducto;
+  /** Para lo que no es café: "Frasco de 250 g", "Botella de 500 ml"… */
+  presentacion?: string;
+  /** Producto de prueba (marcas de terceros): no se incluye en el build de producción. */
+  prueba?: boolean;
+}
+
+export type Categoria = "grano" | "molido" | "jarabe" | "equipo" | "accesorio";
+
+/**
+ * Foto de producto con la etiqueta en blanco. `etiqueta` es la zona de la etiqueta en % de
+ * la foto, donde se escribe con HTML la marca y el nombre; `tono` es el color del texto.
+ */
+export interface FotoProducto {
+  src: string;
+  etiqueta?: { x: number; y: number; w: number; h: number; tono: "oscuro" | "claro"; texto: string };
 }
 
 export interface CartItem extends Product {

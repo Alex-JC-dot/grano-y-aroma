@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Proceso, Visita } from "@/components/inicio/SeccionesInicio";
+import { AsiTrabajamos, Visita } from "@/components/inicio/SeccionesInicio";
 import MapaOrigenes from "@/components/inicio/MapaOrigenes";
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ export default function PaginaNosotros() {
         </div>
       </section>
       <MapaOrigenes conRegiones />
-      <Proceso />
+      <AsiTrabajamos />
       <Visita />
     </>
   );

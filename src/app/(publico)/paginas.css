@@ -236,3 +236,40 @@
   .inicio .intro { display: block; }
   .inicio .intro__texto { margin-top: 32px; }
 }
+
+/* Producto con foto propia y su etiqueta escrita encima (BolsaVisual) */
+.inicio .bolsa--foto { position: relative; container-type: inline-size; }
+.inicio .etiqueta {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  text-align: center;
+  pointer-events: none;
+}
+.inicio .etiqueta--oscuro { color: #3b2a1f; mix-blend-mode: multiply; }
+.inicio .etiqueta--claro { color: #f3ebe1; }
+.inicio .etiqueta__marca { font: 400 clamp(7px, 3.3cqi, 26px) / 1.05 var(--f-display); white-space: nowrap; }
+.inicio .etiqueta__texto { font: 500 clamp(6px, 2cqi, 14px) / 1.2 var(--f-text); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }
+.inicio .etiqueta--claro .etiqueta__marca { font-size: clamp(7px, 2.8cqi, 22px); }
+@container (max-width: 160px) { .inicio .etiqueta__texto { display: none; } }
+
+/* Pestañas de categoría de la tienda */
+.inicio .categorias { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.inicio .categoria {
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(42, 31, 26, 0.3);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--ink);
+  font: 500 15px/1 var(--f-text);
+  cursor: pointer;
+  transition: background-color 0.18s var(--ease), color 0.18s var(--ease);
+}
+.inicio .categoria span { margin-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.inicio .categoria:hover { border-color: var(--ink); }
+.inicio .categoria.is-on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.inicio .categoria.is-on span { color: rgba(230, 222, 212, 0.7); }
