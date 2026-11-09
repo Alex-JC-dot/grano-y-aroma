@@ -1,226 +1,212 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { formatBs } from "@/lib/utils";
-import { X, Minus, Plus, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
+import BolsaVisual from "@/components/tienda/BolsaVisual";
+
+/**
+ * Carrito y checkout en 3 pasos (RNF-05): carrito → datos de entrega → pago.
+ * El pago es simulado (QR o tarjeta) hasta conectar la pasarela; al confirmar se muestra el
+ * número de pedido en el propio panel.
+ */
+
+const PASOS = ["Carrito", "Entrega", "Pago"];
+type Datos = { nombre: string; telefono: string; direccion: string; referencia: string };
+const VACIO: Datos = { nombre: "", telefono: "", direccion: "", referencia: "" };
 
 export default function CartDrawer() {
-  const { items, isOpen, toggleCart, removeItem, updateQuantity, clearCart } =
-    useCartStore();
+  const { items, isOpen, toggleCart, removeItem, updateQuantity, clearCart } = useCartStore();
   const total = useCartStore((s) => s.total());
-  const [mounted, setMounted] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(0);
+  const cantidad = useCartStore((s) => s.itemCount());
+  const [paso, setPaso] = useState(0);
+  const [datos, setDatos] = useState<Datos>(VACIO);
+  const [errores, setErrores] = useState<Partial<Record<keyof Datos, string>>>({});
+  const [pago, setPago] = useState<"qr" | "tarjeta">("qr");
+  const [pedido, setPedido] = useState<string | null>(null);
+  const cerrarRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => { setMounted(true); }, []);
-  if (!mounted) return null;
+  // Al abrir, el foco va al botón de cerrar; Escape cierra.
+  useEffect(() => {
+    if (!isOpen) return;
+    cerrarRef.current?.focus();
+    const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && toggleCart();
+    window.addEventListener("keydown", alTeclear);
+    return () => window.removeEventListener("keydown", alTeclear);
+  }, [isOpen, toggleCart]);
 
-  const steps = ["Carrito", "Datos", "Pago"];
+  const cerrar = () => {
+    toggleCart();
+    if (pedido) {
+      setPedido(null);
+      setPaso(0);
+    }
+  };
+
+  const validar = () => {
+    const e: typeof errores = {};
+    if (!datos.nombre.trim()) e.nombre = "Escribe tu nombre.";
+    if (!/^[0-9+\s]{7,}$/.test(datos.telefono.trim())) e.telefono = "Escribe un teléfono de al menos 7 dígitos.";
+    if (!datos.direccion.trim()) e.direccion = "Escribe la dirección de entrega.";
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const siguiente = () => {
+    if (paso === 1 && !validar()) return;
+    setPaso((p) => p + 1);
+  };
+
+  const confirmar = () => {
+    setPedido(`GA-${Date.now().toString().slice(-6)}`);
+    clearCart();
+    setDatos(VACIO);
+  };
+
+  const campo = (k: keyof Datos, etiqueta: string, tipo = "text", auto?: string) => (
+    <div className="carrito__campo">
+      <label htmlFor={`c-${k}`}>{etiqueta}</label>
+      <input
+        id={`c-${k}`}
+        type={tipo}
+        autoComplete={auto}
+        value={datos[k]}
+        onChange={(e) => setDatos((d) => ({ ...d, [k]: e.target.value }))}
+        aria-invalid={errores[k] ? true : undefined}
+        aria-describedby={errores[k] ? `c-${k}-error` : undefined}
+      />
+      {errores[k] && <p id={`c-${k}-error`} className="carrito__error">{errores[k]}</p>}
+    </div>
+  );
 
   return (
     <>
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
-          onClick={toggleCart}
-        />
-      )}
-
-      {/* Drawer */}
-      <div
-        // Cerrado: fuera de pantalla, sin sombra (se asomaba en el borde derecho) e inerte para el teclado.
-        className={`fixed top-0 right-0 h-full w-full max-w-md z-[70] flex flex-col bg-[#1A0F0B] border-l border-[#C89D54]/20 transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"
-        }`}
+      <div className={`carrito-fondo${isOpen ? " is-open" : ""}`} onClick={cerrar} aria-hidden="true" />
+      <aside
+        className={`carrito${isOpen ? " is-open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="carrito-titulo"
         inert={!isOpen}
         aria-hidden={!isOpen}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+        <header className="carrito__cabeza">
           <div>
-            <h2 className="font-serif text-xl font-semibold text-white">
-              {steps[checkoutStep]}
-            </h2>
-            <div className="flex gap-2 mt-1">
-              {steps.map((s, i) => (
-                <div
-                  key={s}
-                  className={`h-0.5 flex-1 rounded transition-all ${
-                    i <= checkoutStep ? "bg-[#C89D54]" : "bg-white/15"
-                  }`}
-                />
-              ))}
-            </div>
+            <h2 id="carrito-titulo">{pedido ? "Pedido confirmado" : PASOS[paso]}</h2>
+            {!pedido && (
+              <ol className="carrito__pasos" aria-label={`Paso ${paso + 1} de 3`}>
+                {PASOS.map((p, i) => (
+                  <li key={p} className={i <= paso ? "is-on" : ""} />
+                ))}
+              </ol>
+            )}
           </div>
-          <button
-            onClick={toggleCart}
-            className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center hover:border-[#C89D54]/50 transition-colors"
-          >
-            <X size={16} className="text-white/70" />
+          <button ref={cerrarRef} type="button" className="carrito__cerrar" onClick={cerrar} aria-label="Cerrar carrito">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
           </button>
-        </div>
+        </header>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {checkoutStep === 0 && (
-            <>
-              {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                  <ShoppingBag size={48} className="text-white/20" />
-                  <p className="text-white/40 text-sm">Tu carrito está vacío</p>
-                  <button
-                    onClick={toggleCart}
-                    className="text-[#C89D54] text-sm underline underline-offset-4"
-                  >
-                    Explorar productos
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {items.map((item) => (
-                    <div
-                      key={`${item.id}-${item.selectedGrind}`}
-                      className="flex gap-4 p-4 rounded-xl border border-white/8 bg-white/3 hover:border-[#C89D54]/20 transition-colors"
-                    >
-                      <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-[#C89D54]/20 to-[#2C1A14] flex items-center justify-center flex-shrink-0">
-                        <span className="text-2xl">☕</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{item.name}</p>
-                        <p className="text-white/40 text-xs mt-0.5">{item.selectedGrind}</p>
-                        <p className="text-[#C89D54] text-sm font-semibold mt-1">
-                          {formatBs(item.price)}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <button
-                            onClick={() => updateQuantity(`${item.id}`, item.quantity - 1)}
-                            className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center hover:border-[#C89D54]/50 transition-colors"
-                          >
-                            <Minus size={10} className="text-white/60" />
-                          </button>
-                          <span className="text-white text-sm w-6 text-center">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(`${item.id}`, item.quantity + 1)}
-                            className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center hover:border-[#C89D54]/50 transition-colors"
-                          >
-                            <Plus size={10} className="text-white/60" />
-                          </button>
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            className="ml-auto text-red-400/60 hover:text-red-400 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {checkoutStep === 1 && (
-            <div className="space-y-5">
-              <div>
-                <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Nombre completo</label>
-                <input type="text" placeholder="Ej: María López" className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#C89D54]/50 transition-colors" />
-              </div>
-              <div>
-                <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Teléfono</label>
-                <input type="tel" placeholder="+591 7XXXXXXX" className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#C89D54]/50 transition-colors" />
-              </div>
-              <div>
-                <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Dirección de entrega</label>
-                <input type="text" placeholder="Calle, Barrio, Sucre" className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#C89D54]/50 transition-colors" />
-              </div>
-              <div>
-                <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Referencia</label>
-                <textarea placeholder="Frente al parque..." rows={2} className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#C89D54]/50 transition-colors resize-none" />
-              </div>
+        <div className="carrito__cuerpo">
+          {pedido ? (
+            <div className="carrito__listo">
+              <p className="carrito__numero">{pedido}</p>
+              <p>Recibimos tu pedido. Te avisaremos por WhatsApp cuando salga a entrega.</p>
+              <button type="button" className="btn btn--primary" onClick={cerrar}>
+                Seguir comprando
+              </button>
             </div>
-          )}
-
-          {checkoutStep === 2 && (
-            <div className="space-y-4">
-              <p className="text-white/50 text-xs uppercase tracking-wider mb-4">Método de Pago</p>
-              <div className="p-4 rounded-xl border border-[#C89D54]/40 bg-[#C89D54]/10 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-white text-xs font-bold">QR</div>
-                  <div>
-                    <p className="text-white text-sm font-medium">Pago QR Bolivia</p>
-                    <p className="text-white/40 text-xs">Simple QR — BCB</p>
-                  </div>
-                  <div className="ml-auto w-4 h-4 rounded-full border-2 border-[#C89D54] bg-[#C89D54]" />
-                </div>
-              </div>
-              <div className="p-4 rounded-xl border border-white/10 cursor-pointer hover:border-[#C89D54]/30 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white text-xs font-bold">💳</div>
-                  <div>
-                    <p className="text-white text-sm font-medium">Tarjeta Crédito/Débito</p>
-                    <p className="text-white/40 text-xs">Visa, Mastercard</p>
-                  </div>
-                  <div className="ml-auto w-4 h-4 rounded-full border-2 border-white/20" />
-                </div>
-              </div>
-              <div className="mt-6 p-4 rounded-xl bg-white/3 border border-white/8 space-y-2">
-                <div className="flex justify-between text-sm text-white/60">
-                  <span>Subtotal</span><span>{formatBs(total)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-white/60">
-                  <span>Envío</span><span className="text-green-400">Gratis</span>
-                </div>
-                <div className="flex justify-between text-white font-semibold border-t border-white/10 pt-2 mt-2">
-                  <span>Total</span><span className="text-[#C89D54]">{formatBs(total)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        {items.length > 0 && (
-          <div className="px-6 py-5 border-t border-white/10">
-            {checkoutStep < 2 ? (
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/50">Total ({useCartStore.getState().itemCount()} items)</span>
-                  <span className="text-[#C89D54] font-bold text-base">{formatBs(total)}</span>
-                </div>
-                <button
-                  onClick={() => setCheckoutStep((s) => s + 1)}
-                  className="w-full py-4 rounded-xl bg-[#C89D54] text-[#1A0F0B] font-bold text-sm tracking-wide hover:bg-[#D4A373] transition-all duration-200 flex items-center justify-center gap-2 hover:gap-3"
-                >
-                  {checkoutStep === 0 ? "Proceder al Checkout" : "Continuar"}
-                  <ArrowRight size={16} />
-                </button>
+          ) : paso === 0 ? (
+            items.length === 0 ? (
+              <div className="carrito__vacio">
+                <p>Tu carrito está vacío.</p>
+                <Link href="/tienda" className="btn btn--secondary" onClick={toggleCart}>Ver los cafés</Link>
               </div>
             ) : (
-              <button
-                onClick={() => {
-                  alert("¡Pedido realizado! Recibirás confirmación en breve. ☕");
-                  clearCart();
-                  setCheckoutStep(0);
-                  toggleCart();
-                }}
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-[#C89D54] to-[#D4A373] text-[#1A0F0B] font-bold text-sm tracking-wide hover:opacity-90 transition-all"
-              >
-                Confirmar Pedido — {formatBs(total)}
+              <ul className="carrito__lista">
+                {items.map((it) => (
+                  <li key={`${it.id}-${it.selectedGrind}`} className="carrito__linea">
+                    <div className="carrito__mini">
+                      <BolsaVisual producto={it} />
+                    </div>
+                    <div className="carrito__info">
+                      <p className="carrito__nombre">{it.name}</p>
+                      <p className="carrito__detalle">{it.selectedGrind} · {formatBs(it.price)}</p>
+                      <div className="carrito__acciones">
+                        <div className="cantidad cantidad--sm">
+                          <button type="button" aria-label={`Quitar uno de ${it.name}`} onClick={() => updateQuantity(it.id, it.selectedGrind, it.quantity - 1)}>−</button>
+                          <output>{it.quantity}</output>
+                          <button type="button" aria-label={`Agregar uno de ${it.name}`} onClick={() => updateQuantity(it.id, it.selectedGrind, it.quantity + 1)}>+</button>
+                        </div>
+                        <button type="button" className="carrito__quitar" onClick={() => removeItem(it.id, it.selectedGrind)}>
+                          Quitar
+                        </button>
+                      </div>
+                    </div>
+                    <p className="carrito__subtotal">{formatBs(it.price * it.quantity)}</p>
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : paso === 1 ? (
+            <div className="carrito__form">
+              {campo("nombre", "Nombre completo", "text", "name")}
+              {campo("telefono", "Teléfono (WhatsApp)", "tel", "tel")}
+              {campo("direccion", "Dirección de entrega en Sucre", "text", "street-address")}
+              {campo("referencia", "Referencia (opcional)")}
+            </div>
+          ) : (
+            <div className="carrito__form">
+              <fieldset className="carrito__pagos">
+                <legend>Método de pago</legend>
+                {[
+                  { v: "qr" as const, t: "QR Bolivia", d: "Escaneas el código desde la app de tu banco." },
+                  { v: "tarjeta" as const, t: "Tarjeta de débito o crédito", d: "Visa o Mastercard." },
+                ].map((m) => (
+                  <label key={m.v} className={`carrito__pago${pago === m.v ? " is-on" : ""}`}>
+                    <input type="radio" name="pago" checked={pago === m.v} onChange={() => setPago(m.v)} />
+                    <span>
+                      <strong>{m.t}</strong>
+                      <small>{m.d}</small>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+              <p className="carrito__nota">Pago de demostración: no se realiza ningún cobro real.</p>
+              <dl className="carrito__resumen">
+                <dt>Subtotal</dt><dd>{formatBs(total)}</dd>
+                <dt>Envío en Sucre</dt><dd>Sin costo</dd>
+                <dt>Entrega a</dt><dd>{datos.direccion}</dd>
+              </dl>
+            </div>
+          )}
+        </div>
+
+        {!pedido && items.length > 0 && (
+          <footer className="carrito__pie">
+            <div className="carrito__total">
+              <span>Total ({cantidad} {cantidad === 1 ? "bolsa" : "bolsas"})</span>
+              <strong>{formatBs(total)}</strong>
+            </div>
+            {paso < 2 ? (
+              <button type="button" className="btn btn--primary carrito__boton" onClick={siguiente}>
+                {paso === 0 ? "Continuar con la entrega" : "Continuar con el pago"}
+              </button>
+            ) : (
+              <button type="button" className="btn btn--primary carrito__boton" onClick={confirmar}>
+                Confirmar pedido · {formatBs(total)}
               </button>
             )}
-            {checkoutStep > 0 && (
-              <button
-                onClick={() => setCheckoutStep((s) => s - 1)}
-                className="w-full mt-2 text-center text-xs text-white/40 hover:text-white/70 transition-colors"
-              >
-                ← Volver
+            {paso > 0 && (
+              <button type="button" className="link carrito__volver" onClick={() => setPaso((p) => p - 1)}>
+                Volver
               </button>
             )}
-          </div>
+          </footer>
         )}
-      </div>
+      </aside>
     </>
   );
 }
