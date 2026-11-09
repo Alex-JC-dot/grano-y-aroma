@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { formatBs } from "@/lib/utils";
-import { esCafe, rutaCafe } from "@/lib/catalogo";
+import { categoriaDe, esCafe, rutaCafe } from "@/lib/catalogo";
 import { useCartStore } from "@/store/cartStore";
 import BolsaVisual from "./BolsaVisual";
 
@@ -53,7 +53,10 @@ export default function TarjetaCafe({
         <p className="card__notas">{cafe ? producto.flavorProfile.join(" · ") : producto.cuppingNotes}</p>
         <div className="card__pie">
           <div>
-            <span className="card__precio">{formatBs(producto.price)}</span>
+            <span className="card__precio">
+              {formatBs(producto.price)}
+              {cafe && categoriaDe(producto) === "grano" && <small className="card__peso"> · 250 g</small>}
+            </span>
             {cafe && (
               <span className="card__puntaje">
                 {producto.cuppingScore.toLocaleString("es-BO", { minimumFractionDigits: 1 })} puntos

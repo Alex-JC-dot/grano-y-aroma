@@ -200,3 +200,75 @@
   .inicio .banda-foto, .inicio .banda-foto--alta { aspect-ratio: 4 / 3; margin-top: 40px; }
   .inicio .intro--media + .lotes { margin-top: 48px; }
 }
+
+/* ---------- Club: configurador, resumen, fechas y preguntas ---------- */
+.inicio .club__config { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 32px; align-items: start; }
+.inicio .club__pasos { display: flex; flex-direction: column; gap: 36px; }
+.inicio .club__paso { border: 0; margin: 0; padding: 0; min-width: 0; }
+.inicio .club__paso legend { display: flex; align-items: center; gap: 10px; padding: 0; margin-bottom: 14px; font: 400 22px/1.2 var(--f-display); }
+.inicio .club__paso legend span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: var(--bg); font: 500 13px/1 var(--f-text); }
+.inicio .planes--club { margin: 0; }
+.inicio .planes--club .plan__nombre { font-size: 24px; }
+.inicio .club__cafes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.inicio .club__cafe {
+  display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; text-align: left;
+  border: 1px solid rgba(42, 31, 26, 0.25); border-radius: var(--r-btn); background: transparent; color: var(--ink);
+  font: inherit; cursor: pointer; transition: border-color 0.18s var(--ease), background-color 0.18s var(--ease);
+}
+.inicio .club__cafe strong { font: 400 18px/1.2 var(--f-display); }
+.inicio .club__cafe span { font-size: 14px; color: var(--muted); }
+.inicio .club__cafe:hover { border-color: var(--ink); }
+.inicio .club__cafe.is-on { border: 2px solid var(--accent); padding: 13px 15px; background: rgba(122, 74, 44, 0.06); }
+.inicio .club__cafe--sorpresa { grid-column: 1 / -1; }
+
+.inicio .club__resumen { position: sticky; top: calc(var(--nav) + 24px); padding: 28px; border-radius: var(--r-card); background: var(--surface); }
+.inicio .club__resumen h3 { margin: 0 0 6px; font: 400 26px/1.15 var(--f-display); }
+.inicio .club__linea { margin: 0 0 18px; color: var(--muted); }
+.inicio .club__cuentas { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; margin: 0 0 20px; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.inicio .club__cuentas dt { color: var(--muted); }
+.inicio .club__cuentas dd { margin: 0; text-align: right; }
+.inicio .club__total { font: 400 28px/1 var(--f-display); }
+.inicio .club__ahorra { color: #2f5a25; font-weight: 500; }
+.inicio .club__primeros { margin-bottom: 20px; font-size: 14px; }
+.inicio .club__primeros span { color: var(--muted); }
+.inicio .club__primeros ol { margin: 6px 0 0; padding-left: 18px; }
+.inicio .club__boton { width: 100%; }
+.inicio .club__fecha-nota { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+
+.inicio .club__aviso { margin: -8px 0 20px; padding: 12px 16px; border-radius: var(--r-btn); background: rgba(70, 110, 60, 0.14); color: #2f5a25; font-weight: 500; }
+.inicio .club__fechas { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; margin-bottom: 24px; }
+.inicio .club__fechas h3 { margin: 0 0 10px; font: 400 20px/1.2 var(--f-display); }
+.inicio .club__fechas ol { list-style: none; margin: 0; padding: 0; }
+.inicio .club__fechas li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.inicio .club__fechas li span:first-child::first-letter { text-transform: uppercase; }
+.inicio .club__fechas li span:first-child { display: inline-block; }
+.inicio .club__ahorro { display: flex; flex-direction: column; gap: 4px; padding: 20px; border-radius: var(--r-btn); background: var(--bg); }
+.inicio .club__ahorro span { font-size: 14px; color: var(--muted); }
+.inicio .club__ahorro strong { font: 400 36px/1.1 var(--f-display); color: #2f5a25; font-variant-numeric: tabular-nums; }
+.inicio .club__pausa { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.inicio .club__pausa > span { margin-right: 8px; font-weight: 500; }
+
+/* Diálogo de confirmación (las páginas públicas no cargan equipo.css) */
+.inicio .dialogo { width: min(100% - 32px, 480px); padding: 28px; border: 0; border-radius: var(--r-card); background: var(--bg); color: var(--ink); box-shadow: 0 24px 64px rgba(42, 31, 26, 0.3); }
+.inicio .dialogo::backdrop { background: rgba(42, 31, 26, 0.4); }
+.inicio .dialogo h2 { margin: 0 0 12px; font: 400 28px/1.15 var(--f-display); }
+.inicio .dialogo p { margin: 0 0 20px; }
+.inicio .equipo__fila { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* Preguntas frecuentes */
+.inicio .faq { border-top: 1px solid var(--line); }
+.inicio .faq__item { border-bottom: 1px solid var(--line); }
+.inicio .faq__item summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 0; cursor: pointer; list-style: none; font: 400 22px/1.3 var(--f-display); }
+.inicio .faq__item summary::-webkit-details-marker { display: none; }
+.inicio .faq__item summary::after { content: "+"; font: 400 26px/1 var(--f-text); color: var(--muted); transition: transform 0.25s var(--ease); }
+.inicio .faq__item[open] summary::after { transform: rotate(45deg); }
+.inicio .faq__item p { margin: -6px 0 22px; max-width: 70ch; }
+
+@media (max-width: 1023px) {
+  .inicio .club__config, .inicio .club__fechas { grid-template-columns: 1fr; }
+  .inicio .club__resumen { position: static; }
+}
+@media (max-width: 599px) {
+  .inicio .club__cafes { grid-template-columns: 1fr; }
+  .inicio .faq__item summary { font-size: 19px; }
+}

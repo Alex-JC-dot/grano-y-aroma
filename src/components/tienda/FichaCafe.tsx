@@ -98,7 +98,10 @@ function Ficha({ cafe }: { cafe: Product }) {
               <p className="ficha__notas">{cafe.cuppingNotes}</p>
 
               <div className="ficha__compra">
-                <p className="ficha__precio">{formatBs(cafe.price)}</p>
+                <p className="ficha__precio">
+                  {formatBs(cafe.price)}
+                  {esDeCafe && categoriaDe(cafe) === "grano" && <small className="card__peso"> · bolsa de 250 g</small>}
+                </p>
 
                 {esDeCafe && cafe.grindTypes.length > 1 && (
                   <label className="campo">
