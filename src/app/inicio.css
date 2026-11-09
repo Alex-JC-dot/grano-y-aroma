@@ -457,12 +457,14 @@ body:has(.inicio) {
   overflow: hidden;
   background: #d6c8b6; /* tono del video mientras cargan las imágenes */
 }
-.inicio .foot__canvas {
+.inicio .foot__video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
+  object-fit: cover;
+  object-position: 68% 50%; /* el saco a la vista al recortar */
 }
 /*
  * Velo para que el texto resalte sin desenfocar el saco:
@@ -499,6 +501,7 @@ body:has(.inicio) {
 
 @media (max-width: 767px) {
   .inicio .foot__hero { height: 88svh; }
+  .inicio .foot__video { object-position: 55% 50%; } /* en vertical: la boca del saco y los granos */
   /* En celular el texto va arriba: el velo baja desde arriba y deja el saco abajo a la vista */
   .inicio .foot__veil {
     background:
