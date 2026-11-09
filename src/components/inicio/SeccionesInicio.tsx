@@ -1,11 +1,13 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
-import SacoPie from "./SacoPie";
+import TazaPie from "./TazaPie";
+import Contacto from "./Contacto";
 
 /**
- * Secciones estáticas de la página de inicio.
+ * Secciones compartidas de las páginas públicas (proceso, visita y pie).
  *
- * Imágenes: las de "grano verde", "enfriado", el local y las animaciones se generaron con Kling AI;
+ * Imágenes: el local, "grano verde", "enfriado", las bolsas, los paisajes de origen, Sucre y
+ * todos los videos se generaron con Kling AI;
  * "tueste" y "tu taza" son fotografías de Wikimedia Commons con licencia libre (créditos en el pie).
  */
 
@@ -36,17 +38,59 @@ const PROCESO = [
   },
 ];
 
-export function Proceso() {
+/** El proceso del tueste en 4 pasos. En el Inicio lleva un enlace a la página Nosotros. */
+export function Proceso({ conEnlace = false }: { conEnlace?: boolean }) {
   return (
     <section className="section" id="tueste" aria-labelledby="tueste-titulo">
       <div className="wrap">
-        <div className="head">
+        <div className="head" data-revelar>
           <h2 id="tueste-titulo">Del grano verde a tu taza</h2>
-          <p>El mismo lote se sigue desde que llega en saco hasta que sale en bolsa con su código.</p>
+          <div>
+            <p>El mismo lote se sigue desde que llega en saco hasta que sale en bolsa con su código.</p>
+            {conEnlace && (
+              <Link href="/nosotros" className="link head__link">
+                Conoce nuestra historia →
+              </Link>
+            )}
+          </div>
         </div>
         <ol className="process" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {PROCESO.map((p) => (
-            <li key={p.titulo} className="process__item">
+          {PROCESO.map((p, i) => (
+            <li key={p.titulo} className="process__item" data-revelar style={{ "--i": i } as React.CSSProperties}>
+              <figure>
+                <img src={p.img} alt={p.alt} loading="lazy" decoding="async" />
+              </figure>
+              <h3>{p.titulo}</h3>
+              <p>{p.texto}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+const TRABAJO = [
+  { img: "/images/nosotros/recepcion.webp", alt: "Sacos de yute con café verde y una etiqueta de lote", titulo: "Recibimos el lote", texto: "Cada saco llega con su etiqueta: finca, variedad y fecha. Lo pesamos y lo guardamos en bodega." },
+  { img: "/images/nosotros/tostadora.webp", alt: "Granos recién tostados cayendo a la bandeja de enfriado de la tostadora", titulo: "Lo tostamos", texto: "Tostamos en tandas pequeñas y registramos la curva de cada tueste." },
+  { img: "/images/nosotros/catacion.webp", alt: "Mesa de catación con tazas, cucharas y muestras de grano", titulo: "Lo catamos", texto: "Cada lote pasa por la mesa de catación y recibe su puntaje antes de salir a la venta." },
+  { img: "/images/nosotros/embolsado.webp", alt: "Bolsas kraft de café sobre una mesa de trabajo junto a una balanza", titulo: "Lo embolsamos", texto: "Pesamos cada bolsa y le ponemos el código del lote para que puedas rastrearla." },
+];
+
+/** Nosotros: cómo trabajamos un lote, con fotos propias de esta página. */
+export function AsiTrabajamos() {
+  return (
+    <section className="section" id="trabajo" aria-labelledby="trabajo-titulo">
+      <div className="wrap">
+        <div className="head" data-revelar>
+          <h2 id="trabajo-titulo">Así trabajamos cada lote</h2>
+          <div>
+            <p>Cada lote pasa por cuatro pasos y queda registrado en cada uno.</p>
+          </div>
+        </div>
+        <ol className="process" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {TRABAJO.map((p, i) => (
+            <li key={p.titulo} className="process__item" data-revelar style={{ "--i": i } as React.CSSProperties}>
               <figure>
                 <img src={p.img} alt={p.alt} loading="lazy" decoding="async" />
               </figure>
@@ -66,7 +110,7 @@ export function Visita() {
   return (
     <section className="section" id="visita" aria-labelledby="visita-titulo">
       <div className="wrap visit">
-        <div className="visit__panel">
+        <div className="visit__panel" data-revelar>
           <h2 id="visita-titulo">Visítanos en Sucre</h2>
           <p className="visit__place">
             <a href={MAPA} className="link" target="_blank" rel="noreferrer">
@@ -87,7 +131,7 @@ export function Visita() {
             Ver la zona en el mapa
           </a>
         </div>
-        <figure className="visit__photo">
+        <figure className="visit__photo" data-revelar style={{ "--i": 1 } as React.CSSProperties}>
           <img
             src="/images/home/local.webp"
             alt="La barra del local: máquina de espresso, molinos y bolsas de café en repisas bajo vigas de madera"
@@ -107,16 +151,21 @@ const CREDITOS = [
 
 export function PieInicio() {
   return (
-    <footer className="foot" id="contacto">
-      <div className="wrap">
-        <div className="foot__top">
-          <p className="foot__name" aria-hidden="true">
-            Grano y
-            <br />
-            Aroma
-          </p>
-          <SacoPie />
-        </div>
+    <footer className="foot">
+      <TazaPie>
+        <h2 className="foot__title">Del tostador a tu taza</h2>
+        <p className="foot__line">
+          Cafés de origen boliviano, tostados por lote en Sucre y enviados a tu casa.
+        </p>
+        <Link href="/tienda" className="btn btn--light">
+          Comprar café
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </Link>
+      </TazaPie>
+      <Contacto />
+      <div className="wrap foot__bottom foot--desliza" data-revelar>
         <div className="foot__cols">
           <div>
             <h3>Visita</h3>
@@ -130,7 +179,8 @@ export function PieInicio() {
           <div>
             <h3>Tienda</h3>
             <ul>
-              <li><a href="#cafes" className="link">Cafés de origen</a></li>
+              <li><Link href="/tienda" className="link">Cafés de origen</Link></li>
+              <li><Link href="/nosotros" className="link">Nosotros</Link></li>
               <li><Link href="/club" className="link">Club Grano y Aroma</Link></li>
               <li><Link href="/subastas" className="link">Subastas de micro-lotes</Link></li>
             </ul>

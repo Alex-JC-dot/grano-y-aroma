@@ -1,0 +1,277 @@
+/*
+ * Estilos de las páginas internas (Tienda, ficha del café, Nosotros) y de los adelantos del
+ * Inicio. Usan los mismos tokens de publico.css (fondo, tinta, acento, radios, tipografías).
+ */
+
+/* Primera sección de una página interna: deja sitio a la barra fija */
+.inicio .page-top { padding-top: calc(var(--nav) + 72px); }
+.inicio .section--tight { padding-top: 24px; }
+.inicio .head h1 {
+  grid-column: 1 / span 7;
+  margin: 0;
+  font: 400 clamp(40px, 4.4vw, 68px) / 1.02 var(--f-display);
+  letter-spacing: -0.03em;
+}
+.inicio .head > div { grid-column: 9 / span 4; }
+.inicio .head > div p { margin: 0; font-size: 17px; color: var(--muted); }
+.inicio .head__link { display: inline-block; margin-top: 12px; font-weight: 500; }
+@media (max-width: 767px) {
+  .inicio .page-top { padding-top: calc(var(--nav) + 40px); }
+  .inicio .head > div { margin-top: 16px; }
+}
+
+/* Barra: página actual subrayada */
+.inicio .nav__links a[aria-current="page"] { background-size: 100% 2px; }
+
+.inicio .btn--sm { height: 40px; padding: 0 16px; font-size: 15px; }
+.inicio .btn.is-added { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* ---------- Tarjetas de café ---------- */
+.inicio .cards { display: grid; gap: 32px 24px; }
+.inicio .cards--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1023px) { .inicio .cards--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 599px) { .inicio .cards--3 { grid-template-columns: 1fr; } }
+
+.inicio .card { display: flex; flex-direction: column; transition: transform 0.25s var(--ease); }
+.inicio .card:hover { transform: translateY(-2px); }
+.inicio .card__link { display: block; border-radius: var(--r-card); overflow: hidden; }
+.inicio .card__link .bolsa { transition: transform 0.6s var(--ease); }
+.inicio .card__link:hover .bolsa { transform: scale(1.03); }
+.inicio .card__body { padding-top: 18px; display: flex; flex-direction: column; flex: 1; }
+.inicio .card__origen { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+.inicio .card__titulo { margin: 0 0 8px; font: 400 24px/1.2 var(--f-display); letter-spacing: -0.015em; }
+.inicio .card__titulo a { color: var(--ink); text-decoration: none; }
+.inicio .card__titulo a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.inicio .card__notas { margin: 0 0 18px; font-size: 15px; }
+.inicio .card__pie {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.inicio .card__precio { display: block; font: 500 18px/1.2 var(--f-text); font-variant-numeric: tabular-nums; }
+.inicio .card__puntaje { display: block; font-size: 13px; color: var(--muted); }
+
+/* ---------- La bolsa (dibujo provisional hasta tener las fotos) ---------- */
+.inicio .bolsa {
+  aspect-ratio: 1 / 1;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--surface);
+}
+.inicio .bolsa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/*
+ * Bolsa compuesta: la foto de la bolsa kraft (franja en blanco) centrada sobre el crema, y
+ * encima la franja del color del café con su nombre y lote, y la marca impresa en el kraft.
+ * La franja de la foto ocupa del 51,8 % al 73,2 % de su alto (medido sobre la imagen).
+ */
+.inicio .bolsa--compuesta {
+  container-type: inline-size; /* el texto se escala con la bolsa, no con la pantalla */
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 90% at 30% 15%, rgba(255, 255, 255, 0.35), transparent 60%), var(--surface);
+}
+.inicio .bolsa__foto {
+  position: relative;
+  width: 56%; /* = 85 % del alto del cuadro, con la proporción 600 × 906 de la foto */
+  aspect-ratio: 600 / 906;
+  filter: drop-shadow(0 18px 18px rgba(42, 31, 26, 0.22));
+}
+.inicio .bolsa__foto img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.inicio .bolsa__marca {
+  position: absolute;
+  top: 30%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: 400 clamp(7px, 3.6cqi, 22px) / 1 var(--f-display);
+  color: #3b2a1f;
+  mix-blend-mode: multiply; /* parece impreso sobre el kraft */
+  opacity: 0.85;
+  white-space: nowrap;
+}
+.inicio .bolsa__franja {
+  position: absolute;
+  top: 51.8%;
+  height: 21.4%;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  padding: 0 8%;
+  background: var(--etiqueta);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  color: #fbf6ef;
+  text-align: center;
+}
+.inicio .bolsa__nombre { font: 400 clamp(9px, 4.4cqi, 28px) / 1.12 var(--f-display); }
+.inicio .bolsa__lote { font-size: clamp(7px, 2.3cqi, 13px); letter-spacing: 0.05em; opacity: 0.85; }
+@container (max-width: 240px) {
+  .inicio .bolsa__lote { display: none; }
+}
+
+/* ---------- Filtros de la tienda ---------- */
+.inicio .filtros {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 24px 48px;
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.inicio .filtros__grupo { border: 0; margin: 0; padding: 0; min-width: 0; }
+.inicio .filtros__grupo legend { padding: 0; margin-bottom: 12px; font: 500 13px/1.3 var(--f-text); color: var(--muted); }
+.inicio .filtros__opciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.inicio .chip {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(42, 31, 26, 0.3);
+  background: transparent;
+  color: var(--ink);
+  font: 500 14px/1 var(--f-text);
+  cursor: pointer;
+  transition: background-color 0.18s var(--ease), color 0.18s var(--ease), border-color 0.18s var(--ease);
+}
+.inicio .chip:hover { border-color: var(--ink); }
+.inicio .chip.is-on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.inicio .filtros__resumen { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 32px; color: var(--muted); }
+.inicio .filtros__limpiar { border: 0; padding: 0; cursor: pointer; font: inherit; color: var(--ink); }
+.inicio .filtros__vacio { padding: 48px 0; font-size: 18px; }
+@media (max-width: 1023px) { .inicio .filtros { grid-template-columns: 1fr; gap: 20px; } }
+
+/* ---------- Ficha del café ---------- */
+.inicio .migas { display: flex; gap: 10px; margin-bottom: 32px; font-size: 14px; color: var(--muted); }
+.inicio .migas a { color: var(--muted); }
+.inicio .ficha { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: start; }
+.inicio .ficha__visual { grid-column: 1 / span 6; position: sticky; top: calc(var(--nav) + 24px); }
+.inicio .ficha__info { grid-column: 8 / span 5; }
+.inicio .ficha__origen { margin: 0 0 10px; color: var(--muted); }
+.inicio .ficha__titulo { margin: 0 0 20px; font: 400 clamp(36px, 3.6vw, 56px) / 1.05 var(--f-display); letter-spacing: -0.025em; }
+.inicio .ficha__notas { margin: 0 0 32px; font-size: 18px; line-height: 1.6; }
+.inicio .ficha__compra {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 24px;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  margin-bottom: 48px;
+}
+.inicio .ficha__precio { grid-column: 1 / -1; margin: 0; font: 400 32px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.inicio .ficha__agregar { grid-column: 1 / -1; width: 100%; }
+.inicio .campo { display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 500; }
+.inicio .campo select {
+  height: 48px;
+  padding: 0 12px;
+  border: 1px solid rgba(42, 31, 26, 0.3);
+  border-radius: var(--r-btn);
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 16px var(--f-text);
+}
+.inicio .cantidad {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border: 1px solid rgba(42, 31, 26, 0.3);
+  border-radius: var(--r-btn);
+  background: var(--bg);
+}
+.inicio .cantidad button { width: 48px; height: 100%; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: var(--ink); }
+.inicio .cantidad output { flex: 1; text-align: center; font: 500 16px var(--f-text); font-variant-numeric: tabular-nums; }
+.inicio .ficha__subtitulo { margin: 0 0 16px; font: 400 26px/1.2 var(--f-display); }
+.inicio .ficha__datos { display: grid; grid-template-columns: auto 1fr; margin: 0; border-top: 1px solid var(--line); }
+.inicio .ficha__datos dt,
+.inicio .ficha__datos dd { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.inicio .ficha__datos dt { color: var(--muted); padding-right: 24px; }
+.inicio .ficha__datos dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 1023px) {
+  .inicio .ficha { display: block; }
+  .inicio .ficha__visual { position: static; max-width: 520px; margin-bottom: 32px; }
+}
+
+/* ---------- Inicio: adelantos del Club y de las Subastas ---------- */
+.inicio .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.inicio .duo__item {
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  transition: transform 0.25s var(--ease);
+}
+.inicio .duo__item:hover { transform: translateY(-2px); }
+.inicio .duo__visual { aspect-ratio: 16 / 10; overflow: hidden; }
+.inicio .duo__visual img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s var(--ease); }
+.inicio .duo__item:hover .duo__visual img { transform: scale(1.03); }
+.inicio .duo__visual--club { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); }
+.inicio .duo__visual--club .bolsa { aspect-ratio: auto; height: 100%; border-radius: 0; }
+.inicio .duo__texto { padding: 32px; }
+.inicio .duo__etiqueta { margin: 0 0 10px; font: 500 13px/1.3 var(--f-text); color: var(--muted); }
+.inicio .duo__texto h2 { margin: 0 0 12px; font: 400 clamp(26px, 2.4vw, 34px) / 1.15 var(--f-display); letter-spacing: -0.02em; }
+.inicio .duo__texto p { margin: 0 0 20px; }
+.inicio .duo__mas { font-weight: 500; }
+.inicio .duo__item:hover .duo__mas { background-size: 100% 1px; }
+@media (max-width: 767px) {
+  .inicio .duo { grid-template-columns: 1fr; }
+  .inicio .duo__texto { padding: 24px; }
+}
+
+/* ---------- Nosotros: presentación ---------- */
+.inicio .intro { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; }
+.inicio .intro h1 { grid-column: 1 / span 6; margin: 0; font: 400 clamp(40px, 4.4vw, 68px) / 1.04 var(--f-display); letter-spacing: -0.03em; }
+.inicio .intro__texto { grid-column: 8 / span 5; font-size: 18px; line-height: 1.65; }
+.inicio .intro__texto p { margin: 0 0 20px; }
+.inicio .intro__texto .btn { margin-top: 12px; }
+@media (max-width: 1023px) {
+  .inicio .intro { display: block; }
+  .inicio .intro__texto { margin-top: 32px; }
+}
+
+/* Producto con foto propia y su etiqueta escrita encima (BolsaVisual) */
+.inicio .bolsa--foto { position: relative; container-type: inline-size; }
+.inicio .etiqueta {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  text-align: center;
+  pointer-events: none;
+}
+.inicio .etiqueta--oscuro { color: #3b2a1f; mix-blend-mode: multiply; }
+.inicio .etiqueta--claro { color: #f3ebe1; }
+.inicio .etiqueta__marca { font: 400 clamp(7px, 3.3cqi, 26px) / 1.05 var(--f-display); white-space: nowrap; }
+.inicio .etiqueta__texto { font: 500 clamp(6px, 2cqi, 14px) / 1.2 var(--f-text); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }
+.inicio .etiqueta--claro .etiqueta__marca { font-size: clamp(7px, 2.8cqi, 22px); }
+@container (max-width: 160px) { .inicio .etiqueta__texto { display: none; } }
+
+/* Pestañas de categoría de la tienda */
+.inicio .categorias { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.inicio .categoria {
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(42, 31, 26, 0.3);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--ink);
+  font: 500 15px/1 var(--f-text);
+  cursor: pointer;
+  transition: background-color 0.18s var(--ease), color 0.18s var(--ease);
+}
+.inicio .categoria span { margin-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.inicio .categoria:hover { border-color: var(--ink); }
+.inicio .categoria.is-on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.inicio .categoria.is-on span { color: rgba(230, 222, 212, 0.7); }
+
+.inicio .card__peso { font: 400 14px var(--f-text); color: var(--muted); }

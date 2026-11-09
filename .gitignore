@@ -44,3 +44,6 @@ next-env.d.ts
 # herramientas de diseño (taste-skill)
 .taste-skill/
 shots/
+
+# Fotos de productos de prueba (marcas de terceros): solo en local
+/public/images/tienda/prueba/
