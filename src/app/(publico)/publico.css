@@ -652,3 +652,4 @@ html[data-revelar-activo="on"] .inicio [data-revelar][data-visible] {
   .inicio .contacto__form { padding: 24px 20px; }
   .inicio .contacto__fila { grid-template-columns: 1fr; }
 }
+.inicio .contacto__datos a { color: inherit; }

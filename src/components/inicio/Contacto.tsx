@@ -9,7 +9,7 @@ import { useState } from "react";
  *
  * Pendiente: guardar el mensaje en Supabase (tabla de mensajes de contacto). Hasta entonces
  * el envío solo se confirma en pantalla.
- * El correo y el teléfono de abajo son provisionales: reemplazar por los reales del negocio.
+ * Correo y WhatsApp de contacto del equipo.
  */
 
 const MOTIVOS = ["Un pedido o envío", "El Club de suscripción", "Las subastas", "Compras para mi cafetería", "Otro tema"];
@@ -58,11 +58,11 @@ export default function Contacto() {
           <dl className="contacto__datos">
             <div>
               <dt>Correo</dt>
-              <dd>hola@granoyaroma.bo</dd>
+              <dd><a href="mailto:alexcalatayud9@gmail.com" className="link">alexcalatayud9@gmail.com</a></dd>
             </div>
             <div>
               <dt>WhatsApp</dt>
-              <dd>+591 700 00000</dd>
+              <dd><a href="https://wa.me/59174214581" className="link" target="_blank" rel="noreferrer">+591 742 14581</a></dd>
             </div>
             <div>
               <dt>Ubicación</dt>
