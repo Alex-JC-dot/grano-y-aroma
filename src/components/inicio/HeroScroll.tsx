@@ -33,7 +33,7 @@ function useReducirMovimiento() {
  */
 
 const TOTAL = 121;
-const FIN_ANIMACION = 0.85; // el último 15% del scroll deja quieto el fotograma final
+const FIN_ANIMACION = 0.95; // casi todo el scroll anima; solo un respiro al final
 
 const PASOS = [
   {

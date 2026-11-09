@@ -8,18 +8,21 @@
  */
 
 body:has(.inicio) {
-  background: #eee7de;
+  background: #e6ded4;
 }
 
 .inicio {
-  --bg: #eee7de;
-  --surface: #e4dbcf;
+  --bg: #e6ded4; /* crema del video (borde inferior izquierdo del hero) */
+  --surface: #dcd2c6; /* un paso más oscuro, del lado derecho del video */
   --ink: #2a1f1a;
   --muted: #65574c;
   --line: rgba(42, 31, 26, 0.14);
   --accent: #7a4a2c;
   --accent-hover: #643a20;
   --accent-ink: #ffffff;
+
+  --r-btn: 6px;  /* esquinas levemente redondeadas: ni planas ni "amigables" */
+  --r-card: 10px;
 
   --nav: 72px;
   --gut: 80px;
@@ -78,7 +81,7 @@ body:has(.inicio) {
   gap: 10px;
   height: 48px;
   padding: 0 24px;
-  border-radius: 2px;
+  border-radius: var(--r-btn);
   font: 500 16px/1 var(--f-text);
   border: 1px solid transparent;
   cursor: pointer;
@@ -146,7 +149,7 @@ body:has(.inicio) {
   display: grid;
   place-items: center;
   border: 1px solid rgba(42, 31, 26, 0.35);
-  border-radius: 2px;
+  border-radius: var(--r-btn);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -180,7 +183,7 @@ body:has(.inicio) {
 
 .inicio .hero {
   position: relative;
-  height: 300svh; /* 3 pantallas de scroll; la escena queda fija mientras tanto */
+  height: 190svh; /* menos de 1 pantalla de scroll extra: la escena queda fija y la animación avanza */
 }
 .inicio .hero--static { height: auto; }
 
@@ -189,7 +192,7 @@ body:has(.inicio) {
   top: var(--nav);
   height: calc(100svh - var(--nav));
   overflow: hidden;
-  background: #e9e0d6;
+  background: var(--bg);
 }
 .inicio .hero--static .hero__stage { position: relative; top: 0; margin-top: var(--nav); }
 
@@ -316,7 +319,7 @@ body:has(.inicio) {
 .inicio .section {
   padding: var(--padt) 0 var(--padb);
 }
-.inicio .section--alt { background: var(--surface); }
+/* Todas las secciones comparten el fondo del video (antes esta usaba otro tono). */
 
 .inicio .head {
   display: grid;
@@ -380,7 +383,7 @@ body:has(.inicio) {
   gap: 24px;
   align-items: end;
 }
-.inicio .process__item figure { margin: 0 0 20px; overflow: hidden; }
+.inicio .process__item figure { margin: 0 0 20px; overflow: hidden; border-radius: var(--r-card); }
 .inicio .process__item img {
   display: block;
   width: 100%;
@@ -414,6 +417,7 @@ body:has(.inicio) {
 .inicio .visit__panel {
   grid-column: 1 / span 6;
   background: var(--surface);
+  border-radius: var(--r-card);
   padding: 48px;
   display: flex;
   flex-direction: column;
@@ -433,7 +437,7 @@ body:has(.inicio) {
 .inicio .hours dt { font-weight: 500; }
 .inicio .hours dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
 .inicio .visit__panel .btn { align-self: flex-start; margin-top: auto; }
-.inicio .visit__photo { grid-column: 7 / span 6; margin: 0; overflow: hidden; min-height: 420px; }
+.inicio .visit__photo { grid-column: 7 / span 6; margin: 0; overflow: hidden; min-height: 420px; border-radius: var(--r-card); }
 .inicio .visit__photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s var(--ease); }
 .inicio .visit__photo:hover img { transform: scale(1.03); }
 

@@ -37,7 +37,7 @@ const PROCESO = [
 
 export function Proceso() {
   return (
-    <section className="section section--alt" id="tueste" aria-labelledby="tueste-titulo">
+    <section className="section" id="tueste" aria-labelledby="tueste-titulo">
       <div className="wrap">
         <div className="head">
           <h2 id="tueste-titulo">Del grano verde a tu taza</h2>
