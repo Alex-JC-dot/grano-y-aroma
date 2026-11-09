@@ -29,9 +29,12 @@ export default function CartDrawer() {
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-md z-[70] flex flex-col bg-[#1A0F0B] border-l border-[#C89D54]/20 shadow-2xl transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        // Cerrado: fuera de pantalla, sin sombra (se asomaba en el borde derecho) e inerte para el teclado.
+        className={`fixed top-0 right-0 h-full w-full max-w-md z-[70] flex flex-col bg-[#1A0F0B] border-l border-[#C89D54]/20 transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"
         }`}
+        inert={!isOpen}
+        aria-hidden={!isOpen}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
