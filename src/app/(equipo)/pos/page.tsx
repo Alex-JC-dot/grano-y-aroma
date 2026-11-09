@@ -1,55 +1,104 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { posItems } from "@/lib/data";
-import type { POSItem } from "@/lib/types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
+import type { FilaProducto } from "@/store/catalogoStore";
 
 /**
- * Caja de la cafetería (Punto de Venta, RF-17 a RF-21): productos por categoría, orden actual,
- * método de pago, cobro con comprobante y cierre de caja del turno.
- * Los datos son de prueba; el descuento de stock compartido con la tienda vendrá de Supabase.
+ * Caja de la cafetería (Punto de Venta, RF-17 a RF-21): la barra y los productos de la tienda
+ * salen de Supabase; cada cobro pasa por confirmar_pedido() con canal "caja", que descuenta el
+ * stock compartido con la tienda en línea. El cierre de caja suma las ventas del día por método.
  */
 
-type Linea = POSItem & { qty: number };
+type Item = Pick<FilaProducto, "id" | "nombre" | "categoria" | "precio" | "stock" | "stock_minimo" | "grupo">;
+type Linea = Item & { qty: number };
 type Metodo = "efectivo" | "qr" | "tarjeta";
 const METODOS: { v: Metodo; label: string }[] = [
   { v: "efectivo", label: "Efectivo" },
   { v: "qr", label: "QR" },
   { v: "tarjeta", label: "Tarjeta" },
 ];
-const CATEGORIAS = ["Todos", ...Array.from(new Set(posItems.map((i) => i.category)))];
+const ORDEN_GRUPOS = ["Bebidas calientes", "Métodos", "Bebidas frías", "Pastelería", "Otros", "Tienda"];
+const grupoDe = (i: Item) => (i.categoria === "bebida" ? i.grupo ?? "Otros" : "Tienda");
 
-// Ventas del turno antes de abrir la pantalla (datos de prueba).
-const TURNO_INICIAL: Record<Metodo, { monto: number; ventas: number }> = {
-  efectivo: { monto: 1240, ventas: 18 },
-  qr: { monto: 890, ventas: 12 },
-  tarjeta: { monto: 430, ventas: 5 },
-};
+type Turno = Record<Metodo, { monto: number; ventas: number }>;
+const TURNO_VACIO: Turno = { efectivo: { monto: 0, ventas: 0 }, qr: { monto: 0, ventas: 0 }, tarjeta: { monto: 0, ventas: 0 } };
 
 export default function PaginaCaja() {
+  const [items, setItems] = useState<Item[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [cat, setCat] = useState("Todos");
   const [orden, setOrden] = useState<Linea[]>([]);
   const [metodo, setMetodo] = useState<Metodo>("efectivo");
-  const [turno, setTurno] = useState(TURNO_INICIAL);
+  const [turno, setTurno] = useState<Turno>(TURNO_VACIO);
   const [comprobante, setComprobante] = useState<{ n: string; total: number; metodo: string } | null>(null);
+  const [error, setError] = useState("");
+  const [cobrando, setCobrando] = useState(false);
   const cierreRef = useRef<HTMLDialogElement>(null);
 
-  const visibles = posItems.filter((i) => cat === "Todos" || i.category === cat);
-  const total = orden.reduce((s, i) => s + i.price * i.qty, 0);
+  const cargar = useCallback(async () => {
+    const { data } = await supabase
+      .from("productos")
+      .select("id, nombre, categoria, precio, stock, stock_minimo, grupo")
+      .eq("activo", true)
+      .order("orden");
+    setItems(((data as Item[]) ?? []).map((i) => ({ ...i, precio: Number(i.precio) })));
+    setCargando(false);
+  }, []);
+
+  const cargarTurno = useCallback(async () => {
+    const desde = new Date();
+    desde.setHours(0, 0, 0, 0);
+    const { data } = await supabase.from("pedidos").select("metodo_pago, total").eq("canal", "caja").gte("creado_en", desde.toISOString());
+    const t: Turno = { efectivo: { monto: 0, ventas: 0 }, qr: { monto: 0, ventas: 0 }, tarjeta: { monto: 0, ventas: 0 } };
+    for (const p of (data as { metodo_pago: Metodo; total: number }[]) ?? []) {
+      if (!t[p.metodo_pago]) continue;
+      t[p.metodo_pago].monto += Number(p.total);
+      t[p.metodo_pago].ventas += 1;
+    }
+    setTurno(t);
+  }, []);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      cargar();
+      cargarTurno();
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [cargar, cargarTurno]);
+
+  const grupos = ["Todos", ...ORDEN_GRUPOS.filter((g) => items.some((i) => grupoDe(i) === g))];
+  const visibles = items.filter((i) => cat === "Todos" || grupoDe(i) === cat);
+  const total = orden.reduce((s, i) => s + i.precio * i.qty, 0);
   const unidades = orden.reduce((s, i) => s + i.qty, 0);
 
-  const agregar = (item: POSItem) => {
+  const agregar = (item: Item) => {
     setComprobante(null);
-    setOrden((o) => (o.some((x) => x.id === item.id) ? o.map((x) => (x.id === item.id ? { ...x, qty: x.qty + 1 } : x)) : [...o, { ...item, qty: 1 }]));
+    setError("");
+    setOrden((o) => {
+      const ya = o.find((x) => x.id === item.id)?.qty ?? 0;
+      if (ya >= item.stock) return o;
+      return ya ? o.map((x) => (x.id === item.id ? { ...x, qty: x.qty + 1 } : x)) : [...o, { ...item, qty: 1 }];
+    });
   };
   const cambiar = (id: string, d: number) =>
-    setOrden((o) => o.map((x) => (x.id === id ? { ...x, qty: x.qty + d } : x)).filter((x) => x.qty > 0));
+    setOrden((o) => o.map((x) => (x.id === id ? { ...x, qty: Math.min(x.stock, x.qty + d) } : x)).filter((x) => x.qty > 0));
 
-  const cobrar = () => {
-    setTurno((t) => ({ ...t, [metodo]: { monto: t[metodo].monto + total, ventas: t[metodo].ventas + 1 } }));
-    setComprobante({ n: `C-${Date.now().toString().slice(-5)}`, total, metodo: METODOS.find((m) => m.v === metodo)!.label });
+  const cobrar = async () => {
+    setCobrando(true);
+    setError("");
+    const { data, error } = await supabase.rpc("confirmar_pedido", {
+      items: orden.map((l) => ({ producto_id: l.id, cantidad: l.qty, molienda: "Única" })),
+      p_canal: "caja",
+      p_metodo: metodo,
+    });
+    setCobrando(false);
+    if (error) return setError(mensajeDeError(error));
+    setComprobante({ n: data.codigo, total: Number(data.total), metodo: METODOS.find((m) => m.v === metodo)!.label });
     setOrden([]);
+    cargar();
+    cargarTurno();
   };
 
   const totalTurno = Object.values(turno).reduce((s, x) => s + x.monto, 0);
@@ -62,32 +111,37 @@ export default function PaginaCaja() {
             <p className="eyebrow">Punto de venta</p>
             <h1 id="caja-titulo">Caja</h1>
           </div>
-          <button type="button" className="btn btn--secondary" onClick={() => cierreRef.current?.showModal()}>
+          <button type="button" className="btn btn--secondary" onClick={() => { cargarTurno(); cierreRef.current?.showModal(); }}>
             Cierre de caja
           </button>
         </div>
 
         <div className="filtros__opciones caja__categorias" role="group" aria-label="Categorías">
-          {CATEGORIAS.map((c) => (
+          {grupos.map((c) => (
             <button key={c} type="button" className={`chip${cat === c ? " is-on" : ""}`} aria-pressed={cat === c} onClick={() => setCat(c)}>
               {c}
             </button>
           ))}
         </div>
 
-        <div className="caja__grid">
-          {visibles.map((item) => {
-            const bajo = item.stock !== 999 && item.stock < 15;
-            return (
-              <button key={item.id} type="button" className="caja__item" onClick={() => agregar(item)}>
-                <span className="caja__cat">{item.category}</span>
-                <span className="caja__nombre">{item.name}</span>
-                <span className="caja__precio">{formatBs(item.price)}</span>
-                {bajo && <span className="caja__stock">Quedan {item.stock}</span>}
-              </button>
-            );
-          })}
-        </div>
+        {cargando ? (
+          <p className="caja__vacia" aria-busy="true">Cargando productos…</p>
+        ) : (
+          <div className="caja__grid">
+            {visibles.map((item) => {
+              const agotado = item.stock <= 0;
+              const bajo = !agotado && item.stock < 999 && item.stock <= Math.max(item.stock_minimo, 5);
+              return (
+                <button key={item.id} type="button" className="caja__item" onClick={() => agregar(item)} disabled={agotado}>
+                  <span className="caja__cat">{grupoDe(item)}</span>
+                  <span className="caja__nombre">{item.nombre}</span>
+                  <span className="caja__precio">{formatBs(item.precio)}</span>
+                  {agotado ? <span className="caja__stock">Agotado</span> : bajo && <span className="caja__stock">Quedan {item.stock}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <aside className="caja__orden" aria-labelledby="orden-titulo">
@@ -109,13 +163,13 @@ export default function PaginaCaja() {
             {orden.map((l) => (
               <li key={l.id}>
                 <div>
-                  <span className="caja__lnombre">{l.name}</span>
-                  <span className="caja__lprecio">{formatBs(l.price)}</span>
+                  <span className="caja__lnombre">{l.nombre}</span>
+                  <span className="caja__lprecio">{formatBs(l.precio)}</span>
                 </div>
                 <div className="cantidad cantidad--sm">
-                  <button type="button" aria-label={`Quitar uno de ${l.name}`} onClick={() => cambiar(l.id, -1)}>−</button>
+                  <button type="button" aria-label={`Quitar uno de ${l.nombre}`} onClick={() => cambiar(l.id, -1)}>−</button>
                   <output>{l.qty}</output>
-                  <button type="button" aria-label={`Agregar uno de ${l.name}`} onClick={() => cambiar(l.id, 1)}>+</button>
+                  <button type="button" aria-label={`Agregar uno de ${l.nombre}`} onClick={() => cambiar(l.id, 1)}>+</button>
                 </div>
               </li>
             ))}
@@ -134,8 +188,9 @@ export default function PaginaCaja() {
             <span>Total</span>
             <strong>{formatBs(total)}</strong>
           </div>
-          <button type="button" className="btn btn--primary caja__cobrar" disabled={!orden.length} onClick={cobrar}>
-            Cobrar {orden.length ? formatBs(total) : ""}
+          {error && <p className="carrito__error" role="alert">{error}</p>}
+          <button type="button" className="btn btn--primary caja__cobrar" disabled={!orden.length || cobrando} onClick={cobrar}>
+            {cobrando ? "Cobrando…" : `Cobrar ${orden.length ? formatBs(total) : ""}`}
           </button>
         </div>
       </aside>
@@ -147,19 +202,19 @@ export default function PaginaCaja() {
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" /></svg>
           </button>
         </div>
-        <p className="caja__sub">Turno de 08:00 a 18:00</p>
+        <p className="caja__sub">Ventas de hoy, {new Date().toLocaleDateString("es-BO", { weekday: "long", day: "numeric", month: "long" })}</p>
         <ul className="dialogo__filas">
           {METODOS.map((m) => (
             <li key={m.v}>
               <span>
                 {m.label}
-                <small>{turno[m.v].ventas} ventas</small>
+                <small>{turno[m.v].ventas === 1 ? "1 venta" : `${turno[m.v].ventas} ventas`}</small>
               </span>
               <strong>{formatBs(turno[m.v].monto)}</strong>
             </li>
           ))}
           <li className="dialogo__total">
-            <span>Total del turno</span>
+            <span>Total del día</span>
             <strong>{formatBs(totalTurno)}</strong>
           </li>
         </ul>

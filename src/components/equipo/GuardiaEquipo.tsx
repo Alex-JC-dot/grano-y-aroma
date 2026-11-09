@@ -1,7 +1,7 @@
 "use client";
 
+import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useAuth } from "@/store/authStore";
 import { PANELES } from "@/lib/supabase";
 import { FormularioCuenta } from "@/components/cuenta/VentanaCuenta";
@@ -12,7 +12,7 @@ import { FormularioCuenta } from "@/components/cuenta/VentanaCuenta";
  * que esto es la cara visible de una protección que no depende del navegador.
  */
 export default function GuardiaEquipo({ children }: { children: React.ReactNode }) {
-  const ruta = usePathname();
+  const ruta = useRuta();
   const { session, perfil, cargando } = useAuth();
 
   if (cargando) return <div className="guardia" aria-busy="true" />;

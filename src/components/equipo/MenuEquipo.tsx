@@ -1,13 +1,15 @@
 "use client";
 
+import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useAuth } from "@/store/authStore";
 import { PANELES } from "@/lib/supabase";
 
 const ENLACES = [
   { href: "/admin", label: "Panel general", detalle: "Ventas y reportes" },
+  { href: "/admin/productos", label: "Productos", detalle: "Precios, stock y nuevos" },
   { href: "/admin/subastas", label: "Subastas", detalle: "Publicar y cerrar lotes" },
+  { href: "/admin/usuarios", label: "Usuarios", detalle: "Cuentas y roles" },
   { href: "/pos", label: "Caja", detalle: "Venta en la cafetería" },
   { href: "/erp", label: "Bodega y tueste", detalle: "Stock y lotes" },
   { href: "/logistica", label: "Logística", detalle: "Pedidos y entregas" },
@@ -17,7 +19,7 @@ const NOMBRE_ROL = { cliente: "Cliente", cajero: "Cajero", tostador: "Tostador",
 
 /** Barra lateral de los paneles internos: solo muestra los que el rol puede abrir. */
 export default function MenuEquipo() {
-  const ruta = usePathname();
+  const ruta = useRuta();
   const { perfil, session, salir } = useAuth();
   const visibles = perfil ? ENLACES.filter((e) => PANELES[perfil.rol].includes(e.href)) : [];
 

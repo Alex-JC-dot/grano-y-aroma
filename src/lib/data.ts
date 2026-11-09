@@ -241,6 +241,10 @@ const PRUEBA: Product[] =
 
 export const products: Product[] = [...catalogo, ...PRUEBA];
 
+/** Copia del catálogo que viene en la página; la tienda la reemplaza con la de Supabase al cargar. */
+export const catalogoInicial = catalogo;
+export const productosDePrueba = PRUEBA;
+
 export const auctions: Auction[] = [
   {
     id: "a1",

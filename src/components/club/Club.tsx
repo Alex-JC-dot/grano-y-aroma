@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
+import { create } from "zustand";
+import { supabase } from "@/lib/supabase";
 import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
 import { categoriaDe, esCafe } from "@/lib/catalogo";
@@ -12,8 +14,8 @@ import { useAuth } from "@/store/authStore";
  *
  * - Se arma en 4 pasos (frecuencia, cantidad, café, molienda) con el precio por envío, el
  *   ahorro frente a la tienda y las próximas fechas de envío y cobro calculadas al momento.
- * - La suscripción se guarda en el navegador (localStorage) hasta conectar Supabase, donde
- *   quedará ligada al perfil del usuario y el cobro recurrente lo hará una tarea programada.
+ * - La suscripción se guarda en Supabase, ligada a la cuenta del cliente (tabla suscripciones):
+ *   la ve desde cualquier dispositivo y el equipo sabe qué preparar en cada envío.
  *
  * Precios: las bolsas de la tienda son de 250 g. El Club cobra el precio del café por cada
  * 250 g con 10 % de descuento si es cada 30 días y 15 % si es cada 15 días. La "Sorpresa del
@@ -44,7 +46,6 @@ const CANTIDADES: { g: Gramos; label: string }[] = [
 ];
 const MOLIENDAS = ["Grano entero", "Espresso", "V60", "Prensa francesa", "Moka"];
 const CAFES = products.filter((p) => esCafe(p) && categoriaDe(p) === "grano");
-const CLAVE = "ga-club-suscripcion";
 const DIA = 86_400_000;
 
 // ---------- Utilidades de fecha ----------
@@ -76,42 +77,83 @@ function precios(cafe: string, gramos: Gramos, frecuencia: Frecuencia) {
 const nombreCafe = (id: string) => (id === "sorpresa" ? "Sorpresa del tostador" : CAFES.find((c) => c.id === id)?.name ?? "—");
 const nombreCantidad = (g: Gramos) => CANTIDADES.find((c) => c.g === g)!.label;
 
-// ---------- Guardado en el navegador ----------
-const EVENTO = "ga-club-cambio";
-function suscribirGuardado(cb: () => void) {
-  window.addEventListener(EVENTO, cb);
-  window.addEventListener("storage", cb);
-  return () => {
-    window.removeEventListener(EVENTO, cb);
-    window.removeEventListener("storage", cb);
+// ---------- Guardado en Supabase (ligado a la cuenta) ----------
+type FilaSub = {
+  id: number;
+  frecuencia: Frecuencia;
+  gramos: Gramos;
+  cafe: string;
+  molienda: string;
+  estado: Estado;
+  inicio: string;
+  saltos: number;
+  pausa_hasta: string | null;
+};
+type SubGuardada = Suscripcion & { id?: number };
+const aSub = (x: FilaSub): SubGuardada => ({
+  id: x.id,
+  frecuencia: x.frecuencia,
+  gramos: x.gramos,
+  cafe: x.cafe,
+  molienda: x.molienda,
+  estado: x.estado,
+  inicio: x.inicio,
+  saltos: x.saltos,
+  pausaHasta: x.pausa_hasta,
+});
+
+const useClubStore = create<{ sub: SubGuardada | null }>(() => ({ sub: null }));
+
+async function cargarSub(uid: string | null) {
+  if (!uid) return useClubStore.setState({ sub: null });
+  const { data } = await supabase
+    .from("suscripciones")
+    .select("*")
+    .eq("cliente_id", uid)
+    .neq("estado", "cancelada")
+    .order("creado_en", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  useClubStore.setState({ sub: data ? aSub(data as FilaSub) : null });
+}
+
+/** Guarda la suscripción en la cuenta (null = cancelar). La base solo deja tocar la propia (RLS). */
+async function guardar(s: Suscripcion | null) {
+  const uid = useAuth.getState().session?.user.id;
+  if (!uid) return;
+  const actual = useClubStore.getState().sub;
+  if (!s) {
+    useClubStore.setState({ sub: null });
+    if (actual?.id) await supabase.from("suscripciones").update({ estado: "cancelada" }).eq("id", actual.id);
+    return;
+  }
+  const fila = {
+    frecuencia: s.frecuencia,
+    gramos: s.gramos,
+    cafe: s.cafe,
+    molienda: s.molienda,
+    estado: s.estado,
+    inicio: s.inicio,
+    saltos: s.saltos,
+    pausa_hasta: s.pausaHasta,
+    precio: precios(s.cafe, s.gramos, s.frecuencia).club,
+    proximo_envio: aISO(proximosEnvios(s, 1)[0]),
   };
-}
-function leerGuardado() {
-  try {
-    return localStorage.getItem(CLAVE);
-  } catch {
-    return null;
+  useClubStore.setState({ sub: { ...s, id: actual?.id } });
+  if (actual?.id) {
+    await supabase.from("suscripciones").update(fila).eq("id", actual.id);
+  } else {
+    const { data } = await supabase.from("suscripciones").insert({ ...fila, cliente_id: uid }).select().single();
+    if (data) useClubStore.setState({ sub: aSub(data as FilaSub) });
   }
-}
-function guardar(s: Suscripcion | null) {
-  try {
-    if (s) localStorage.setItem(CLAVE, JSON.stringify(s));
-    else localStorage.removeItem(CLAVE);
-  } catch {
-    // Sin almacenamiento (modo privado): la suscripción dura lo que dure la página.
-  }
-  window.dispatchEvent(new Event(EVENTO));
 }
 
 export default function Club() {
-  const crudo = useSyncExternalStore(suscribirGuardado, leerGuardado, () => null);
-  const sub = useMemo<Suscripcion | null>(() => {
-    try {
-      return crudo ? (JSON.parse(crudo) as Suscripcion) : null;
-    } catch {
-      return null;
-    }
-  }, [crudo]);
+  const uid = useAuth((s) => s.session?.user.id ?? null);
+  useEffect(() => {
+    cargarSub(uid);
+  }, [uid]);
+  const sub = useClubStore((s) => s.sub);
 
   // Formulario
   const [frecuencia, setFrecuencia] = useState<Frecuencia>(30);
@@ -132,8 +174,11 @@ export default function Club() {
   const pedirCuenta = useAuth((s) => s.pedirCuenta);
   const suscribir = async () => {
     if (!vigente && !(await pedirCuenta("Para suscribirte al Club necesitas una cuenta."))) return;
-    if (vigente) {
-      actualizar({ frecuencia, gramos, cafe, molienda });
+    // Al entrar recién, puede que la cuenta ya tenga una suscripción guardada.
+    if (!vigente) await cargarSub(useAuth.getState().session?.user.id ?? null);
+    const ya = useClubStore.getState().sub;
+    if (ya && ya.estado !== "cancelada") {
+      guardar({ ...ya, frecuencia, gramos, cafe, molienda });
       setMensaje("Guardamos los cambios: se aplican desde tu próximo envío.");
     } else {
       guardar({ frecuencia, gramos, cafe, molienda, estado: "activa", inicio: aISO(sumarDias(hoy(), 3)), saltos: 0, pausaHasta: null });

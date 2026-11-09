@@ -1,11 +1,15 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
-import { cafes } from "@/lib/catalogo";
+import { esCafe } from "@/lib/catalogo";
+import { useProductos } from "@/store/catalogoStore";
 import TarjetaCafe from "@/components/tienda/TarjetaCafe";
 
 /** Inicio: tres cafés destacados con enlace a la tienda completa. */
 export function Destacados() {
   // Los tres de mayor puntaje de catación.
+  const cafes = useProductos().filter(esCafe);
   const destacados = [...cafes].sort((a, b) => b.cuppingScore - a.cuppingScore).slice(0, 3);
 
   return (

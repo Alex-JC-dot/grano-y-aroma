@@ -67,8 +67,9 @@ export default function TarjetaCafe({
             type="button"
             className={`btn btn--secondary btn--sm${agregado ? " is-added" : ""}`}
             onClick={alAgregar}
+            disabled={producto.stock <= 0}
           >
-            {agregado ? "Agregado" : "Agregar"}
+            {producto.stock <= 0 ? "Agotado" : agregado ? "Agregado" : "Agregar"}
           </button>
         </div>
       </div>

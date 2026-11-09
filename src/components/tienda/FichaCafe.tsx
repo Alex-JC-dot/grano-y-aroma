@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { products } from "@/lib/data";
+import { useProductos } from "@/store/catalogoStore";
 import type { Product } from "@/lib/types";
 import { formatBs } from "@/lib/utils";
 import {
@@ -20,7 +20,8 @@ import TarjetaCafe from "./TarjetaCafe";
 /** Ficha de producto con trazabilidad de origen (RF-05) y compra con molienda y cantidad. */
 export default function FichaCafe() {
   const slug = useSearchParams().get("c");
-  const cafe = buscarCafe(slug);
+  const products = useProductos();
+  const cafe = buscarCafe(slug, products);
 
   if (!cafe) {
     return (
@@ -37,10 +38,10 @@ export default function FichaCafe() {
   }
 
   // key: al pasar a otro café (misma página, otro ?c=) se reinician molienda y cantidad.
-  return <Ficha key={cafe.id} cafe={cafe} />;
+  return <Ficha key={cafe.id} cafe={cafe} products={products} />;
 }
 
-function Ficha({ cafe }: { cafe: Product }) {
+function Ficha({ cafe, products }: { cafe: Product; products: Product[] }) {
   const agregar = useCartStore((s) => s.addItem);
   const abrirCarrito = useCartStore((s) => s.toggleCart);
   const [molienda, setMolienda] = useState(cafe.grindTypes[0]);
@@ -51,12 +52,14 @@ function Ficha({ cafe }: { cafe: Product }) {
   }, [cafe]);
 
   const alAgregar = () => {
-    for (let i = 0; i < cantidad; i++)
+    for (let i = 0; i < Math.min(cantidad, Math.max(0, cafe.stock)); i++)
       agregar(cafe, molienda || cafe.grindTypes[0]);
     abrirCarrito();
   };
 
   const esDeCafe = esCafe(cafe);
+  const agotado = cafe.stock <= 0;
+  const tope = Math.max(1, Math.min(10, cafe.stock));
   // Primero los de la misma categoría, después el resto.
   const otros = [
     ...products.filter(
@@ -117,6 +120,13 @@ function Ficha({ cafe }: { cafe: Product }) {
                   </label>
                 )}
 
+                {agotado ? (
+                  <p className="ficha__stock is-agotado" role="status">Agotado por ahora. Vuelve pronto: tostamos cada semana.</p>
+                ) : cafe.stock <= 5 ? (
+                  <p className="ficha__stock" role="status">{cafe.stock === 1 ? "Queda 1" : `Quedan ${cafe.stock}`}</p>
+                ) : null}
+
+                {!agotado && (
                 <div className="campo">
                   <span id="cantidad-label">Cantidad</span>
                   <div
@@ -135,19 +145,21 @@ function Ficha({ cafe }: { cafe: Product }) {
                     <button
                       type="button"
                       aria-label="Agregar una"
-                      onClick={() => setCantidad((c) => Math.min(10, c + 1))}
+                      onClick={() => setCantidad((c) => Math.min(tope, c + 1))}
                     >
                       +
                     </button>
                   </div>
                 </div>
+                )}
 
                 <button
                   type="button"
                   className="btn btn--primary ficha__agregar"
                   onClick={alAgregar}
+                  disabled={agotado}
                 >
-                  Agregar al carrito · {formatBs(cafe.price * cantidad)}
+                  {agotado ? "Agotado" : `Agregar al carrito · ${formatBs(cafe.price * Math.min(cantidad, tope))}`}
                 </button>
               </div>
 
