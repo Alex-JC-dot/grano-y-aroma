@@ -686,4 +686,5 @@ html[data-revelar-activo="on"] .inicio [data-revelar]:is(.desde-izq, .desde-der)
 }
 html[data-revelar-activo="on"] .inicio [data-revelar].desde-izq:not([data-visible]) { transform: translateX(-64px); }
 html[data-revelar-activo="on"] .inicio [data-revelar].desde-der:not([data-visible]) { transform: translateX(64px); }
-.inicio .club__config { overflow-x: clip; }
+/* El recorte horizontal va en toda la página (no en el bloque), para no cortar lo que entra. */
+.inicio { overflow-x: clip; }
