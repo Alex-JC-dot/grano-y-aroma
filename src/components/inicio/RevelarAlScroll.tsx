@@ -19,6 +19,14 @@ export default function RevelarAlScroll() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const raiz = document.documentElement;
+
+    // El pie pertenece al layout y no se vuelve a montar al cambiar de página: se le quita la
+    // marca de "visto" (si no está en pantalla) para que vuelva a entrar en cada página.
+    document.querySelectorAll<HTMLElement>(".foot--desliza[data-visible]").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top > window.innerHeight || r.bottom < 0) el.removeAttribute("data-visible");
+    });
+
     const elementos = Array.from(document.querySelectorAll<HTMLElement>("[data-revelar]:not([data-visible])"));
     if (!elementos.length) return;
 
