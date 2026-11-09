@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Cerradas, ComoFunciona, Pestanas, Proximas, type Pestana } from "./SubastasExtra";
 import { useAuctionStore } from "@/store/auctionStore";
@@ -112,7 +113,11 @@ export default function Subastas() {
               return (
                 <article key={a.id} className={`lote${cerrada ? " is-cerrada" : ""}`}>
                   <div className="lote__visual">
-                    {img && <img src={img.src} alt={img.alt} loading="lazy" decoding="async" />}
+                    {img && (
+                      <Link href={`/subastas/lote?l=${a.id}`} aria-label={`Ver la ficha de ${a.productName}`}>
+                        <img src={img.src} alt={img.alt} loading="lazy" decoding="async" />
+                      </Link>
+                    )}
                     <span className={`lote__reloj${urgente ? " is-urgente" : ""}`}>
                       {cerrada ? "Cerrada" : `Cierra en ${formatTimeLeft(a.timeLeftSeconds)}`}
                     </span>
@@ -122,7 +127,9 @@ export default function Subastas() {
                     <p className="lote__origen">
                       {a.origin} · {a.altitude.toLocaleString("es-BO")} msnm · {a.quantity} {a.unit}
                     </p>
-                    <h2 className="lote__titulo">{a.productName}</h2>
+                    <h2 className="lote__titulo">
+                      <Link href={`/subastas/lote?l=${a.id}`}>{a.productName}</Link>
+                    </h2>
                     <p className="lote__desc">{a.description}</p>
 
                     <div className="lote__puja">
