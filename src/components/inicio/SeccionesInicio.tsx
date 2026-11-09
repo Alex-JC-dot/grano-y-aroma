@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
 import TazaPie from "./TazaPie";
+import Contacto from "./Contacto";
 
 /**
  * Secciones compartidas de las páginas públicas (proceso, visita y pie).
@@ -116,7 +117,7 @@ const CREDITOS = [
 
 export function PieInicio() {
   return (
-    <footer className="foot" id="contacto">
+    <footer className="foot">
       <TazaPie>
         <h2 className="foot__title">Del tostador a tu taza</h2>
         <p className="foot__line">
@@ -129,6 +130,7 @@ export function PieInicio() {
           </svg>
         </Link>
       </TazaPie>
+      <Contacto />
       <div className="wrap foot__bottom">
         <div className="foot__cols">
           <div>
