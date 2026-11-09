@@ -678,3 +678,12 @@ html[data-revelar-activo="on"] .inicio .foot--desliza[data-visible] :is(.foot__c
 @media (max-width: 767px) {
   .inicio .foot__dark--tostadora .foot__video { object-position: 50% 50%; }
 }
+
+/* Entrada desde los costados (bloques con data-revelar + desde-izq / desde-der) */
+html[data-revelar-activo="on"] .inicio [data-revelar]:is(.desde-izq, .desde-der) {
+  transition: opacity 0.8s var(--ease), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(min(var(--i, 0), 6) * 90ms);
+}
+html[data-revelar-activo="on"] .inicio [data-revelar].desde-izq:not([data-visible]) { transform: translateX(-64px); }
+html[data-revelar-activo="on"] .inicio [data-revelar].desde-der:not([data-visible]) { transform: translateX(64px); }
+.inicio .club__config { overflow-x: clip; }

@@ -307,11 +307,11 @@ export default function Club() {
 
           <div className="club__config">
             <div className="club__pasos">
-              <fieldset className="club__paso">
+              <fieldset className="club__paso desde-izq" data-revelar>
                 <legend><span>1</span> Cada cuánto</legend>
                 <div className="planes planes--club">
-                  {([30, 15] as Frecuencia[]).map((f) => (
-                    <label key={f} className={`plan${frecuencia === f ? " is-on" : ""}`}>
+                  {([30, 15] as Frecuencia[]).map((f, i) => (
+                    <label key={f} className={`plan ${i ? "desde-der" : "desde-izq"}${frecuencia === f ? " is-on" : ""}`} data-revelar style={{ "--i": i + 1 } as React.CSSProperties}>
                       <input type="radio" name="frecuencia" checked={frecuencia === f} onChange={() => setFrecuencia(f)} />
                       <span className="plan__nombre">Cada {f} días</span>
                       <span className="plan__ahorro">{Math.round(DESCUENTO[f] * 100)} % menos que en la tienda</span>
@@ -320,7 +320,7 @@ export default function Club() {
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso">
+              <fieldset className="club__paso desde-izq" data-revelar>
                 <legend><span>2</span> Cuánto café por envío</legend>
                 <div className="filtros__opciones">
                   {CANTIDADES.map((c) => (
@@ -331,15 +331,15 @@ export default function Club() {
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso">
+              <fieldset className="club__paso desde-izq" data-revelar>
                 <legend><span>3</span> Qué café</legend>
                 <div className="club__cafes">
-                  <button type="button" className={`club__cafe club__cafe--sorpresa${cafe === "sorpresa" ? " is-on" : ""}`} aria-pressed={cafe === "sorpresa"} onClick={() => setCafe("sorpresa")}>
+                  <button type="button" data-revelar className={`club__cafe club__cafe--sorpresa desde-izq${cafe === "sorpresa" ? " is-on" : ""}`} aria-pressed={cafe === "sorpresa"} onClick={() => setCafe("sorpresa")}>
                     <strong>Sorpresa del tostador</strong>
                     <span>Un café distinto en cada envío, elegido de los lotes recién tostados · {formatBs(PRECIO_SORPRESA)} los 250 g</span>
                   </button>
-                  {CAFES.map((c) => (
-                    <button key={c.id} type="button" className={`club__cafe${cafe === c.id ? " is-on" : ""}`} aria-pressed={cafe === c.id} onClick={() => setCafe(c.id)}>
+                  {CAFES.map((c, i) => (
+                    <button key={c.id} type="button" data-revelar style={{ "--i": Math.floor(i / 2) + 1 } as React.CSSProperties} className={`club__cafe ${i % 2 ? "desde-der" : "desde-izq"}${cafe === c.id ? " is-on" : ""}`} aria-pressed={cafe === c.id} onClick={() => setCafe(c.id)}>
                       <strong>{c.name}</strong>
                       <span>{c.region} · {formatBs(c.price)} los 250 g</span>
                     </button>
@@ -347,7 +347,7 @@ export default function Club() {
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso">
+              <fieldset className="club__paso desde-izq" data-revelar>
                 <legend><span>4</span> Molienda</legend>
                 <div className="filtros__opciones">
                   {MOLIENDAS.map((m) => (
@@ -359,7 +359,7 @@ export default function Club() {
               </fieldset>
             </div>
 
-            <aside className="club__resumen" aria-live="polite">
+            <aside className="club__resumen desde-der" data-revelar aria-live="polite">
               <h3>Tu envío</h3>
               <p className="club__linea">{nombreCafe(cafe)} · {nombreCantidad(gramos)} · {molienda}</p>
               <dl className="club__cuentas">
