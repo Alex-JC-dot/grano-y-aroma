@@ -1,7 +1,8 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Cerradas, ComoFunciona, Pestanas, Proximas, type Pestana } from "./SubastasExtra";
 import { useAuctionStore } from "@/store/auctionStore";
 import { formatBs, formatTimeLeft } from "@/lib/utils";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
@@ -25,6 +26,35 @@ export default function Subastas() {
   const { auctions, placeBid, tickTimers } = useAuctionStore();
   const [montos, setMontos] = useState<Record<string, string>>({});
   const [avisos, setAvisos] = useState<Record<string, { texto: string; error: boolean }>>({});
+  const [pestana, setPestana] = useState<Pestana>("vivo");
+  const [superado, setSuperado] = useState<string | null>(null);
+  const programados = useRef(new Set<string>());
+
+  // Simula a otros postores: cuando vas primero en un lote, a los 8-14 s alguien te supera
+  // (solo una vez por lote) y aparece el aviso "Te superaron" (RF-13). Con Supabase llegará
+  // en tiempo real desde las pujas de otros usuarios.
+  useEffect(() => {
+    for (const a of auctions) {
+      if (a.currentBidder !== "Tú" || a.timeLeftSeconds === 0 || programados.current.has(a.id)) continue;
+      programados.current.add(a.id);
+      const rival = ["Café Mirador SCZ", "Roasters del Sur", "El Grano Fino", "Tienda Selecta"][Math.floor(Math.random() * 4)];
+      window.setTimeout(() => {
+        const lote = useAuctionStore.getState().auctions.find((x) => x.id === a.id);
+        if (!lote || lote.currentBidder !== "Tú" || lote.timeLeftSeconds === 0) return;
+        const monto = lote.currentBid + INCREMENTO * 2;
+        if (useAuctionStore.getState().placeBid(a.id, rival, monto)) {
+          setSuperado(`${rival} pujó ${formatBs(monto)} en ${lote.productName.split(" — ")[0]}. Puedes volver a pujar.`);
+          setAvisos((x) => ({ ...x, [a.id]: { texto: "Te superaron. Vuelve a pujar si quieres el lote.", error: true } }));
+        }
+      }, 8000 + Math.random() * 6000);
+    }
+  }, [auctions]);
+
+  useEffect(() => {
+    if (!superado) return;
+    const id = window.setTimeout(() => setSuperado(null), 7000);
+    return () => window.clearTimeout(id);
+  }, [superado]);
 
   useEffect(() => {
     const id = setInterval(tickTimers, 1000);
@@ -67,8 +97,11 @@ export default function Subastas() {
             </div>
           </div>
 
-          <div className="lotes">
-            {auctions.map((a, i) => {
+          <Pestanas pestana={pestana} setPestana={setPestana} enVivo={auctions.filter((a) => a.timeLeftSeconds > 0).length} />
+
+          {pestana === "vivo" && (
+          <div className="lotes" role="tabpanel" aria-label="Subastas en vivo">
+            {auctions.map((a) => {
               const cerrada = a.timeLeftSeconds === 0;
               const urgente = !cerrada && a.timeLeftSeconds < 3600;
               const minimo = a.bids.length ? a.currentBid + INCREMENTO : a.basePrice;
@@ -77,7 +110,7 @@ export default function Subastas() {
               const campo = `puja-${a.id}`;
 
               return (
-                <article key={a.id} className={`lote${cerrada ? " is-cerrada" : ""}`} data-revelar style={{ "--i": i } as React.CSSProperties}>
+                <article key={a.id} className={`lote${cerrada ? " is-cerrada" : ""}`}>
                   <div className="lote__visual">
                     {img && <img src={img.src} alt={img.alt} loading="lazy" decoding="async" />}
                     <span className={`lote__reloj${urgente ? " is-urgente" : ""}`}>
@@ -154,8 +187,21 @@ export default function Subastas() {
               );
             })}
           </div>
+          )}
+          {pestana === "proximas" && <Proximas />}
+          {pestana === "cerradas" && <Cerradas />}
         </div>
       </section>
+
+      <ComoFunciona />
+
+      {superado && (
+        <div className="toast" role="alert">
+          <strong>Te superaron</strong>
+          <span>{superado}</span>
+          <button type="button" className="toast__cerrar" aria-label="Cerrar aviso" onClick={() => setSuperado(null)}>×</button>
+        </div>
+      )}
     </>
   );
 }
