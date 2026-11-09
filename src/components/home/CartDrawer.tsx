@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
+import { useAuth } from "@/store/authStore";
 import { formatBs } from "@/lib/utils";
 import BolsaVisual from "@/components/tienda/BolsaVisual";
 
@@ -53,7 +54,14 @@ export default function CartDrawer() {
     return Object.keys(e).length === 0;
   };
 
-  const siguiente = () => {
+  const pedirCuenta = useAuth((s) => s.pedirCuenta);
+  const siguiente = async () => {
+    if (paso === 0) {
+      // La cuenta se pide recién aquí: el carrito sigue intacto y, al entrar, se pasa a la entrega.
+      if (!(await pedirCuenta("Para hacer tu pedido necesitas una cuenta. Tu carrito se mantiene."))) return;
+      const p = useAuth.getState().perfil;
+      if (p) setDatos((d) => ({ ...d, nombre: d.nombre || p.nombre, telefono: d.telefono || p.telefono || "", direccion: d.direccion || p.direccion || "" }));
+    }
     if (paso === 1 && !validar()) return;
     setPaso((p) => p + 1);
   };

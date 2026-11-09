@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
+import MenuCuenta from "@/components/cuenta/MenuCuenta";
 
 const ENLACES = [
   { href: "/tienda", label: "Tienda" },
@@ -57,6 +58,7 @@ export default function NavInicio() {
           </ul>
         </nav>
         <div className="nav__actions">
+          <MenuCuenta />
           <button
             type="button"
             className="cart-btn"

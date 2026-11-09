@@ -5,6 +5,7 @@ import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
 import { categoriaDe, esCafe } from "@/lib/catalogo";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
+import { useAuth } from "@/store/authStore";
 
 /**
  * Club Grano y Aroma (Suscripciones, RF-06 a RF-09).
@@ -128,7 +129,9 @@ export default function Club() {
 
   const actualizar = (cambios: Partial<Suscripcion>) => sub && guardar({ ...sub, ...cambios });
 
-  const suscribir = () => {
+  const pedirCuenta = useAuth((s) => s.pedirCuenta);
+  const suscribir = async () => {
+    if (!vigente && !(await pedirCuenta("Para suscribirte al Club necesitas una cuenta."))) return;
     if (vigente) {
       actualizar({ frecuencia, gramos, cafe, molienda });
       setMensaje("Guardamos los cambios: se aplican desde tu próximo envío.");

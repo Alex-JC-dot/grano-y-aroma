@@ -303,3 +303,10 @@
 
 /* En los paneles los estados ya vienen escritos como deben leerse */
 .equipo .estado { text-transform: none; }
+
+.equipo__pie { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.equipo__usuario { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.equipo__usuario span { font-size: 13px; color: var(--muted); }
+.equipo__salir { border: 0; background: none; padding: 0; font: inherit; color: var(--muted); cursor: pointer; }
+.equipo__tienda { margin-top: 0 !important; }
+@media (max-width: 860px) { .equipo__pie { display: none; } }

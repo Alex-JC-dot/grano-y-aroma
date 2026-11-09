@@ -8,6 +8,8 @@ import CartDrawer from "@/components/home/CartDrawer";
 import NavInicio from "@/components/inicio/NavInicio";
 import { PieInicio } from "@/components/inicio/SeccionesInicio";
 import RevelarAlScroll from "@/components/inicio/RevelarAlScroll";
+import Sesion from "@/components/cuenta/Sesion";
+import "./cuenta.css";
 
 /**
  * Layout de las páginas públicas (Inicio, Tienda, Nosotros…): la misma barra, el carrito,
@@ -22,6 +24,7 @@ export default function LayoutPublico({ children }: { children: React.ReactNode 
       <main id="contenido">{children}</main>
       <PieInicio />
       <RevelarAlScroll />
+      <Sesion />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Cerradas, ComoFunciona, Pestanas, Proximas, type Pestana } from "./Suba
 import { useAuctionStore } from "@/store/auctionStore";
 import { formatBs, formatTimeLeft } from "@/lib/utils";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
+import { useAuth } from "@/store/authStore";
 
 /**
  * Subastas de micro-lotes (RF-10 a RF-16), con la misma lógica del prototipo: cuenta regresiva,
@@ -69,7 +70,8 @@ export default function Subastas() {
     return () => clearInterval(id);
   }, [tickTimers]);
 
-  const pujar = (id: string) => {
+  const pedirCuenta = useAuth((s) => s.pedirCuenta);
+  const pujar = async (id: string) => {
     const lote = auctions.find((a) => a.id === id);
     if (!lote) return;
     const minimo = lote.bids.length ? lote.currentBid + INCREMENTO : lote.basePrice;
@@ -78,6 +80,7 @@ export default function Subastas() {
       setAvisos((a) => ({ ...a, [id]: { texto: `Escribe al menos ${formatBs(minimo)}.`, error: true } }));
       return;
     }
+    if (!(await pedirCuenta("Para pujar necesitas una cuenta. Tu monto se mantiene."))) return;
     if (placeBid(id, "Tú", monto)) {
       setToast({ tipo: "ok", titulo: "Vas primero", texto: `Tu puja de ${formatBs(monto)} va primera en ${lote.productName.split(" — ")[0]}.` });
       setAvisos((a) => ({ ...a, [id]: { texto: `Tu puja de ${formatBs(monto)} va primera.`, error: false } }));

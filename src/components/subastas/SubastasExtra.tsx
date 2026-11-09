@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import { useEffect, useState } from "react";
 import { formatBs } from "@/lib/utils";
+import { useAuth } from "@/store/authStore";
 
 /**
  * Partes de la página de Subastas: pestañas, próximas subastas (con aviso de apertura),
@@ -104,6 +105,7 @@ export function Pestanas({
 export function Proximas() {
   const [pasados, setPasados] = useState(0);
   const [avisar, setAvisar] = useState<Record<string, boolean>>({});
+  const pedirCuenta = useAuth((s) => s.pedirCuenta);
 
   useEffect(() => {
     const id = setInterval(() => setPasados((s) => s + 30), 30_000);
@@ -132,7 +134,10 @@ export function Proximas() {
               type="button"
               className={`btn ${avisar[p.id] ? "btn--secondary" : "btn--primary"} lote__avisar`}
               aria-pressed={!!avisar[p.id]}
-              onClick={() => setAvisar((a) => ({ ...a, [p.id]: !a[p.id] }))}
+              onClick={async () => {
+                if (!avisar[p.id] && !(await pedirCuenta("Para avisarte cuando abra necesitamos tu cuenta."))) return;
+                setAvisar((a) => ({ ...a, [p.id]: !a[p.id] }));
+              }}
             >
               {avisar[p.id] ? "Te avisaremos cuando abra ✓" : "Avisarme cuando abra"}
             </button>

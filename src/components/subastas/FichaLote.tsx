@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuctionStore } from "@/store/auctionStore";
+import { useAuth } from "@/store/authStore";
 import { formatBs, formatTimeLeft } from "@/lib/utils";
 import type { Auction } from "@/lib/types";
 
@@ -98,10 +99,12 @@ function Lote({ lote }: { lote: Auction }) {
     document.title = `${lote.productName} · Subastas · Grano y Aroma`;
   }, [lote.productName]);
 
-  const pujar = (e: React.FormEvent) => {
+  const pedirCuenta = useAuth((s) => s.pedirCuenta);
+  const pujar = async (e: React.FormEvent) => {
     e.preventDefault();
     const m = Number(monto);
     if (!m || m < minimo) return setAviso({ texto: `Escribe al menos ${formatBs(minimo)}.`, error: true });
+    if (!(await pedirCuenta("Para pujar necesitas una cuenta. Tu monto se mantiene."))) return;
     if (placeBid(lote.id, "Tú", m)) {
       setAviso({ texto: `Tu puja de ${formatBs(m)} va primera.`, error: false });
       setMonto("");
