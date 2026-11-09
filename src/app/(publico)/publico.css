@@ -669,3 +669,12 @@ html[data-revelar-activo="on"] .inicio .foot--desliza .foot__cols > div:nth-chil
 html[data-revelar-activo="on"] .inicio .foot--desliza .foot__legal { transition-delay: 0.36s; }
 html[data-revelar-activo="on"] .inicio .foot--desliza[data-visible] :is(.foot__cols > div, .foot__legal) { opacity: 1; transform: none; }
 .inicio .foot { overflow-x: clip; }
+
+/* Cierre de Nosotros: la tostadora, con sombra a la izquierda para que se lea el texto */
+.inicio .foot__dark--tostadora .foot__video { object-position: 62% 50%; }
+.inicio .foot__dark--tostadora::after {
+  background: linear-gradient(90deg, rgba(14, 7, 3, 0.92) 0%, rgba(14, 7, 3, 0.78) 34%, rgba(14, 7, 3, 0.2) 62%, rgba(14, 7, 3, 0) 80%);
+}
+@media (max-width: 767px) {
+  .inicio .foot__dark--tostadora .foot__video { object-position: 50% 50%; }
+}

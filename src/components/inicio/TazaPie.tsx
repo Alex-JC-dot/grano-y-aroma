@@ -1,6 +1,14 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useSyncExternalStore } from "react";
+
+// Video del cierre por página: en Nosotros la tostadora (con sombra a la izquierda para el
+// texto); en el resto, la taza humeante.
+const VIDEOS = {
+  taza: { base: "/pie/taza", poster: "/pie/taza-poster.webp", desc: "Una taza de capuchino humeante con arte latte sobre una mesa de madera oscura" },
+  tostadora: { base: "/video/tostadora", poster: "/video/tostadora-inicio.webp", desc: "Granos recién tostados caen del tambor de la tostadora a la bandeja de enfriado" },
+};
 
 /**
  * Cierre de la página: banda oscura a todo el ancho con una taza de café humeante a la
@@ -20,6 +28,9 @@ function suscribirReducir(alCambiar: () => void) {
 }
 
 export default function TazaPie({ children }: { children: React.ReactNode }) {
+  const ruta = usePathname();
+  const clave = ruta === "/nosotros" ? "tostadora" : "taza";
+  const v = VIDEOS[clave];
   const seccionRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const reducir = useSyncExternalStore(
@@ -72,24 +83,25 @@ export default function TazaPie({ children }: { children: React.ReactNode }) {
       cerca.disconnect();
       aLaVista.disconnect();
     };
-  }, [reducir]);
+  }, [reducir, clave]);
 
   return (
-    <div ref={seccionRef} className="foot__dark">
+    <div ref={seccionRef} className={`foot__dark foot__dark--${clave}`}>
       <video
+        key={clave}
         ref={videoRef}
         className="foot__video"
         muted
         loop
         playsInline
         preload="none"
-        poster="/pie/taza-poster.webp"
-        aria-label="Una taza de capuchino humeante con arte latte sobre una mesa de madera oscura"
+        poster={v.poster}
+        aria-label={v.desc}
       >
         {!reducir && (
           <>
-            <source src="/pie/taza.webm" type="video/webm" />
-            <source src="/pie/taza.mp4" type="video/mp4" />
+            <source src={`${v.base}.webm`} type="video/webm" />
+            <source src={`${v.base}.mp4`} type="video/mp4" />
           </>
         )}
       </video>
