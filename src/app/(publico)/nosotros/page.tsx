@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AsiTrabajamos, Visita } from "@/components/inicio/SeccionesInicio";
 import MapaOrigenes from "@/components/inicio/MapaOrigenes";
+import Cifras from "@/components/nosotros/Cifras";
+import CurvaTueste from "@/components/nosotros/CurvaTueste";
 
 export const metadata: Metadata = {
   title: "Nosotros: tostaduría y cafetería en Sucre · Grano y Aroma",
@@ -44,8 +46,10 @@ export default function PaginaNosotros() {
           </figure>
         </div>
       </section>
+      <Cifras />
       <MapaOrigenes conRegiones />
       <AsiTrabajamos />
+      <CurvaTueste />
       <Visita />
     </>
   );

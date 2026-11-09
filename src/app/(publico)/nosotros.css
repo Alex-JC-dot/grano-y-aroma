@@ -1,0 +1,70 @@
+/* Nosotros: cifras y curva de tueste */
+
+.inicio .cifras { padding: 0 0 24px; }
+.inicio .cifras__lista {
+  list-style: none;
+  margin: 0;
+  padding: 40px 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.inicio .cifra { display: flex; flex-direction: column; gap: 10px; }
+.inicio .cifra__valor { font: 400 clamp(40px, 4.4vw, 68px) / 1 var(--f-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.inicio .cifra__texto { max-width: 24ch; color: var(--muted); }
+@media (max-width: 899px) { .inicio .cifras__lista { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 32px; } }
+
+/* Curva de tueste */
+.inicio .curva { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: center; background: var(--surface); border-radius: var(--r-card); padding: 40px; }
+.inicio .curva__grafico { grid-column: 1 / span 8; margin: 0; }
+.inicio .curva__grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
+.inicio .curva__etapa { fill: var(--bg); }
+.inicio .curva__etapa--2 { fill: rgba(196, 149, 47, 0.12); }
+.inicio .curva__etapa--3 { fill: rgba(122, 74, 44, 0.12); }
+.inicio .curva__etiqueta-etapa { font: 500 13px var(--f-text); fill: var(--muted); text-anchor: middle; }
+.inicio .curva__guia { stroke: var(--line); stroke-width: 1; }
+.inicio .curva__eje { font: 400 12px var(--f-text); fill: var(--muted); }
+.inicio .curva__linea {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 2.6s cubic-bezier(0.45, 0.05, 0.25, 1) 0.3s;
+}
+.inicio .curva__hito circle { fill: var(--ink); stroke: var(--surface); stroke-width: 3; }
+.inicio .curva__hito text { font: 500 13px var(--f-text); fill: var(--ink); }
+.inicio .curva__hito { transition: opacity 0.4s var(--ease); transition-delay: calc(0.6s + var(--i) * 0.6s); }
+
+.inicio .curva__hitos { grid-column: 9 / span 4; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.inicio .curva__hitos li { display: flex; gap: 14px; transition: opacity 0.5s var(--ease), transform 0.5s var(--ease); transition-delay: calc(0.6s + var(--i) * 0.6s); }
+.inicio .curva__num { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--bg); font: 500 13px/1 var(--f-text); }
+.inicio .curva__hitos h3 { margin: 2px 0 4px; font: 400 20px/1.2 var(--f-display); }
+.inicio .curva__hitos h3 small { font: 400 13px var(--f-text); color: var(--muted); margin-left: 4px; white-space: nowrap; }
+.inicio .curva__hitos p { margin: 0; font-size: 15px; }
+
+/* Antes de aparecer: la línea sin dibujar y los hitos ocultos (solo con la animación activa) */
+html[data-revelar-activo="on"] .inicio .curva:not([data-visible]) .curva__linea { stroke-dashoffset: 1; }
+html[data-revelar-activo="on"] .inicio .curva:not([data-visible]) .curva__hito { opacity: 0; }
+html[data-revelar-activo="on"] .inicio .curva:not([data-visible]) .curva__hitos li { opacity: 0; transform: translateY(10px); }
+
+@media (max-width: 1023px) {
+  .inicio .curva { display: block; padding: 24px; }
+  .inicio .curva__hitos { margin-top: 28px; }
+}
+@media (max-width: 599px) {
+  .inicio .curva { padding: 16px; }
+  .inicio .curva__eje { font-size: 16px; }
+  .inicio .curva__etiqueta-etapa { font-size: 17px; }
+}
+.inicio .cifra__unidad { font: 400 0.36em/1 var(--f-text); letter-spacing: 0; margin-left: 2px; color: var(--muted); }
+/* En celular el gráfico conserva un ancho legible y se desliza de lado dentro de su marco */
+@media (max-width: 599px) {
+  .inicio .curva__grafico { overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; }
+  .inicio .curva__grafico svg { min-width: 600px; }
+  .inicio .curva__eje { font-size: 13px; }
+  .inicio .curva__etiqueta-etapa { font-size: 14px; }
+}
