@@ -448,34 +448,67 @@ body:has(.inicio) {
 }
 
 /* Pie */
-.inicio .foot { padding: 96px 0 40px; border-top: 1px solid var(--line); }
-/* Fila superior: el nombre en dos líneas a la izquierda, el saco animado a la derecha */
-.inicio .foot__top {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: 24px;
-  align-items: end;
-  margin-bottom: 72px;
+.inicio .foot { padding: 0 0 40px; }
+
+/* Cierre a todo el ancho: el saco de fondo, el nombre y el botón encima */
+.inicio .foot__hero {
+  position: relative;
+  height: clamp(520px, 80svh, 780px);
+  overflow: hidden;
+  background: #d6c8b6; /* tono del video mientras cargan las imágenes */
+}
+.inicio .foot__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/*
+ * Velo para que el texto resalte sin desenfocar el saco:
+ * - arriba, del crema de la página a transparente (sin línea dura con la sección anterior);
+ * - a la izquierda, un velo crema detrás del nombre que se desvanece hacia el saco.
+ */
+.inicio .foot__veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, var(--bg) 0%, rgba(230, 222, 212, 0) 22%),
+    linear-gradient(0deg, var(--bg) 0%, rgba(230, 222, 212, 0) 20%),
+    linear-gradient(90deg, rgba(230, 222, 212, 0.92) 0%, rgba(230, 222, 212, 0.75) 30%, rgba(230, 222, 212, 0) 58%);
+}
+.inicio .foot__hero-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
 }
 .inicio .foot__name {
-  grid-column: 1 / span 6;
   margin: 0;
   font: 400 clamp(64px, 9vw, 152px) / 0.98 var(--f-display);
   letter-spacing: -0.04em;
   padding-bottom: 0.12em; /* espacio para la "y" */
 }
-.inicio .foot__media {
-  grid-column: 7 / span 6;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--r-card);
-  overflow: hidden;
-  background: #d6c8b6; /* tono del video mientras cargan las imágenes */
-}
-.inicio .foot__media canvas { display: block; width: 100%; height: 100%; }
+.inicio .foot__line { margin: 8px 0 28px; font-size: 18px; }
+
+.inicio .foot__bottom { padding-top: 72px; }
 
 @media (max-width: 767px) {
-  .inicio .foot__top { display: block; margin-bottom: 48px; }
-  .inicio .foot__name { margin-bottom: 24px; font-size: clamp(56px, 17vw, 80px); }
+  .inicio .foot__hero { height: 88svh; }
+  /* En celular el texto va arriba: el velo baja desde arriba y deja el saco abajo a la vista */
+  .inicio .foot__veil {
+    background:
+      linear-gradient(180deg, var(--bg) 0%, rgba(230, 222, 212, 0.9) 34%, rgba(230, 222, 212, 0) 62%),
+      linear-gradient(0deg, var(--bg) 0%, rgba(230, 222, 212, 0) 16%);
+  }
+  .inicio .foot__hero-content { justify-content: flex-start; padding-top: 56px; }
+  .inicio .foot__name { font-size: clamp(56px, 17vw, 80px); }
+  .inicio .foot__hero-content .btn { width: 100%; }
+  .inicio .foot__bottom { padding-top: 48px; }
 }
 .inicio .foot__cols {
   display: grid;
