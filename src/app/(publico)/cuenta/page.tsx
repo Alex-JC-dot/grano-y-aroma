@@ -12,6 +12,7 @@ type Pedido = {
   canal: string;
   estado: string;
   total: number;
+  nombre: string | null;
   creado_en: string;
   pedido_items: { cantidad: number; molienda: string | null; productos: { nombre: string } | null }[];
 };
@@ -33,7 +34,7 @@ export default function PaginaCuenta() {
     if (!session) return;
     supabase
       .from("pedidos")
-      .select("id, codigo, canal, estado, total, creado_en, pedido_items(cantidad, molienda, productos(nombre))")
+      .select("id, codigo, canal, estado, total, nombre, creado_en, pedido_items(cantidad, molienda, productos(nombre))")
       .eq("cliente_id", session.user.id)
       .order("creado_en", { ascending: false })
       .then(({ data }) => setPedidos((data as unknown as Pedido[]) ?? []));
@@ -98,7 +99,9 @@ export default function PaginaCuenta() {
                       <tr key={p.id}>
                         <td>{p.codigo}</td>
                         <td>
-                          {p.pedido_items
+                          {p.canal === "subasta" && !p.pedido_items.length
+                            ? p.nombre ?? "Lote ganado en subasta"
+                            : p.pedido_items
                             .map((i) => `${i.cantidad} × ${i.productos?.nombre ?? "Producto"}${i.molienda && i.molienda !== "Única" ? ` (${i.molienda})` : ""}`)
                             .join(", ")}
                         </td>

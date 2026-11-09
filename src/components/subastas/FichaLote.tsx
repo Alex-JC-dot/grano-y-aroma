@@ -4,76 +4,31 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAuctionStore } from "@/store/auctionStore";
 import { useAuth } from "@/store/authStore";
-import { formatBs, formatTimeLeft } from "@/lib/utils";
-import type { Auction } from "@/lib/types";
+import { abierta, minimoDe, nombreCorto, segundosA, useSubastas, type Puja, type Subasta } from "@/store/subastasStore";
+import { AvisoSubasta, horaDe, tiempo, useSubastasEnVivo } from "./EnVivo";
+import { formatBs } from "@/lib/utils";
 
 /**
  * Ficha de un lote en subasta: /subastas/lote?l=<id>.
- * Puja en vivo (misma regla: Bs. 20 sobre la actual), rueda de catación, historia del lote,
- * gráfica de cómo subió el precio e historial completo de pujas. Los atributos de catación y
- * la historia son datos de demostración del lote.
+ * Puja en vivo con Supabase (misma regla: Bs. 20 sobre la actual), rueda de catación, historia
+ * del lote, gráfica de cómo subió el precio e historial completo de pujas, todo desde la base.
  */
 
-const INCREMENTO = 20;
-
-const EXTRA: Record<string, {
-  img: string;
-  alt: string;
-  variedad: string;
-  proceso: string;
-  cosecha: string;
-  finca: string;
-  historia: string;
-  catacion: [string, number][];
-}> = {
-  a1: {
-    img: "/images/subastas/gesha.webp",
-    alt: "Rama de cafeto con cerezas rojas maduras sobre un valle al amanecer",
-    variedad: "Gesha",
-    proceso: "Natural",
-    cosecha: "Junio de 2025",
-    finca: "Finca familiar en Villa Serrano",
-    historia:
-      "Un pequeño grupo de plantas de Gesha cultivadas a 1.920 msnm. Las cerezas se secan enteras sobre camas elevadas durante cuatro semanas, lo que da su perfil floral y a frutas blancas.",
-    catacion: [["Aroma", 9.0], ["Sabor", 9.0], ["Acidez", 8.75], ["Cuerpo", 8.25], ["Dulzor", 9.0], ["Final", 8.75]],
-  },
-  a2: {
-    img: "/images/subastas/bourbon.webp",
-    alt: "Cerezas de café secándose al sol en camas elevadas",
-    variedad: "Bourbon",
-    proceso: "Natural, doble fermentación aeróbica",
-    cosecha: "Mayo de 2025",
-    finca: "Familia Veizaga, Padilla",
-    historia:
-      "La familia Veizaga fermenta las cerezas dos veces antes de secarlas al sol. Es su primer lote en subasta, de producción limitada de la temporada 2025.",
-    catacion: [["Aroma", 8.5], ["Sabor", 8.5], ["Acidez", 8.0], ["Cuerpo", 8.75], ["Dulzor", 8.75], ["Final", 8.25]],
-  },
-  a3: {
-    img: "/images/subastas/reserva.webp",
-    alt: "Muestra de café verde en una bandeja de madera junto a una lupa",
-    variedad: "Caturra y Typica",
-    proceso: "Natural",
-    cosecha: "Junio de 2025",
-    finca: "Productores de Villa Serrano",
-    historia:
-      "Selección de los mejores sacos del lote Natural 001, separada en la mesa de catación para esta subasta. Taza limpia, dulce y con acidez cítrica.",
-    catacion: [["Aroma", 8.75], ["Sabor", 8.5], ["Acidez", 8.5], ["Cuerpo", 8.25], ["Dulzor", 8.75], ["Final", 8.5]],
-  },
-};
-
 export default function FichaLote() {
-  const id = useSearchParams().get("l");
-  const lote = useAuctionStore((s) => s.auctions.find((a) => a.id === id));
-  const tick = useAuctionStore((s) => s.tickTimers);
+  useSubastasEnVivo();
+  const id = Number(useSearchParams().get("l"));
+  const lote = useSubastas((s) => s.subastas.find((a) => a.id === id));
+  const cargando = useSubastas((s) => s.cargando);
 
-  useEffect(() => {
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-  }, [tick]);
-
-  if (!lote || !EXTRA[lote.id]) {
+  if (cargando) {
+    return (
+      <section className="section page-top">
+        <div className="wrap"><p aria-busy="true">Cargando el lote…</p></div>
+      </section>
+    );
+  }
+  if (!lote) {
     return (
       <section className="section page-top">
         <div className="wrap">
@@ -87,17 +42,30 @@ export default function FichaLote() {
   return <Lote key={lote.id} lote={lote} />;
 }
 
-function Lote({ lote }: { lote: Auction }) {
-  const placeBid = useAuctionStore((s) => s.placeBid);
-  const x = EXTRA[lote.id];
+const SIN_PUJAS: Puja[] = [];
+
+function Lote({ lote }: { lote: Subasta }) {
+  const ahora = useSubastas((s) => s.ahora);
+  const pujas = useSubastas((s) => s.pujas[lote.id] ?? SIN_PUJAS);
+  const registrar = useSubastas((s) => s.pujar);
+  const setAvisoFlotante = useSubastas((s) => s.setAviso);
+  const yo = useAuth((s) => s.session?.user.id);
   const [monto, setMonto] = useState("");
   const [aviso, setAviso] = useState<{ texto: string; error: boolean } | null>(null);
-  const cerrada = lote.timeLeftSeconds === 0;
-  const minimo = lote.bids.length ? lote.currentBid + INCREMENTO : lote.basePrice;
+  const [enviando, setEnviando] = useState(false);
+
+  const proxima = lote.estado === "proxima" && new Date(lote.abre_en).getTime() > ahora;
+  const enCurso = abierta(lote, ahora);
+  const cerrada = !proxima && !enCurso;
+  const seg = segundosA(proxima ? lote.abre_en : lote.cierra_en, ahora);
+  const minimo = minimoDe(lote);
+  const hayPujas = lote.num_pujas > 0;
+  const voyPrimero = !!yo && lote.lider_id === yo;
+  const ganador = lote.ganador_nombre ?? lote.lider_nombre;
 
   useEffect(() => {
-    document.title = `${lote.productName} · Subastas · Grano y Aroma`;
-  }, [lote.productName]);
+    document.title = `${lote.titulo} · Subastas · Grano y Aroma`;
+  }, [lote.titulo]);
 
   const pedirCuenta = useAuth((s) => s.pedirCuenta);
   const pujar = async (e: React.FormEvent) => {
@@ -105,11 +73,23 @@ function Lote({ lote }: { lote: Auction }) {
     const m = Number(monto);
     if (!m || m < minimo) return setAviso({ texto: `Escribe al menos ${formatBs(minimo)}.`, error: true });
     if (!(await pedirCuenta("Para pujar necesitas una cuenta. Tu monto se mantiene."))) return;
-    if (placeBid(lote.id, "Tú", m)) {
-      setAviso({ texto: `Tu puja de ${formatBs(m)} va primera.`, error: false });
-      setMonto("");
-    }
+    setEnviando(true);
+    const fallo = await registrar(lote.id, m);
+    setEnviando(false);
+    if (fallo) return setAviso({ texto: fallo, error: true });
+    setAviso({ texto: `Tu puja de ${formatBs(m)} va primera.`, error: false });
+    setAvisoFlotante({ tipo: "ok", titulo: "Vas primero", texto: `Tu puja de ${formatBs(m)} va primera en ${nombreCorto(lote.titulo)}.` });
+    setMonto("");
   };
+
+  const datos: [string, string | null][] = [
+    ["Finca", lote.finca],
+    ["Variedad", lote.variedad],
+    ["Proceso", lote.proceso],
+    ["Cosecha", lote.cosecha],
+    ["Código", lote.codigo_lote],
+    ["Puntaje de catación", lote.puntaje ? `${lote.puntaje.toLocaleString("es-BO", { minimumFractionDigits: 1 })} puntos` : null],
+  ];
 
   return (
     <>
@@ -118,68 +98,80 @@ function Lote({ lote }: { lote: Auction }) {
           <nav className="migas" aria-label="Estás en">
             <Link href="/subastas" className="link">Subastas</Link>
             <span aria-hidden="true">/</span>
-            <span aria-current="page">{lote.productName.split(" — ")[0]}</span>
+            <span aria-current="page">{nombreCorto(lote.titulo)}</span>
           </nav>
 
           <div className="ficha">
             <div className="ficha__visual">
               <figure className="lote-ficha__foto">
-                <img src={x.img} alt={x.alt} />
-                <span className={`lote__reloj${!cerrada && lote.timeLeftSeconds < 3600 ? " is-urgente" : ""}`}>
-                  {cerrada ? "Cerrada" : `Cierra en ${formatTimeLeft(lote.timeLeftSeconds)}`}
+                {lote.imagen && <img src={lote.imagen} alt={lote.imagen_alt ?? ""} />}
+                <span className={`lote__reloj${enCurso && seg < 3600 ? " is-urgente" : ""}`}>
+                  {proxima ? `Abre en ${tiempo(seg)}` : enCurso ? `Cierra en ${tiempo(seg)}` : "Cerrada"}
                 </span>
               </figure>
             </div>
 
             <div className="ficha__info">
-              <p className="ficha__origen">{lote.origin} · {lote.altitude.toLocaleString("es-BO")} msnm · {lote.quantity} {lote.unit}</p>
-              <h1 id="lote-titulo" className="ficha__titulo">{lote.productName}</h1>
-              <p className="ficha__notas">{lote.description}</p>
+              <p className="ficha__origen">
+                {lote.origen}
+                {lote.altitud ? ` · ${lote.altitud.toLocaleString("es-BO")} msnm` : ""}
+                {lote.cantidad_kg ? ` · ${lote.cantidad_kg.toLocaleString("es-BO")} kg` : ""}
+              </p>
+              <h1 id="lote-titulo" className="ficha__titulo">{lote.titulo}</h1>
+              <p className="ficha__notas">{lote.descripcion}</p>
 
               <div className="ficha__compra lote-ficha__puja">
                 <div className="lote-ficha__actual">
-                  <span className="lote__etiqueta">{lote.bids.length ? "Puja actual" : "Precio de salida"}</span>
-                  <span className="ficha__precio">{formatBs(lote.bids.length ? lote.currentBid : lote.basePrice)}</span>
+                  <span className="lote__etiqueta">{hayPujas ? (cerrada ? "Precio final" : "Puja actual") : "Precio de salida"}</span>
+                  <span className="ficha__precio">{formatBs(lote.puja_actual ?? lote.precio_base)}</span>
                   <span className="lote__etiqueta">
-                    {lote.bids.length === 1 ? "1 puja" : `${lote.bids.length} pujas`}
-                    {lote.currentBidder && ` · va primero ${lote.currentBidder}`}
+                    {lote.num_pujas === 1 ? "1 puja" : `${lote.num_pujas} pujas`}
+                    {!cerrada && lote.lider_nombre && ` · va primero ${voyPrimero ? "tu puja" : lote.lider_nombre}`}
                   </span>
                 </div>
-                {!cerrada ? (
-                  <form className="lote__form" onSubmit={pujar} noValidate>
-                    <label htmlFor="puja-ficha">Tu puja en Bs. (mínimo {minimo})</label>
-                    <div className="lote__fila">
-                      <input
-                        id="puja-ficha"
-                        type="number"
-                        inputMode="numeric"
-                        min={minimo}
-                        step={10}
-                        value={monto}
-                        placeholder={String(minimo)}
-                        onChange={(e) => setMonto(e.target.value)}
-                        aria-invalid={aviso?.error || undefined}
-                        aria-describedby="puja-ficha-aviso"
-                      />
-                      <button type="submit" className="btn btn--primary">Pujar</button>
-                    </div>
-                    <p id="puja-ficha-aviso" className={`lote__aviso${aviso?.error ? " is-error" : ""}`} role="status">{aviso?.texto}</p>
-                  </form>
+                {proxima ? (
+                  <p className="lote__resultado">Esta subasta abre pronto. Desde la página de subastas puedes pedir que te avisemos.</p>
+                ) : enCurso ? (
+                  voyPrimero ? (
+                    <p className="lote__aviso" role="status">Vas primero. Te avisamos si alguien te supera.</p>
+                  ) : (
+                    <form className="lote__form" onSubmit={pujar} noValidate>
+                      <label htmlFor="puja-ficha">Tu puja en Bs. (mínimo {minimo})</label>
+                      <div className="lote__fila">
+                        <input
+                          id="puja-ficha"
+                          type="number"
+                          inputMode="numeric"
+                          min={minimo}
+                          step={10}
+                          value={monto}
+                          placeholder={String(minimo)}
+                          onChange={(e) => setMonto(e.target.value)}
+                          aria-invalid={aviso?.error || undefined}
+                          aria-describedby="puja-ficha-aviso"
+                        />
+                        <button type="submit" className="btn btn--primary" disabled={enviando}>
+                          {enviando ? "Pujando…" : "Pujar"}
+                        </button>
+                      </div>
+                      <p id="puja-ficha-aviso" className={`lote__aviso${aviso?.error ? " is-error" : ""}`} role="status">{aviso?.texto}</p>
+                    </form>
+                  )
                 ) : (
                   <p className="lote__resultado">
-                    {lote.currentBidder ? `Ganó ${lote.currentBidder} con ${formatBs(lote.currentBid)}.` : "Cerró sin pujas."}
+                    {ganador ? `Ganó ${voyPrimero ? "tu puja" : ganador} con ${formatBs(lote.puja_actual ?? 0)}.` : "Cerró sin pujas."}
                   </p>
                 )}
               </div>
 
               <h2 className="ficha__subtitulo">El lote</h2>
               <dl className="ficha__datos">
-                <dt>Finca</dt><dd>{x.finca}</dd>
-                <dt>Variedad</dt><dd>{x.variedad}</dd>
-                <dt>Proceso</dt><dd>{x.proceso}</dd>
-                <dt>Cosecha</dt><dd>{x.cosecha}</dd>
-                <dt>Código</dt><dd>{lote.lotCode}</dd>
-                <dt>Puntaje de catación</dt><dd>{lote.cuppingScore.toLocaleString("es-BO", { minimumFractionDigits: 1 })} puntos</dd>
+                {datos.filter(([, v]) => v).map(([k, v]) => (
+                  <div key={k} style={{ display: "contents" }}>
+                    <dt>{k}</dt>
+                    <dd>{v}</dd>
+                  </div>
+                ))}
               </dl>
             </div>
           </div>
@@ -189,17 +181,19 @@ function Lote({ lote }: { lote: Auction }) {
       <section className="section section--tight" aria-labelledby="catacion-titulo">
         <div className="wrap">
           <div className="head" data-revelar>
-            <h2 id="catacion-titulo">Cómo sabe en la taza</h2>
-            <div><p>{x.historia}</p></div>
+            <h2 id="catacion-titulo">{lote.catacion ? "Cómo sabe en la taza" : "Cómo va la subasta"}</h2>
+            <div>{lote.historia && <p>{lote.historia}</p>}</div>
           </div>
           <div className="lote-graficos">
-            <figure className="lote-grafico desde-izq" data-revelar>
-              <figcaption>Rueda de catación</figcaption>
-              <Rueda atributos={x.catacion} />
-            </figure>
+            {lote.catacion && lote.catacion.length >= 3 && (
+              <figure className="lote-grafico desde-izq" data-revelar>
+                <figcaption>Rueda de catación</figcaption>
+                <Rueda atributos={lote.catacion} />
+              </figure>
+            )}
             <figure className="lote-grafico desde-der" data-revelar>
               <figcaption>Cómo subió el precio</figcaption>
-              <Pujas lote={lote} />
+              <Grafica base={lote.precio_base} pujas={pujas} />
             </figure>
           </div>
         </div>
@@ -210,31 +204,34 @@ function Lote({ lote }: { lote: Auction }) {
           <div className="head">
             <h2 id="historial-titulo">Todas las pujas</h2>
           </div>
-          {lote.bids.length ? (
+          {pujas.length ? (
             <div className="tabla-pujas">
               <table>
                 <thead>
                   <tr><th scope="col">Postor</th><th scope="col" className="num">Monto</th><th scope="col" className="num">Hora</th></tr>
                 </thead>
                 <tbody>
-                  {lote.bids.map((b, i) => (
-                    <tr key={i} className={i === 0 ? "is-primera" : ""}>
-                      <td>{b.bidder}{i === 0 && <small> · va primero</small>}</td>
-                      <td className="num">{formatBs(b.amount)}</td>
-                      <td className="num">{b.timestamp}</td>
+                  {pujas.map((b, i) => (
+                    <tr key={b.id} className={i === 0 ? "is-primera" : ""}>
+                      <td>{b.es_mia ? "Tú" : b.postor}{i === 0 && <small> · {cerrada ? "ganó" : "va primero"}</small>}</td>
+                      <td className="num">{formatBs(b.monto)}</td>
+                      <td className="num">{horaDe(b.creado_en)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <p className="filtros__vacio">Todavía no hay pujas: la primera puede ser la tuya.</p>
+            <p className="filtros__vacio">
+              {cerrada && hayPujas ? `Esta subasta cerró con ${lote.num_pujas} pujas.` : "Todavía no hay pujas: la primera puede ser la tuya."}
+            </p>
           )}
           <p className="caja__sub" style={{ marginTop: 24 }}>
             <Link href="/subastas" className="link">← Volver a las subastas</Link>
           </p>
         </div>
       </section>
+      <AvisoSubasta />
     </>
   );
 }
@@ -277,8 +274,8 @@ function Rueda({ atributos }: { atributos: [string, number][] }) {
 }
 
 /** Gráfica escalonada del precio del lote, desde la salida hasta la puja actual. */
-function Pujas({ lote }: { lote: Auction }) {
-  const serie = [lote.basePrice, ...[...lote.bids].reverse().map((b) => b.amount)];
+function Grafica({ base, pujas }: { base: number; pujas: Puja[] }) {
+  const serie = [base, ...[...pujas].reverse().map((b) => b.monto)];
   const W = 460;
   const H = 300;
   const m = { izq: 64, der: 16, arr: 20, aba: 36 };

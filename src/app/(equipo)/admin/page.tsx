@@ -33,7 +33,7 @@ const ATAJOS = [
   { href: "/pos", label: "Abrir la caja" },
   { href: "/erp", label: "Ver bodega y tueste" },
   { href: "/logistica", label: "Ver pedidos" },
-  { href: "/subastas", label: "Ver subastas" },
+  { href: "/admin/subastas", label: "Publicar subastas" },
 ];
 
 export default function PaginaPanel() {

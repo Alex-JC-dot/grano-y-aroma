@@ -33,7 +33,7 @@ export const PANELES: Record<Rol, string[]> = {
   cliente: [],
   cajero: ["/pos"],
   tostador: ["/erp"],
-  admin: ["/admin", "/pos", "/erp", "/logistica"],
+  admin: ["/admin", "/admin/subastas", "/pos", "/erp", "/logistica"],
 };
 
 /** Traduce los errores de Supabase Auth a mensajes claros en español. */

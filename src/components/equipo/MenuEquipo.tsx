@@ -7,6 +7,7 @@ import { PANELES } from "@/lib/supabase";
 
 const ENLACES = [
   { href: "/admin", label: "Panel general", detalle: "Ventas y reportes" },
+  { href: "/admin/subastas", label: "Subastas", detalle: "Publicar y cerrar lotes" },
   { href: "/pos", label: "Caja", detalle: "Venta en la cafetería" },
   { href: "/erp", label: "Bodega y tueste", detalle: "Stock y lotes" },
   { href: "/logistica", label: "Logística", detalle: "Pedidos y entregas" },
