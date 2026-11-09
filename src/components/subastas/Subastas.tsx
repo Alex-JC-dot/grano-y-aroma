@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useAuctionStore } from "@/store/auctionStore";
 import { formatBs, formatTimeLeft } from "@/lib/utils";
+import VideoUnaVez from "@/components/inicio/VideoUnaVez";
 
 /**
  * Subastas de micro-lotes (RF-10 a RF-16), con la misma lógica del prototipo: cuenta regresiva,
@@ -49,16 +50,20 @@ export default function Subastas() {
     <>
       <section className="section page-top" aria-labelledby="subastas-titulo">
         <div className="wrap">
-          <div className="head" data-revelar>
-            <div className="head__titulo">
+          <div className="intro intro--media">
+            <div data-revelar>
               <p className="eyebrow"><span className="en-vivo" aria-hidden="true" /> Subastas en vivo</p>
               <h1 id="subastas-titulo">Micro-lotes de Chuquisaca</h1>
-            </div>
-            <div>
-              <p>
+              <p className="intro__lead">
                 Lotes de producción limitada, directo de las fincas. Cada puja debe superar a la anterior
                 en al menos {formatBs(INCREMENTO)}; la subasta se cierra sola y gana la puja más alta.
               </p>
+            </div>
+            <div data-revelar style={{ "--i": 1 } as React.CSSProperties}>
+              <VideoUnaVez
+                nombre="subasta-saco"
+                descripcion="Una pala de madera saca granos de café verde de un saco de yute"
+              />
             </div>
           </div>
 

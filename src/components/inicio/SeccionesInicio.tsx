@@ -5,7 +5,8 @@ import TazaPie from "./TazaPie";
 /**
  * Secciones compartidas de las páginas públicas (proceso, visita y pie).
  *
- * Imágenes: las de "grano verde", "enfriado", el local y los videos se generaron con Kling AI;
+ * Imágenes: el local, "grano verde", "enfriado", las bolsas, los paisajes de origen, Sucre y
+ * todos los videos se generaron con Kling AI;
  * "tueste" y "tu taza" son fotografías de Wikimedia Commons con licencia libre (créditos en el pie).
  */
 

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
-import BolsaVisual from "@/components/tienda/BolsaVisual";
+import VideoUnaVez from "@/components/inicio/VideoUnaVez";
 
 /**
  * Club Grano y Aroma (módulo de Suscripciones, RF-06 a RF-09).
@@ -58,11 +57,11 @@ export default function Club() {
               Recibe café recién tostado en tu puerta cada 15 o 30 días. Tú eliges la cantidad y la
               molienda, y puedes pausar o cancelar cuando quieras.
             </p>
-            <div className="club__bolsas" aria-hidden="true">
-              <BolsaVisual producto={products[0]} />
-              <BolsaVisual producto={products[2]} />
-              <BolsaVisual producto={products[4]} />
-            </div>
+            <VideoUnaVez
+              nombre="club-caja"
+              descripcion="Una caja de cartón kraft se abre y deja ver dos bolsas de café con granos tostados"
+              className="club__video"
+            />
           </div>
         </div>
       </section>

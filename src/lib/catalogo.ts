@@ -38,6 +38,19 @@ const COLORES: Record<string, string> = {
   p6: "#5d7b95", // azul grisáceo
 };
 
+/**
+ * Paisaje del origen de un café (fotos generadas con Kling): los Yungas para Caranavi y
+ * Coroico, y los valles de Chuquisaca para Villa Serrano y Padilla.
+ */
+export function imagenOrigen(p: Pick<Product, "region" | "origin">): { src: string; alt: string } {
+  const r = p.region.toLowerCase();
+  if (r.includes("coroico"))
+    return { src: "/images/origen/coroico.webp", alt: "Cerros verdes de los Yungas con neblina en el valle, al amanecer" };
+  if (p.origin === "La Paz")
+    return { src: "/images/origen/caranavi.webp", alt: "Valle de los Yungas con neblina y una ladera con plantas de café" };
+  return { src: "/images/origen/chuquisaca.webp", alt: "Valles de Chuquisaca con una rama de cafeto con cerezas rojas" };
+}
+
 export function colorDe(p: Pick<Product, "id">): string {
   return COLORES[p.id] ?? "#7a4a2c";
 }

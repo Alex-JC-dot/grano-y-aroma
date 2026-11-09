@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { products } from "@/lib/data";
 import TarjetaCafe from "@/components/tienda/TarjetaCafe";
-import BolsaVisual from "@/components/tienda/BolsaVisual";
 
 /** Inicio: tres cafés destacados con enlace a la tienda completa. */
 export function Destacados() {
@@ -33,15 +32,17 @@ export function Destacados() {
 
 /** Inicio: adelantos del Club y de las Subastas, cada uno con su página. */
 export function ClubYSubastas() {
-  const [a, b] = products;
-
   return (
     <section className="section" aria-label="Club y subastas">
       <div className="wrap duo">
         <Link href="/club" className="duo__item" data-revelar>
-          <div className="duo__visual duo__visual--club" aria-hidden="true">
-            <BolsaVisual producto={a} />
-            <BolsaVisual producto={b} />
+          <div className="duo__visual">
+            <img
+              src="/video/club-caja-final.webp"
+              alt="Caja de suscripción abierta con dos bolsas de café y granos tostados"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
           <div className="duo__texto">
             <p className="duo__etiqueta">Club Grano y Aroma</p>

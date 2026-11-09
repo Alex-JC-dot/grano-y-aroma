@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { products } from "@/lib/data";
 import type { Product } from "@/lib/types";
 import { formatBs } from "@/lib/utils";
-import { buscarCafe, formatoFecha } from "@/lib/catalogo";
+import { buscarCafe, formatoFecha, imagenOrigen } from "@/lib/catalogo";
 import { useCartStore } from "@/store/cartStore";
 import BolsaVisual from "./BolsaVisual";
 import TarjetaCafe from "./TarjetaCafe";
@@ -50,6 +50,7 @@ function Ficha({ cafe }: { cafe: Product }) {
   };
 
   const otros = products.filter((p) => p.id !== cafe.id).slice(0, 3);
+  const origen = imagenOrigen(cafe);
   const puntaje = cafe.cuppingScore.toLocaleString("es-BO", { minimumFractionDigits: 1 });
 
   return (
@@ -129,6 +130,24 @@ function Ficha({ cafe }: { cafe: Product }) {
               </dl>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="section section--tight" aria-labelledby="origen-titulo">
+        <div className="wrap">
+          <div className="head">
+            <h2 id="origen-titulo">De dónde viene este café</h2>
+            <div>
+              <p>
+                {cafe.region}, {cafe.origin} · {cafe.altitude.toLocaleString("es-BO")} msnm. Compramos el
+                grano verde por lote y lo tostamos en Sucre.
+              </p>
+            </div>
+          </div>
+          <figure className="banda-foto">
+            {/* eslint-disable-next-line @next/next/no-img-element -- export estático */}
+            <img src={origen.src} alt={origen.alt} loading="lazy" decoding="async" />
+          </figure>
         </div>
       </section>
 

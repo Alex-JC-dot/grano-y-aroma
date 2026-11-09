@@ -33,11 +33,19 @@ export default function TazaPie({ children }: { children: React.ReactNode }) {
     const video = videoRef.current;
     if (!seccion || !video || reducir) return;
 
+    // Descarga una sola vez: un load() después de play() reiniciaría el video en pausa.
+    let cargado = false;
+    const cargar = () => {
+      if (cargado) return;
+      cargado = true;
+      video.preload = "auto";
+      video.load();
+    };
+
     const cerca = new IntersectionObserver(
       (e) => {
         if (e.some((x) => x.isIntersecting)) {
-          video.preload = "auto";
-          video.load();
+          cargar();
           cerca.disconnect();
         }
       },
@@ -47,6 +55,7 @@ export default function TazaPie({ children }: { children: React.ReactNode }) {
     const aLaVista = new IntersectionObserver(
       (e) => {
         if (e.some((x) => x.isIntersecting)) {
+          cargar();
           video.play().catch(() => {
             // Si el navegador bloquea la reproducción, queda la imagen fija: no es un error.
           });

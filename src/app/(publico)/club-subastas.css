@@ -176,3 +176,27 @@
 /* Cuando el título va dentro de un bloque (con su etiqueta encima), ese bloque toma la columna */
 .inicio .intro > div:first-child { grid-column: 1 / span 6; }
 .inicio .intro > div:first-child h1 { margin: 0; font: 400 clamp(40px, 4.4vw, 68px) / 1.04 var(--f-display); letter-spacing: -0.03em; }
+
+/* ---------- Videos que se reproducen una vez y fotos en banda ---------- */
+.inicio .video-marco { aspect-ratio: 16 / 9; border-radius: var(--r-card); overflow: hidden; background: var(--surface); }
+.inicio .video-marco video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.inicio .club__video { margin-top: 32px; }
+
+/* Cabecera con video a la derecha (Subastas) */
+.inicio .intro--media { align-items: center; }
+.inicio .intro--media > div:first-child { grid-column: 1 / span 5; }
+.inicio .intro--media > div:last-child { grid-column: 7 / span 6; }
+.inicio .intro__lead { margin: 24px 0 0; font-size: 18px; line-height: 1.6; max-width: 46ch; }
+.inicio .intro--media + .lotes { margin-top: 72px; }
+
+.inicio .banda-foto { margin: 0; aspect-ratio: 21 / 9; border-radius: var(--r-card); overflow: hidden; background: var(--surface); }
+.inicio .banda-foto--alta { aspect-ratio: 16 / 7; margin-top: 72px; }
+.inicio .banda-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@media (max-width: 1023px) {
+  .inicio .intro--media > div:last-child { margin-top: 32px; }
+}
+@media (max-width: 767px) {
+  .inicio .banda-foto, .inicio .banda-foto--alta { aspect-ratio: 4 / 3; margin-top: 40px; }
+  .inicio .intro--media + .lotes { margin-top: 48px; }
+}

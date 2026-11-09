@@ -32,6 +32,16 @@ export default function PaginaNosotros() {
             </Link>
           </div>
         </div>
+        <div className="wrap">
+          <figure className="banda-foto banda-foto--alta" data-revelar>
+            {/* eslint-disable-next-line @next/next/no-img-element -- export estático */}
+            <img
+              src="/images/origen/sucre.webp"
+              alt="Techos de tejas y fachadas blancas de una ciudad colonial con un campanario, frente a los cerros al atardecer"
+              decoding="async"
+            />
+          </figure>
+        </div>
       </section>
       <Proceso />
       <Visita />
