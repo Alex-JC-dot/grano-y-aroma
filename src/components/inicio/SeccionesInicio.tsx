@@ -8,7 +8,7 @@ import Contacto from "./Contacto";
  *
  * Imágenes: el local, "grano verde", "enfriado", las bolsas, los paisajes de origen, Sucre y
  * todos los videos se generaron con Kling AI;
- * "tueste" y "tu taza" son fotografías de Wikimedia Commons con licencia libre (créditos en el pie).
+ * "tueste" y "tu taza" son fotografías de Wikimedia Commons con licencia libre (créditos en el README).
  */
 
 const PROCESO = [
@@ -144,11 +144,6 @@ export function Visita() {
   );
 }
 
-const CREDITOS = [
-  { que: "Tueste", autor: "Jameswasswa", lic: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Closer_look_at_the_coffee_beans_from_the_coffee_roasting_machine_looking_at_their_progress.jpg" },
-  { que: "Tu taza", autor: "Kim Sanso", lic: "CC0", url: "https://commons.wikimedia.org/wiki/File:Manual_drip_(pour-over)_coffee.jpg" },
-];
-
 export function PieInicio() {
   return (
     <footer className="foot">
@@ -197,18 +192,6 @@ export function PieInicio() {
         </div>
         <div className="foot__legal">
           <span>© 2026 Grano y Aroma · Proyecto de Ingeniería de Software, USFX</span>
-          <details className="credits">
-            <summary>Imágenes generadas con Kling AI y fotografías vía Wikimedia Commons</summary>
-            <ul>
-              {CREDITOS.map((c) => (
-                <li key={c.que}>
-                  <a href={c.url} target="_blank" rel="noreferrer">
-                    {c.que}: {c.autor}, {c.lic}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </details>
         </div>
       </div>
     </footer>
