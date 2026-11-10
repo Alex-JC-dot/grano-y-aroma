@@ -1,21 +1,25 @@
-@import "tailwindcss";
+/*
+ * globals.css — Base del documento.
+ *
+ * Antes este archivo guardaba el tema oscuro del prototipo del Laboratorio 8: fondo
+ * #1A0F0B, texto blanco, tokens de Tailwind (--color-espresso, --color-roasted-gold) y
+ * utilidades como .glass-card y .gradient-text. Nada de eso se usaba ya, porque publico.css
+ * lo neutralizaba con body:has(.inicio). Eran 180 líneas de CSS muerto que cualquiera que
+ * abriera el proyecto iba a leer como si fueran el sistema vigente.
+ *
+ * Lo único que sobrevivió es el grano de papel, que estaba escrito y sin usar: ahora sí se
+ * aplica, al 3 % en claro y al 1.5 % en oscuro.
+ *
+ * Los colores viven en tokens.css. Aquí solo va lo que afecta al documento entero.
+ */
 
-@theme {
-  --color-espresso: #2C1A14;
-  --color-dark-coffee: #1A0F0B;
-  --color-roasted-gold: #C89D54;
-  --color-warm-amber: #D4A373;
-  --color-coffee-cream: #FBF8F5;
-  --color-warm-sand: #F2EAE1;
-  --color-border: #3D2219;
-  --font-serif: "Playfair Display", "Lora", serif;
-  --font-sans: "Inter", sans-serif;
-}
+@import "./tokens.css";
+@import "./imprimir.css";
 
-@layer base {
-  * {
-    box-sizing: border-box;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html {
@@ -23,158 +27,60 @@ html {
 }
 
 body {
-  background: var(--color-dark-coffee);
-  color: #ffffff;
-  font-family: var(--font-sans);
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-text);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Custom scrollbar */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* La barra de desplazamiento acompaña al tema en vez de quedarse clara sobre fondo oscuro. */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-dark-coffee);
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-roasted-gold);
-  border-radius: 3px;
+  background: var(--line-fuerte);
+  border: 3px solid var(--bg);
+  border-radius: var(--r-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-hover);
 }
 
-/* Fonts */
-.font-serif {
-  font-family: var(--font-serif);
+/* Selección de texto en el acento del tema, no en el azul del navegador. */
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
-/* Gold accent text */
-.text-gold {
-  color: var(--color-roasted-gold);
-}
-.text-amber {
-  color: var(--color-warm-amber);
-}
-
-/* Glass card effect */
-.glass-card {
-  background: rgba(44, 26, 20, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(200, 157, 84, 0.15);
-}
-
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, var(--color-roasted-gold), var(--color-warm-amber));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Scrollbar for light sections */
-.light-scroll::-webkit-scrollbar-track {
-  background: var(--color-warm-sand);
-}
-
-/* Animations */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 157, 84, 0.4); }
-  50% { box-shadow: 0 0 0 10px rgba(200, 157, 84, 0); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-.animate-fade-up {
-  animation: fadeInUp 0.6s ease forwards;
-}
-.animate-fade-in {
-  animation: fadeIn 0.5s ease forwards;
-}
-.animate-slide-right {
-  animation: slideInRight 0.5s ease forwards;
-}
-.animate-pulse-gold {
-  animation: pulse-gold 2s infinite;
-}
-
-/* Bid flash animation */
-@keyframes bidFlash {
-  0% { background: rgba(200, 157, 84, 0.3); }
-  100% { background: transparent; }
-}
-.bid-flash {
-  animation: bidFlash 1s ease-out;
-}
-
-/* Hover lift */
-.hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-}
-
-/* Grain texture overlay */
-.grain-overlay::after {
+/*
+ * Grano de papel.
+ *
+ * Al 3 % no se percibe conscientemente, pero le quita a las superficies el aspecto de
+ * plástico y las acerca al papel impreso. Sobre fondo oscuro el mismo valor ensucia, así
+ * que el token baja a 1.5 % en ese tema.
+ *
+ * Va como capa fija sobre el documento entero, con z-index 1: queda por encima del fondo y
+ * del contenido normal, y por debajo de la barra, el carrito y los diálogos, que viven en
+ * z-index altos. pointer-events:none para que no intercepte ningún clic.
+ */
+body::after {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 1;
+  opacity: var(--grano);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-
-/* Nav backdrop */
-.nav-scrolled {
-  background: rgba(26, 15, 11, 0.95) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(200, 157, 84, 0.2);
-}
-
-/* Status badge colors */
-.status-recibido { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
-.status-preparacion { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
-.status-camino { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
-.status-entregado { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
-
-/* POS active item */
-.pos-item-active {
-  border-color: var(--color-roasted-gold) !important;
-  background: rgba(200, 157, 84, 0.1) !important;
-}
-
-/* Roast level badges */
-.roast-light { background: rgba(254, 240, 138, 0.15); color: #fef08a; border: 1px solid rgba(254, 240, 138, 0.3); }
-.roast-medium { background: rgba(200, 157, 84, 0.15); color: #C89D54; border: 1px solid rgba(200, 157, 84, 0.3); }
-.roast-dark { background: rgba(44, 26, 20, 0.6); color: #a8a29e; border: 1px solid rgba(255,255,255,0.1); }

@@ -1,19 +1,17 @@
-/* Carrito lateral (CartDrawer). Va fuera de .inicio en el árbol, así que define sus tokens. */
-.carrito,
-.carrito-fondo {
-  --bg: #e6ded4;
-  --surface: #dcd2c6;
-  --ink: #2a1f1a;
-  --muted: #65574c;
-  --line: rgba(42, 31, 26, 0.14);
-  --accent: #7a4a2c;
-  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
-}
+/*
+ * Carrito lateral (CartDrawer).
+ *
+ * Antes repetía aquí la paleta entera, porque el panel es position:fixed y se asumía que
+ * quedaba fuera del alcance de los tokens de .inicio. No es así: position:fixed cambia dónde
+ * se pinta un elemento, no dónde vive en el árbol del documento, y la herencia de las
+ * variables CSS sigue el árbol. Ahora los tokens bajan desde :root y el carrito cambia de
+ * tema junto con el resto de la página.
+ */
 .carrito-fondo {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(42, 31, 26, 0.35);
+  background: var(--velo-dialogo);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s var(--ease);
@@ -34,7 +32,7 @@
   transform: translateX(100%);
   transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
 }
-.carrito.is-open { transform: none; box-shadow: -24px 0 48px rgba(42, 31, 26, 0.18); }
+.carrito.is-open { transform: none; box-shadow: var(--sombra-cajon); }
 .carrito :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .carrito__cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 24px; border-bottom: 1px solid var(--line); }
@@ -42,7 +40,7 @@
 .carrito__pasos { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; width: 180px; }
 .carrito__pasos li { flex: 1; height: 3px; border-radius: 2px; background: var(--line); }
 .carrito__pasos li.is-on { background: var(--accent); }
-.carrito__cerrar { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(42, 31, 26, 0.3); border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; }
+.carrito__cerrar { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line-fuerte); border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; }
 .carrito__cerrar:hover { border-color: var(--ink); }
 
 .carrito__cuerpo { flex: 1; overflow-y: auto; padding: 8px 24px 24px; }
@@ -58,13 +56,13 @@
 .carrito__detalle { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
 .carrito__acciones { display: flex; align-items: center; gap: 14px; }
 .carrito__quitar { border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.carrito__quitar:hover { color: #8a2f25; }
+.carrito__quitar:hover { color: var(--peligro); }
 .carrito__subtotal { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; }
 
 .cantidad--sm { height: 36px !important; }
 .cantidad--sm button { width: 36px !important; font-size: 18px !important; }
 .cantidad--sm output { min-width: 28px; }
-.carrito .cantidad { display: flex; align-items: center; border: 1px solid rgba(42, 31, 26, 0.3); border-radius: 6px; background: var(--bg); }
+.carrito .cantidad { display: flex; align-items: center; border: 1px solid var(--line-fuerte); border-radius: 6px; background: var(--bg); }
 .carrito .cantidad button { border: 0; background: transparent; color: var(--ink); cursor: pointer; height: 100%; }
 .carrito .cantidad output { text-align: center; font-weight: 500; font-variant-numeric: tabular-nums; }
 
@@ -74,18 +72,18 @@
   width: 100%;
   height: 48px;
   padding: 0 14px;
-  border: 1px solid rgba(42, 31, 26, 0.3);
+  border: 1px solid var(--line-fuerte);
   border-radius: 6px;
-  background: #efe9e1;
+  background: var(--surface-hundida);
   color: var(--ink);
   font-size: 16px;
   font-family: inherit;
 }
-.carrito__campo input[aria-invalid="true"] { border-color: #b3261e; }
-.carrito__error { margin: 6px 0 0; font-size: 14px; color: #b3261e; }
+.carrito__campo input[aria-invalid="true"] { border-color: var(--error); }
+.carrito__error { margin: 6px 0 0; font-size: 14px; color: var(--error); }
 .carrito__pagos { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .carrito__pagos legend { padding: 0; margin-bottom: 10px; font-size: 14px; font-weight: 500; }
-.carrito__pago { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid rgba(42, 31, 26, 0.25); border-radius: 10px; cursor: pointer; }
+.carrito__pago { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid var(--line-media); border-radius: 10px; cursor: pointer; }
 .carrito__pago.is-on { border: 2px solid var(--accent); padding: 15px; }
 .carrito__pago input { margin-top: 4px; accent-color: var(--accent); }
 .carrito__pago span { display: flex; flex-direction: column; gap: 2px; }
@@ -104,9 +102,9 @@
   transition: transform 0.18s var(--ease), background-color 0.18s var(--ease);
 }
 .carrito .btn:active { transform: translateY(1px) scale(0.98); }
-.carrito .btn--primary { background: var(--accent); color: #fff; }
-.carrito .btn--primary:hover { background: #643a20; }
-.carrito .btn--secondary { background: transparent; color: var(--ink); border-color: rgba(42, 31, 26, 0.35); }
+.carrito .btn--primary { background: var(--accent); color: var(--accent-ink); }
+.carrito .btn--primary:hover { background: var(--accent-hover); }
+.carrito .btn--secondary { background: transparent; color: var(--ink); border-color: var(--line-maxima); }
 .carrito__boton { width: 100%; }
 .carrito__volver { align-self: center; border: 0; background: none; padding: 4px; color: var(--muted); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
@@ -118,3 +116,7 @@
 .carrito__mini .bolsa__marca,
 .carrito__mini .bolsa__franja > span { display: none; }
 .carrito__fila { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* Confirmación del pedido: descargar el comprobante y seguir comprando. */
+.carrito__acciones-listo { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.carrito__acciones-listo .btn { width: 100%; }

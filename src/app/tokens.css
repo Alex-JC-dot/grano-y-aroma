@@ -1,0 +1,235 @@
+/*
+ * tokens.css — Sistema único de tokens de diseño de Grano y Aroma.
+ *
+ * Centraliza color, tipografía, radios, espaciado y sombras para los dos temas.
+ * Antes cada hoja repetía sus propios colores escritos a mano (publico.css y carrito.css
+ * incluso redeclaraban --bg y --accent por su cuenta), así que el modo oscuro era imposible:
+ * había que cambiar el mismo color en siete archivos. Ahora todo sale de aquí.
+ *
+ * El tema se decide con el atributo data-theme en <html>. El script inline del layout lo
+ * fija antes del primer pintado, leyendo localStorage o, si el usuario no eligió nunca,
+ * prefers-color-scheme.
+ *
+ * Decisiones que conviene conocer antes de tocar esto:
+ *
+ *  - La paleta clara es la identidad del proyecto y NO cambia: crema #e6ded4, superficie
+ *    #dcd2c6, tinta #2a1f1a, nogal #7a4a2c. Lo único que se hizo fue nombrarla y ampliarla.
+ *
+ *  - En oscuro el acento se ACLARA y su texto se OSCURECE. El nogal #7a4a2c sobre fondo
+ *    oscuro queda en 2.4:1 de contraste, ilegible. Por eso en oscuro el acento pasa a
+ *    #cf9b6d con texto oscuro encima.
+ *
+ *  - En oscuro la elevación no se hace con sombras —que casi no se ven sobre fondo oscuro—
+ *    sino subiendo un paso la superficie. Por eso --surface-alta existe en ambos temas pero
+ *    carga el peso del relieve solo en el oscuro.
+ *
+ *  - Los semánticos se derivan de la paleta cálida: verde musgo, ocre y terracota. Nada de
+ *    los verdes y rojos saturados de framework, que romperían la armonía de papel y madera.
+ *
+ *  - --dark y --on-dark son las secciones que ya eran oscuras en el diseño original (el
+ *    velo del hero y la franja de contacto). Esas se mantienen iguales en ambos temas: son
+ *    una decisión de composición, no del tema.
+ */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* ── Superficies ─────────────────────────────────────────────── */
+  --bg: #e6ded4;              /* lienzo: el crema del video del hero */
+  --surface: #dcd2c6;         /* tarjetas y bloques alternos */
+  --surface-alta: #d4c9bc;    /* un paso por encima de --surface */
+  --surface-hundida: #efe9e1; /* fondo de campos de formulario */
+  --surface-foco: #f6f1ea;    /* campo de formulario enfocado */
+  --surface-trans: rgba(230, 222, 212, 0.94); /* paneles flotantes sobre foto */
+
+  /* ── Tinta ───────────────────────────────────────────────────── */
+  --ink: #2a1f1a;             /* texto principal */
+  --muted: #65574c;           /* subtítulos y texto secundario */
+  --soft: rgba(42, 31, 26, 0.55); /* marcas de posición y texto terciario */
+  --ink-roce: rgba(42, 31, 26, 0.06); /* fondo al pasar el cursor sobre una fila */
+  --on-ink-soft: rgba(230, 222, 212, 0.75); /* texto atenuado SOBRE un fondo --ink */
+
+  /* ── Líneas ──────────────────────────────────────────────────── */
+  --line: rgba(42, 31, 26, 0.14);
+  --line-suave: rgba(42, 31, 26, 0.18);
+  --line-media: rgba(42, 31, 26, 0.25);
+  --line-fuerte: rgba(42, 31, 26, 0.3);
+  --line-maxima: rgba(42, 31, 26, 0.35);
+  --line-hover: rgba(42, 31, 26, 0.4);
+
+  /* ── Acento nogal ────────────────────────────────────────────── */
+  --accent: #7a4a2c;
+  --accent-hover: #643a20;
+  --accent-ink: #ffffff;              /* texto sobre el acento */
+  --accent-ink-soft: rgba(255, 255, 255, 0.78);
+  --accent-tenue: rgba(122, 74, 44, 0.06);  /* fondo de elemento elegido */
+  --accent-roce: rgba(122, 74, 44, 0.04);   /* fondo al pasar el cursor */
+  --accent-velo: rgba(122, 74, 44, 0.14);   /* insignias y zonas de gráfico */
+  --accent-fill: rgba(122, 74, 44, 0.22);   /* relleno de formas SVG */
+  --accent-halo: rgba(122, 74, 44, 0.45);   /* anillo del pulso del mapa */
+  --accent-halo-0: rgba(122, 74, 44, 0);
+
+  /* ── Semánticos, derivados de la paleta cálida ───────────────── */
+  --exito: #2f5a25;
+  --exito-bg: rgba(70, 110, 60, 0.15);
+  --exito-solido: #2f5a25;
+  --aviso: #6e4f0d;
+  --aviso-fuerte: #8a5a0d;
+  --aviso-bg: rgba(196, 149, 47, 0.18);
+  --aviso-tenue: rgba(196, 149, 47, 0.12);
+  --aviso-destello: rgba(196, 149, 47, 0.45);
+  --error: #b3261e;
+  --error-solido: #b3261e;   /* fondo sólido con texto claro encima */
+  --error-bg: rgba(179, 38, 30, 0.5);
+  --error-bg-0: rgba(179, 38, 30, 0);
+  --error-halo: rgba(179, 38, 30, 0.45);
+  --peligro: #8a2f25;
+  --peligro-linea: rgba(138, 47, 37, 0.45);
+  --peligro-bg: rgba(138, 47, 37, 0.14);
+  --info: #2f4d66;
+  --info-bg: rgba(93, 123, 149, 0.18);
+
+  /* ── Sombras: siempre con tinte cálido, nunca grises ─────────── */
+  --sombra-1: 0 2px 8px rgba(42, 31, 26, 0.06);
+  --sombra-2: 0 8px 24px rgba(42, 31, 26, 0.1);
+  --sombra-3: 0 20px 48px rgba(42, 31, 26, 0.16);
+  --sombra-bolsa: 0 18px 18px rgba(42, 31, 26, 0.22);
+  --sombra-apoyo: 0 18px 30px -18px rgba(42, 31, 26, 0.35);
+  --sombra-cajon: -24px 0 48px rgba(42, 31, 26, 0.18);
+  --sombra-dialogo: 0 24px 64px rgba(42, 31, 26, 0.3);
+  --velo-dialogo: rgba(42, 31, 26, 0.4);
+
+  /* ── Brillos interiores de la bolsa de café ──────────────────── */
+  --luz-alta: rgba(255, 255, 255, 0.18);
+  --luz-baja: rgba(0, 0, 0, 0.12);
+  --luz-radial: rgba(255, 255, 255, 0.35);
+
+  /* ── Grano de papel ──────────────────────────────────────────── */
+  --grano: 0.03;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ── Superficies: café y madera de noche, nunca negro puro ───── */
+  --bg: #1a1512;
+  --surface: #231c18;
+  --surface-alta: #2c2420;
+  --surface-hundida: #16110e;
+  --surface-foco: #1d1714;
+  --surface-trans: rgba(35, 28, 24, 0.94);
+
+  /* ── Tinta ───────────────────────────────────────────────────── */
+  --ink: #f0e8e0;
+  --muted: #b3a299;
+  --soft: rgba(240, 232, 224, 0.55);
+  --ink-roce: rgba(240, 232, 224, 0.07);
+  --on-ink-soft: rgba(26, 21, 18, 0.72);
+
+  /* ── Líneas ──────────────────────────────────────────────────── */
+  --line: rgba(240, 232, 224, 0.12);
+  --line-suave: rgba(240, 232, 224, 0.16);
+  --line-media: rgba(240, 232, 224, 0.2);
+  --line-fuerte: rgba(240, 232, 224, 0.26);
+  --line-maxima: rgba(240, 232, 224, 0.32);
+  --line-hover: rgba(240, 232, 224, 0.44);
+
+  /* ── Acento: el mismo nogal, aclarado para que se lea ────────── */
+  --accent: #cf9b6d;
+  --accent-hover: #e0b189;
+  --accent-ink: #1a1512;
+  --accent-ink-soft: rgba(26, 21, 18, 0.72);
+  --accent-tenue: rgba(207, 155, 109, 0.14);
+  --accent-roce: rgba(207, 155, 109, 0.08);
+  --accent-velo: rgba(207, 155, 109, 0.2);
+  --accent-fill: rgba(207, 155, 109, 0.26);
+  --accent-halo: rgba(207, 155, 109, 0.5);
+  --accent-halo-0: rgba(207, 155, 109, 0);
+
+  /* ── Semánticos aclarados para pasar contraste sobre oscuro ──── */
+  --exito: #93c47d;
+  --exito-bg: rgba(147, 196, 125, 0.16);
+  --exito-solido: #3f6b33;
+  --aviso: #dcae4d;
+  --aviso-fuerte: #e8bd63;
+  --aviso-bg: rgba(220, 174, 77, 0.18);
+  --aviso-tenue: rgba(220, 174, 77, 0.14);
+  --aviso-destello: rgba(220, 174, 77, 0.45);
+  --error: #e89a92;
+  --error-solido: #a4322a;   /* se mantiene oscuro: lleva texto claro encima */
+  --error-bg: rgba(232, 154, 146, 0.45);
+  --error-bg-0: rgba(232, 154, 146, 0);
+  --error-halo: rgba(232, 154, 146, 0.4);
+  --peligro: #e0998f;
+  --peligro-linea: rgba(224, 153, 143, 0.45);
+  --peligro-bg: rgba(224, 153, 143, 0.16);
+  --info: #9dbcd6;
+  --info-bg: rgba(157, 188, 214, 0.18);
+
+  /* ── Sombras: en oscuro apenas se ven, el relieve lo da la ─────
+       superficie. Se mantienen suaves solo para despegar del fondo. */
+  --sombra-1: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --sombra-2: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --sombra-3: 0 20px 48px rgba(0, 0, 0, 0.55);
+  --sombra-bolsa: 0 18px 18px rgba(0, 0, 0, 0.45);
+  --sombra-apoyo: 0 18px 30px -18px rgba(0, 0, 0, 0.6);
+  --sombra-cajon: -24px 0 48px rgba(0, 0, 0, 0.5);
+  --sombra-dialogo: 0 24px 64px rgba(0, 0, 0, 0.6);
+  --velo-dialogo: rgba(10, 7, 5, 0.6);
+
+  --luz-alta: rgba(255, 255, 255, 0.1);
+  --luz-baja: rgba(0, 0, 0, 0.25);
+  --luz-radial: rgba(255, 255, 255, 0.12);
+
+  /* El grano se nota el doble sobre oscuro: a la misma opacidad ensucia. */
+  --grano: 0.015;
+}
+
+/*
+ * Tokens que NO dependen del tema.
+ * El velo del hero y la franja de contacto son oscuros por composición, no por tema:
+ * se ven igual en claro y en oscuro, y por eso su texto tampoco cambia.
+ */
+:root {
+  --dark: #0e0703;
+  --on-dark: #f3ebe1;
+  --on-dark-soft: rgba(243, 235, 225, 0.82);
+  --on-dark-mute: rgba(243, 235, 225, 0.65);
+  --on-dark-roce: rgba(255, 255, 255, 0.1);
+
+  /* ── Geometría ───────────────────────────────────────────────── */
+  --r-btn: 6px;   /* esquinas apenas redondeadas: ni planas ni amigables */
+  --r-card: 10px;
+  --r-pill: 999px;
+
+  /* ── Tipografía ──────────────────────────────────────────────── */
+  --f-display: var(--font-fraunces), Georgia, serif;
+  --f-text: var(--font-figtree), system-ui, sans-serif;
+
+  /* ── Movimiento ──────────────────────────────────────────────── */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-rapida: 0.18s;
+  --t-normal: 0.28s;
+}
+
+/*
+ * El cambio de tema se anima, salvo en la primera pintura y salvo que el usuario
+ * haya pedido menos movimiento. La clase la pone y la quita el botón de tema.
+ */
+.cambiando-tema,
+.cambiando-tema *,
+.cambiando-tema *::before,
+.cambiando-tema *::after {
+  transition: background-color 0.25s var(--ease), border-color 0.25s var(--ease),
+    color 0.25s var(--ease), fill 0.25s var(--ease) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cambiando-tema,
+  .cambiando-tema *,
+  .cambiando-tema *::before,
+  .cambiando-tema *::after {
+    transition: none !important;
+  }
+}

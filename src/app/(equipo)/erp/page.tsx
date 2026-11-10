@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
+import BotonesDocumento from "@/components/ui/BotonesDocumento";
+import HojaDocumento from "@/components/ui/HojaDocumento";
+import { fechaISO } from "@/lib/documento";
+import type { HojaExcel } from "@/lib/excel";
 
 /**
  * Bodega y tueste (RF-22 a RF-26), con Supabase:
@@ -10,6 +14,7 @@ import { formatBs } from "@/lib/utils";
  *  · Ingreso de café verde comprado al productor.
  *  · Registro de tueste: registrar_tueste() descuenta el verde, calcula la merma, genera el
  *    código de trazabilidad y suma las bolsas al stock de la tienda.
+ *  · Inventario y lotes de tueste se descargan en Excel y en PDF.
  */
 
 type Verde = { id: number; codigo: string; nombre: string; origen: string | null; proveedor: string | null; kg: number; kg_minimo: number; costo_kg: number | null };
@@ -149,6 +154,60 @@ export default function PaginaBodega() {
     { label: "Insumos", total: `${insumos.length} productos`, bajos: insumos.filter((i) => i.cantidad <= i.minimo).length },
   ];
 
+  /**
+   * Las dos hojas del libro: inventario y lotes de tueste. La columna "Faltante" no está en
+   * pantalla y sí en el Excel a propósito: es el número con el que se arma una orden de compra.
+   */
+  const hojasExcel = (): HojaExcel[] => [
+    {
+      nombre: "Inventario",
+      columnas: [
+        { titulo: "Producto", clave: "nombre" },
+        { titulo: "Tipo", clave: "tipo" },
+        { titulo: "Lote o proveedor", clave: "sub" },
+        { titulo: "Cantidad", clave: "cantidad", formato: "numero" },
+        { titulo: "Unidad", clave: "unidad" },
+        { titulo: "Stock mínimo", clave: "minimo", formato: "numero" },
+        { titulo: "Faltante", clave: "faltante", formato: "numero" },
+        { titulo: "Estado", clave: "estado" },
+      ],
+      filas: [
+        ...verdes.map((v) => ({ nombre: v.nombre, tipo: "Café verde", sub: `${v.codigo}${v.proveedor ? ` · ${v.proveedor}` : ""}`, cantidad: v.kg, unidad: "kg", minimo: v.kg_minimo })),
+        ...tostados.map((t) => ({ nombre: t.nombre, tipo: "Café tostado (tienda)", sub: t.codigo_lote ?? "", cantidad: t.stock, unidad: "bolsas", minimo: t.stock_minimo })),
+        ...insumos.map((i) => ({ nombre: i.nombre, tipo: "Insumo", sub: "", cantidad: i.cantidad, unidad: i.unidad, minimo: i.minimo })),
+      ].map((f) => ({ ...f, faltante: Math.max(0, f.minimo - f.cantidad), estado: f.cantidad <= f.minimo ? "Bajo stock" : "En orden" })),
+    },
+    {
+      nombre: "Lotes de tueste",
+      columnas: [
+        { titulo: "Lote tostado", clave: "codigo" },
+        { titulo: "Fecha", clave: "fecha", formato: "fecha" },
+        { titulo: "Café verde", clave: "verde" },
+        { titulo: "Verde (kg)", clave: "kgVerde", formato: "numero" },
+        { titulo: "Tostado (kg)", clave: "kgTostado", formato: "numero" },
+        { titulo: "Merma", clave: "merma", formato: "porcentaje" },
+        { titulo: "Perfil de tueste", clave: "perfil" },
+        { titulo: "Puntaje", clave: "puntaje", formato: "numero" },
+        { titulo: "Apto para subasta", clave: "apto" },
+        { titulo: "Bolsas a la tienda", clave: "bolsas", formato: "entero" },
+        { titulo: "Notas de cata", clave: "notas" },
+      ],
+      filas: tuestes.map((r) => ({
+        codigo: r.codigo,
+        fecha: new Date(r.creado_en),
+        verde: r.cafe_verde ? `${r.cafe_verde.codigo} · ${r.cafe_verde.nombre}` : "",
+        kgVerde: r.kg_verde,
+        kgTostado: r.kg_tostado,
+        merma: r.kg_verde ? 1 - r.kg_tostado / r.kg_verde : 0,
+        perfil: r.perfil ?? "",
+        puntaje: r.puntaje,
+        apto: r.puntaje != null && r.puntaje >= APTO_SUBASTA ? "Sí" : "No",
+        bolsas: r.bolsas,
+        notas: r.notas ?? "",
+      })),
+    },
+  ];
+
   const campo = (id: string, etiqueta: string, valor: string, fijar: (v: string) => void, ayuda = "", tipo = "text") => (
     <div className="carrito__campo">
       <label htmlFor={id}>{etiqueta}</label>
@@ -163,6 +222,11 @@ export default function PaginaBodega() {
           <p className="eyebrow">Producción e inventario</p>
           <h1>Bodega y tueste</h1>
         </div>
+        <BotonesDocumento
+          concepto={pestana === "inventario" ? "inventario" : "lotes-de-tueste"}
+          tituloPdf="Bodega y tueste - Grano y Aroma"
+          hojas={hojasExcel}
+        />
       </div>
 
       <div className="pestanas" role="tablist" aria-label="Secciones">
@@ -335,6 +399,78 @@ export default function PaginaBodega() {
       <p className="caja__sub" style={{ marginTop: 24 }}>
         Costo del café verde en bodega: {formatBs(verdes.reduce((s, v) => s + v.kg * (v.costo_kg ?? 0), 0))}.
       </p>
+
+      {/* Versión en papel: inventario y lotes de tueste en un solo documento. */}
+      <HojaDocumento
+        className="solo-papel imprimible"
+        titulo="Bodega y producción"
+        subtitulo="Inventario actual y registro de lotes de tueste"
+        numero={`BP-${fechaISO()}`}
+        etiquetaNumero="Reporte"
+      >
+        <section className="doc__bloque">
+          <h3>Inventario</h3>
+          <table className="doc__tabla">
+            <thead>
+              <tr>
+                <th scope="col">Producto</th>
+                <th scope="col">Tipo</th>
+                <th scope="col" className="num">Stock</th>
+                <th scope="col" className="num">Mínimo</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filas.map((f) => (
+                <tr key={f.key}>
+                  <td>
+                    {f.nombre}
+                    {f.sub && <small>{f.sub}</small>}
+                  </td>
+                  <td>{f.tipo}</td>
+                  <td className="num">{f.cant}</td>
+                  <td className="num">{f.min}</td>
+                  <td>{f.bajo ? "Bajo stock" : "En orden"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        {tuestes.length > 0 && (
+          <section className="doc__bloque">
+            <h3>Lotes de tueste</h3>
+            <table className="doc__tabla">
+              <thead>
+                <tr>
+                  <th scope="col">Lote</th>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Perfil</th>
+                  <th scope="col" className="num">Puntaje</th>
+                  <th scope="col" className="num">Verde → tostado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tuestes.map((r) => (
+                  <tr key={r.id}>
+                    <td>
+                      {r.codigo}
+                      {r.cafe_verde && <small>de {r.cafe_verde.codigo}</small>}
+                    </td>
+                    <td>{new Date(r.creado_en).toLocaleDateString("es-BO")}</td>
+                    <td>
+                      {r.perfil ?? "—"}
+                      {r.notas && <small>{r.notas}</small>}
+                    </td>
+                    <td className="num">{r.puntaje != null ? r.puntaje.toFixed(1) : "—"}</td>
+                    <td className="num">{r.kg_verde} → {r.kg_tostado} kg</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
+      </HojaDocumento>
     </div>
   );
 }

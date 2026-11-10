@@ -4,6 +4,7 @@ import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
 import { useAuth } from "@/store/authStore";
 import { PANELES } from "@/lib/supabase";
+import BotonTema from "@/components/ui/BotonTema";
 
 const ENLACES = [
   { href: "/admin", label: "Panel general", detalle: "Ventas y reportes" },
@@ -54,6 +55,8 @@ export default function MenuEquipo() {
         {session && (
           <button type="button" className="link equipo__salir" onClick={() => salir()}>Salir</button>
         )}
+        {/* El tema también se cambia desde aquí: quien trabaja en caja o bodega no pasa por la tienda. */}
+        <BotonTema />
       </div>
     </header>
   );

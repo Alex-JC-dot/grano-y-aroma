@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import MenuCuenta from "@/components/cuenta/MenuCuenta";
+import BotonTema from "@/components/ui/BotonTema";
 
 const ENLACES = [
   { href: "/tienda", label: "Tienda" },
@@ -59,6 +60,7 @@ export default function NavInicio() {
         </nav>
         <div className="nav__actions">
           <MenuCuenta />
+          <BotonTema />
           <button
             type="button"
             className="cart-btn"

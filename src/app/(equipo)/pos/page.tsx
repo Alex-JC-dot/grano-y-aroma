@@ -4,11 +4,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import type { FilaProducto } from "@/store/catalogoStore";
+import HojaDocumento from "@/components/ui/HojaDocumento";
+import BotonesDocumento from "@/components/ui/BotonesDocumento";
+import { fechaISO, imprimirDocumento } from "@/lib/documento";
+import type { HojaExcel } from "@/lib/excel";
 
 /**
  * Caja de la cafetería (Punto de Venta, RF-17 a RF-21): la barra y los productos de la tienda
  * salen de Supabase; cada cobro pasa por confirmar_pedido() con canal "caja", que descuenta el
  * stock compartido con la tienda en línea. El cierre de caja suma las ventas del día por método.
+ *
+ * La caja emite dos documentos: el comprobante de venta (RF-18) y el cierre de caja (RF-19),
+ * en PDF y el cierre también en Excel. Solo uno puede estar marcado como imprimible a la vez:
+ * si los dos lo estuvieran, saldrían juntos en la misma hoja. `impresion` decide cuál, y
+ * lleva un contador para que pedir dos veces seguidas el mismo documento vuelva a imprimir.
  */
 
 type Item = Pick<FilaProducto, "id" | "nombre" | "categoria" | "precio" | "stock" | "stock_minimo" | "grupo">;
@@ -25,6 +34,15 @@ const grupoDe = (i: Item) => (i.categoria === "bebida" ? i.grupo ?? "Otros" : "T
 type Turno = Record<Metodo, { monto: number; ventas: number }>;
 const TURNO_VACIO: Turno = { efectivo: { monto: 0, ventas: 0 }, qr: { monto: 0, ventas: 0 }, tarjeta: { monto: 0, ventas: 0 } };
 
+/** Lo que queda de una venta cobrada: la orden se vacía enseguida. */
+type Venta = {
+  numero: string;
+  hora: string;
+  lineas: { nombre: string; categoria: string; qty: number; precio: number }[];
+  total: number;
+  metodo: string;
+};
+
 export default function PaginaCaja() {
   const [items, setItems] = useState<Item[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -32,7 +50,8 @@ export default function PaginaCaja() {
   const [orden, setOrden] = useState<Linea[]>([]);
   const [metodo, setMetodo] = useState<Metodo>("efectivo");
   const [turno, setTurno] = useState<Turno>(TURNO_VACIO);
-  const [comprobante, setComprobante] = useState<{ n: string; total: number; metodo: string } | null>(null);
+  const [venta, setVenta] = useState<Venta | null>(null);
+  const [impresion, setImpresion] = useState<{ tipo: "venta" | "cierre"; titulo: string; n: number } | null>(null);
   const [error, setError] = useState("");
   const [cobrando, setCobrando] = useState(false);
   const cierreRef = useRef<HTMLDialogElement>(null);
@@ -73,8 +92,21 @@ export default function PaginaCaja() {
   const total = orden.reduce((s, i) => s + i.precio * i.qty, 0);
   const unidades = orden.reduce((s, i) => s + i.qty, 0);
 
+  // Imprime cuando el documento ya está marcado en el DOM, no antes. Depende solo del pedido
+  // de impresión: si dependiera de la venta, cada venta nueva abriría otra vez el diálogo.
+  useEffect(() => {
+    if (impresion) imprimirDocumento(impresion.titulo);
+  }, [impresion]);
+
+  const pedirImpresion = (tipo: "venta" | "cierre") =>
+    setImpresion((previa) => ({
+      tipo,
+      titulo: tipo === "venta" ? `Comprobante ${venta?.numero ?? ""} - Grano y Aroma` : "Cierre de caja - Grano y Aroma",
+      n: (previa?.n ?? 0) + 1,
+    }));
+
   const agregar = (item: Item) => {
-    setComprobante(null);
+    setVenta(null);
     setError("");
     setOrden((o) => {
       const ya = o.find((x) => x.id === item.id)?.qty ?? 0;
@@ -95,13 +127,42 @@ export default function PaginaCaja() {
     });
     setCobrando(false);
     if (error) return setError(mensajeDeError(error));
-    setComprobante({ n: data.codigo, total: Number(data.total), metodo: METODOS.find((m) => m.v === metodo)!.label });
+    // El detalle se copia de la orden antes de vaciarla; si no, el comprobante saldría vacío.
+    setVenta({
+      numero: data.codigo,
+      hora: new Date().toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit", hour12: false }),
+      lineas: orden.map((l) => ({ nombre: l.nombre, categoria: grupoDe(l), qty: l.qty, precio: l.precio })),
+      total: Number(data.total),
+      metodo: METODOS.find((m) => m.v === metodo)!.label,
+    });
     setOrden([]);
     cargar();
     cargarTurno();
   };
 
   const totalTurno = Object.values(turno).reduce((s, x) => s + x.monto, 0);
+  const ventasTurno = Object.values(turno).reduce((s, x) => s + x.ventas, 0);
+
+  /** Hoja de Excel del cierre de caja (RF-19). */
+  const hojasCierre = (): HojaExcel[] => [
+    {
+      nombre: "Cierre de caja",
+      columnas: [
+        { titulo: "Método de pago", clave: "metodo" },
+        { titulo: "Ventas", clave: "ventas", formato: "entero" },
+        { titulo: "Monto", clave: "monto", formato: "moneda" },
+        { titulo: "Ticket promedio", clave: "ticket", formato: "moneda" },
+        { titulo: "Participación", clave: "parte", formato: "porcentaje" },
+      ],
+      filas: METODOS.map((m) => ({
+        metodo: m.label,
+        ventas: turno[m.v].ventas,
+        monto: turno[m.v].monto,
+        ticket: turno[m.v].ventas ? turno[m.v].monto / turno[m.v].ventas : 0,
+        parte: totalTurno ? turno[m.v].monto / totalTurno : 0,
+      })),
+    },
+  ];
 
   return (
     <div className="caja">
@@ -148,11 +209,11 @@ export default function PaginaCaja() {
         <h2 id="orden-titulo">Orden actual</h2>
         <p className="caja__sub">{unidades === 1 ? "1 producto" : `${unidades} productos`}</p>
 
-        {comprobante && (
+        {venta && (
           <div className="caja__comprobante" role="status">
-            <strong>Venta registrada · {comprobante.n}</strong>
-            <span>{formatBs(comprobante.total)} en {comprobante.metodo.toLowerCase()}</span>
-            <button type="button" className="link" onClick={() => window.print()}>Imprimir comprobante</button>
+            <strong>Venta registrada · {venta.numero}</strong>
+            <span>{formatBs(venta.total)} en {venta.metodo.toLowerCase()}</span>
+            <button type="button" className="link" onClick={() => pedirImpresion("venta")}>Imprimir comprobante</button>
           </div>
         )}
 
@@ -218,8 +279,108 @@ export default function PaginaCaja() {
             <strong>{formatBs(totalTurno)}</strong>
           </li>
         </ul>
-        <button type="button" className="btn btn--primary" onClick={() => window.print()}>Imprimir reporte</button>
+        <BotonesDocumento
+          concepto="cierre-de-caja"
+          tituloPdf="Cierre de caja - Grano y Aroma"
+          hojas={hojasCierre}
+          alImprimir={() => pedirImpresion("cierre")}
+        />
       </dialog>
+
+      {/* Los dos documentos en papel. Solo el que se pidió lleva la clase imprimible. */}
+      {venta && (
+        <HojaDocumento
+          className={`solo-papel${impresion?.tipo === "venta" ? " imprimible" : ""}`}
+          titulo="Comprobante de venta"
+          subtitulo={`Atención en caja · ${venta.hora}`}
+          numero={venta.numero}
+          etiquetaNumero="Venta"
+        >
+          <section className="doc__bloque">
+            <table className="doc__tabla">
+              <thead>
+                <tr>
+                  <th scope="col">Producto</th>
+                  <th scope="col" className="num">Cantidad</th>
+                  <th scope="col" className="num">Precio</th>
+                  <th scope="col" className="num">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {venta.lineas.map((l, i) => (
+                  <tr key={`${l.nombre}-${i}`}>
+                    <td>
+                      {l.nombre}
+                      <small>{l.categoria}</small>
+                    </td>
+                    <td className="num">{l.qty}</td>
+                    <td className="num">{formatBs(l.precio)}</td>
+                    <td className="num">{formatBs(l.precio * l.qty)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={3}>Método de pago</td>
+                  <td className="num">{venta.metodo}</td>
+                </tr>
+                <tr className="doc__gran-total">
+                  <td colSpan={3}>Total</td>
+                  <td className="num">{formatBs(venta.total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </section>
+          <p className="doc__sub">Gracias por su compra.</p>
+        </HojaDocumento>
+      )}
+
+      <HojaDocumento
+        className={`solo-papel${impresion?.tipo === "cierre" ? " imprimible" : ""}`}
+        titulo="Cierre de caja"
+        subtitulo="Ventas del día en caja"
+        numero={`CC-${fechaISO()}`}
+        etiquetaNumero="Cierre"
+      >
+        <section className="doc__bloque">
+          <table className="doc__tabla">
+            <thead>
+              <tr>
+                <th scope="col">Método de pago</th>
+                <th scope="col" className="num">Ventas</th>
+                <th scope="col" className="num">Ticket promedio</th>
+                <th scope="col" className="num">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {METODOS.map((m) => (
+                <tr key={m.v}>
+                  <td>{m.label}</td>
+                  <td className="num">{turno[m.v].ventas}</td>
+                  <td className="num">{formatBs(turno[m.v].ventas ? turno[m.v].monto / turno[m.v].ventas : 0)}</td>
+                  <td className="num">{formatBs(turno[m.v].monto)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="doc__gran-total">
+                <td>Total del día</td>
+                <td className="num">{ventasTurno}</td>
+                <td className="num" />
+                <td className="num">{formatBs(totalTurno)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+
+        <section className="doc__bloque">
+          <h3>Conformidad</h3>
+          <dl className="doc__datos">
+            <div><dt>Cajero</dt><dd>_______________________</dd></div>
+            <div><dt>Supervisor</dt><dd>_______________________</dd></div>
+          </dl>
+        </section>
+      </HojaDocumento>
     </div>
   );
 }
