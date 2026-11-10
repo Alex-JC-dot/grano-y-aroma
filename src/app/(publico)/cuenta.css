@@ -156,10 +156,32 @@
 .tc-form__cabeza h2 { margin: 0 0 8px; font: 400 clamp(30px, 3vw, 38px) / 1.08 var(--font-fraunces), Georgia, serif; letter-spacing: -0.015em; color: var(--tc-crema); }
 .tc-form__cabeza p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--tc-suave); }
 .tc-form__cabeza .tc-form__motivo { margin-top: 12px; padding: 10px 14px; border-left: 2px solid var(--tc-cobre); background: rgba(211, 154, 106, 0.1); border-radius: 0 8px 8px 0; color: var(--tc-crema); font-size: 15px; }
-.tc-form__modos { display: flex; gap: 4px; padding: 4px; margin-top: 4px; border-radius: 999px; background: rgba(239, 231, 220, 0.07); }
-.tc-form__modos button { flex: 1; height: 42px; border: 0; border-radius: 999px; background: transparent; color: var(--tc-suave); font: 500 15px var(--font-figtree), system-ui, sans-serif; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
+/* Pestañas: una sola píldora crema que se desliza de una a otra. */
+.tc-form__modos { position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 4px; margin-top: 4px; border-radius: 999px; background: rgba(239, 231, 220, 0.07); }
+.tc-form__modos::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 999px;
+  background: var(--tc-crema);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: transform 0.45s cubic-bezier(0.65, 0, 0.25, 1);
+}
+.tc-form__modos[data-modo="crear"]::before { transform: translateX(100%); }
+.tc-form__modos button { position: relative; z-index: 1; height: 42px; border: 0; border-radius: 999px; background: transparent; color: var(--tc-suave); font: 500 15px var(--font-figtree), system-ui, sans-serif; cursor: pointer; transition: color 0.35s ease; }
 .tc-form__modos button:hover { color: var(--tc-crema); }
-.tc-form__modos button.is-on { background: var(--tc-crema); color: #2a1f1a; }
+.tc-form__modos button.is-on { color: #2a1f1a; }
+
+/* Lo que cambia al pasar de un modo a otro entra con un fundido corto. */
+.tc-anima { animation: tc-aparece 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes tc-aparece { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .tc-form__modos::before, .tc-form__modos button { transition: none; }
+  .tc-anima { animation: none; }
+}
 .tc-campo label { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 500; color: var(--tc-suave); }
 .tc-campo input {
   width: 100%;

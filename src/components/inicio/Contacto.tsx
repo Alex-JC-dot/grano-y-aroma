@@ -79,7 +79,7 @@ export default function Contacto() {
             </div>
             <div>
               <dt>WhatsApp</dt>
-              <dd><a href="https://wa.me/59174212541" className="link" target="_blank" rel="noreferrer">+591 742 12541</a></dd>
+              <dd><a href="https://wa.me/59174814521" className="link" target="_blank" rel="noreferrer">+591 748 14521</a></dd>
             </div>
             <div>
               <dt>Ubicación</dt>

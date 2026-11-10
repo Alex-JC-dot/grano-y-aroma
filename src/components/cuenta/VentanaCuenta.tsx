@@ -176,13 +176,16 @@ export function FormularioCuenta({ motivo, alTerminar, alCancelar, soloEntrar = 
       )}
 
       <div className="tc-form__cabeza">
-        <h2 id="cuenta-titulo">{titulo[0]}</h2>
-        <p>{titulo[1]}</p>
+        {/* La key reinicia el fundido cada vez que cambia el modo. */}
+        <div key={modo} className="tc-anima">
+          <h2 id="cuenta-titulo">{titulo[0]}</h2>
+          <p>{titulo[1]}</p>
+        </div>
         {motivo && (modo === "entrar" || modo === "crear") && <p className="tc-form__motivo">{motivo}</p>}
       </div>
 
       {!soloEntrar && (modo === "entrar" || modo === "crear") && (
-        <div className="tc-form__modos" role="tablist" aria-label="Cuenta">
+        <div className="tc-form__modos" role="tablist" aria-label="Cuenta" data-modo={modo}>
           <button type="button" role="tab" aria-selected={modo === "entrar"} className={modo === "entrar" ? "is-on" : ""} onClick={() => cambiarModo("entrar")}>
             Iniciar sesión
           </button>
@@ -193,7 +196,7 @@ export function FormularioCuenta({ motivo, alTerminar, alCancelar, soloEntrar = 
       )}
 
       {modo === "crear" && (
-        <div className="tc-campo">
+        <div className="tc-campo tc-anima">
           <label htmlFor="cu-nombre">Nombre</label>
           <input id="cu-nombre" autoComplete="name" value={nombre} onChange={(e) => setNombre(e.target.value)} />
         </div>
@@ -240,14 +243,14 @@ export function FormularioCuenta({ motivo, alTerminar, alCancelar, soloEntrar = 
       )}
 
       {(modo === "crear" || modo === "nueva") && (
-        <div className="tc-campo">
+        <div className="tc-campo tc-anima">
           <label htmlFor="cu-clave2">Repite la contraseña</label>
           <input id="cu-clave2" type={verClave ? "text" : "password"} autoComplete="new-password" value={clave2} onChange={(e) => setClave2(e.target.value)} />
         </div>
       )}
 
       {modo === "entrar" && (
-        <div className="tc-form__fila">
+        <div className="tc-form__fila tc-anima">
           <label className="tc-form__recordar">
             <input type="checkbox" checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
             Recordarme

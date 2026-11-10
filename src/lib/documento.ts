@@ -11,7 +11,7 @@ export const EMPRESA = {
   nombre: "Grano y Aroma",
   rubro: "Café de especialidad",
   direccion: "Centro histórico, Sucre, Bolivia",
-  whatsapp: "+591 742 12541",
+  whatsapp: "+591 748 14521",
   correo: "alexcalatayud@gmail.com",
 } as const;
 
