@@ -12,7 +12,7 @@
 .inicio .mapa__lienzo { grid-column: 1 / span 6; position: relative; max-width: 520px; width: 100%; justify-self: center; }
 .inicio .mapa__area { position: relative; }
 .inicio .mapa__svg { display: block; width: 100%; height: auto; overflow: visible; }
-.inicio .mapa__pais { fill: var(--bg); stroke: rgba(42, 31, 26, 0.35); stroke-width: 1.5; stroke-linejoin: round; }
+.inicio .mapa__pais { fill: var(--bg); stroke: var(--line-maxima); stroke-width: 1.5; stroke-linejoin: round; }
 
 /* Rutas hacia Sucre: se dibujan al aparecer la sección */
 .inicio .mapa__ruta {
@@ -60,16 +60,16 @@ html[data-revelar-activo="on"] .inicio .mapa:not([data-visible]) .mapa__ruta { s
 .inicio .mapa__nombre {
   padding: 5px 9px;
   border-radius: 999px;
-  background: rgba(230, 222, 212, 0.9);
+  background: var(--surface-trans);
   transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
 }
 .inicio .mapa__punto:hover .mapa__marca { transform: scale(1.25); }
 .inicio .mapa__punto.is-on .mapa__nombre { background: var(--ink); color: var(--bg); }
 .inicio .mapa__punto.is-on .mapa__marca { animation: mapa-pulso 2s infinite; }
 @keyframes mapa-pulso {
-  0% { box-shadow: 0 0 0 3px var(--surface), 0 0 0 3px rgba(122, 74, 44, 0.45); }
-  70% { box-shadow: 0 0 0 3px var(--surface), 0 0 0 14px rgba(122, 74, 44, 0); }
-  100% { box-shadow: 0 0 0 3px var(--surface), 0 0 0 3px rgba(122, 74, 44, 0); }
+  0% { box-shadow: 0 0 0 3px var(--surface), 0 0 0 3px var(--accent-halo); }
+  70% { box-shadow: 0 0 0 3px var(--surface), 0 0 0 14px var(--accent-halo-0); }
+  100% { box-shadow: 0 0 0 3px var(--surface), 0 0 0 3px var(--accent-halo-0); }
 }
 .inicio .mapa__leyenda { display: flex; align-items: center; gap: 8px; margin: 16px 0 0; font-size: 13px; color: var(--muted); }
 .inicio .mapa__leyenda .mapa__marca { width: 10px; height: 10px; box-shadow: none; }
@@ -126,14 +126,14 @@ html[data-revelar-activo="on"] .inicio .mapa:not([data-visible]) .mapa__ruta { s
   gap: 2px;
   padding: 12px 16px;
   border-radius: var(--r-btn);
-  background: rgba(230, 222, 212, 0.94);
+  background: var(--surface-trans);
   color: var(--ink);
 }
 .inicio .region__nombre { font: 400 22px/1.15 var(--f-display); }
 .inicio .region__detalle { font-size: 14px; color: var(--muted); }
 .inicio .region.is-on { box-shadow: 0 0 0 2px var(--ink); }
 .inicio .region.is-on .region__texto { background: var(--ink); color: var(--bg); }
-.inicio .region.is-on .region__detalle { color: rgba(230, 222, 212, 0.8); }
+.inicio .region.is-on .region__detalle { color: var(--on-ink-soft); }
 @media (max-width: 767px) {
   .inicio .regiones { grid-template-columns: 1fr; gap: 16px; }
   .inicio .region__nombre { font-size: 19px; }

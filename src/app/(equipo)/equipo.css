@@ -33,10 +33,31 @@
 }
 .equipo__menu nav a span { font-weight: 500; }
 .equipo__menu nav a small { font-size: 13px; color: var(--muted); }
-.equipo__menu nav a:hover { background: rgba(42, 31, 26, 0.06); }
+.equipo__menu nav a:hover { background: var(--ink-roce); }
 .equipo__menu nav a[aria-current="page"] { background: var(--ink); color: var(--bg); }
-.equipo__menu nav a[aria-current="page"] small { color: rgba(230, 222, 212, 0.75); }
-.equipo__tienda { margin-top: auto; align-self: flex-start; font-weight: 500; }
+.equipo__menu nav a[aria-current="page"] small { color: var(--on-ink-soft); }
+.equipo__pie { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.equipo__pie .link { font-weight: 500; }
+/* En la barra lateral el botón de tema es más chico que en la tienda: aquí manda la densidad. */
+.equipo__pie .boton-tema {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-maxima);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--t-rapida) var(--ease);
+}
+.equipo__pie .boton-tema:hover:not(:disabled) { border-color: var(--ink); }
+.equipo__pie .boton-tema:disabled { cursor: default; }
+
+@media (max-width: 899px) {
+  .equipo__pie { margin-top: 0; }
+}
 
 .equipo__main { min-width: 0; }
 .equipo__pagina { padding: 40px 48px 64px; max-width: 1240px; }
@@ -44,7 +65,7 @@
 .equipo__cabeza h1 { margin: 0; font: 400 clamp(34px, 3vw, 46px) / 1.05 var(--f-display); letter-spacing: -0.025em; }
 .equipo__cabeza .eyebrow { margin-bottom: 8px; }
 .equipo__acciones { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
-.equipo__aviso { margin: 0; color: #2f5a25; font-weight: 500; }
+.equipo__aviso { margin: 0; color: var(--exito); font-weight: 500; }
 .equipo__fila { display: flex; gap: 12px; flex-wrap: wrap; }
 .equipo__dos { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
 .equipo .panel h2 { margin: 0 0 20px; font: 400 26px/1.15 var(--f-display); }
@@ -96,8 +117,8 @@
 }
 .dato__label { font-size: 14px; color: var(--muted); }
 .dato__valor { font: 400 30px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
-.dato__nota { font-size: 14px; color: #2f5a25; }
-.dato__nota.is-alerta { color: #8a5a0d; }
+.dato__nota { font-size: 14px; color: var(--exito); }
+.dato__nota.is-alerta { color: var(--aviso-fuerte); }
 .dato--boton { cursor: pointer; transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease); }
 .dato--boton:hover { transform: translateY(-2px); }
 .dato--boton.is-on { box-shadow: inset 0 0 0 2px var(--ink); }
@@ -112,8 +133,8 @@
 .tabla tr:last-child td { border-bottom: 0; }
 .tabla td small { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
 .tabla .num { text-align: right; font-variant-numeric: tabular-nums; }
-.estado--recibido { background: rgba(93, 123, 149, 0.18); color: #2f4d66; }
-.estado--camino { background: rgba(122, 74, 44, 0.15); color: var(--accent); }
+.estado--recibido { background: var(--info-bg); color: var(--info); }
+.estado--camino { background: var(--accent-velo); color: var(--accent); }
 
 /* Barras de ventas */
 .barras { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; gap: 18px; }
@@ -127,7 +148,7 @@
   display: flex;
   justify-content: space-between;
   padding: 18px 20px;
-  border: 1px solid rgba(42, 31, 26, 0.25);
+  border: 1px solid var(--line-media);
   border-radius: var(--r-card);
   color: var(--ink);
   text-decoration: none;
@@ -158,12 +179,12 @@
   cursor: pointer;
   transition: transform 0.15s var(--ease), border-color 0.15s var(--ease);
 }
-.caja__item:hover { border-color: rgba(42, 31, 26, 0.35); }
+.caja__item:hover { border-color: var(--line-maxima); }
 .caja__item:active { transform: scale(0.97); }
 .caja__cat { font-size: 12px; color: var(--muted); }
 .caja__nombre { font: 400 19px/1.2 var(--f-display); }
 .caja__precio { margin-top: auto; font-weight: 500; font-variant-numeric: tabular-nums; }
-.caja__stock { position: absolute; top: 12px; right: 12px; padding: 3px 8px; border-radius: 999px; background: rgba(196, 149, 47, 0.2); color: #6e4f0d; font-size: 12px; font-weight: 500; }
+.caja__stock { position: absolute; top: 12px; right: 12px; padding: 3px 8px; border-radius: 999px; background: var(--aviso-bg); color: var(--aviso); font-size: 12px; font-weight: 500; }
 
 .caja__orden {
   position: sticky;
@@ -189,8 +210,8 @@
 .caja__total strong { font: 400 30px/1 var(--f-display); font-variant-numeric: tabular-nums; }
 .caja__cobrar { width: 100%; height: 56px; font-size: 17px; }
 .caja__cobrar:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.caja__comprobante { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; margin: 0 0 12px; border-radius: var(--r-btn); background: rgba(70, 110, 60, 0.14); color: #2f5a25; }
-.caja__comprobante .link { align-self: flex-start; color: #2f5a25; border: 0; background: none; padding: 0; font: inherit; cursor: pointer; background-image: linear-gradient(currentColor, currentColor); background-size: 100% 1px; background-position: 0 100%; background-repeat: no-repeat; }
+.caja__comprobante { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; margin: 0 0 12px; border-radius: var(--r-btn); background: var(--exito-bg); color: var(--exito); }
+.caja__comprobante .link { align-self: flex-start; color: var(--exito); border: 0; background: none; padding: 0; font: inherit; cursor: pointer; background-image: linear-gradient(currentColor, currentColor); background-size: 100% 1px; background-position: 0 100%; background-repeat: no-repeat; }
 
 /* Diálogo (cierre de caja) */
 .dialogo {
@@ -200,9 +221,9 @@
   border-radius: var(--r-card);
   background: var(--bg);
   color: var(--ink);
-  box-shadow: 0 24px 64px rgba(42, 31, 26, 0.3);
+  box-shadow: var(--sombra-dialogo);
 }
-.dialogo::backdrop { background: rgba(42, 31, 26, 0.4); }
+.dialogo::backdrop { background: var(--velo-dialogo); }
 .dialogo__cabeza { display: flex; justify-content: space-between; align-items: flex-start; }
 .dialogo__cabeza h2 { margin: 0; font: 400 30px/1.1 var(--f-display); }
 .dialogo__filas { list-style: none; margin: 0 0 20px; padding: 0; }
@@ -217,7 +238,7 @@
 .tueste-form textarea {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid rgba(42, 31, 26, 0.3);
+  border: 1px solid var(--line-fuerte);
   border-radius: 6px;
   background: var(--bg);
   color: var(--ink);
@@ -252,7 +273,7 @@
   text-align: left;
   cursor: pointer;
 }
-.pedido:hover { border-color: rgba(42, 31, 26, 0.3); }
+.pedido:hover { border-color: var(--line-fuerte); }
 .pedido.is-on { border: 2px solid var(--ink); padding: 15px 17px; }
 .pedido__fila { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .pedido__cliente { font: 400 19px/1.2 var(--f-display); }
@@ -321,7 +342,7 @@
 .admin-sub textarea {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid rgba(42, 31, 26, 0.3);
+  border: 1px solid var(--line-fuerte);
   border-radius: 6px;
   background: var(--bg);
   color: var(--ink);
@@ -336,7 +357,7 @@
 .admin-sub__foto:has(input:focus-visible) { outline-color: var(--ink); }
 .admin-sub__acciones { justify-content: flex-end; gap: 16px; }
 .admin-sub__acciones .link { background: none; border: 0; padding: 0; font: 500 15px var(--f-text); color: var(--ink); cursor: pointer; white-space: nowrap; }
-.admin-sub__borrar.link { color: #b3261e; }
+.admin-sub__borrar.link { color: var(--error); }
 @media (max-width: 760px) { .admin-sub__grid { grid-template-columns: 1fr; } }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
@@ -345,7 +366,7 @@
   width: 100%;
   height: 48px;
   padding: 0 40px 0 14px;
-  border: 1px solid rgba(42, 31, 26, 0.3);
+  border: 1px solid var(--line-fuerte);
   border-radius: 6px;
   background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%232a1f1a' stroke-width='1.6' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center;
   color: var(--ink);
@@ -355,7 +376,7 @@
 }
 .tueste-form__select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .admin-usu__rol { height: 40px; min-width: 170px; }
-.admin-prod__num { width: 96px; height: 38px; padding: 0 10px; border: 1px solid rgba(42, 31, 26, 0.25); border-radius: 6px; background: var(--bg); color: var(--ink); font: 500 15px var(--f-text); text-align: right; }
+.admin-prod__num { width: 96px; height: 38px; padding: 0 10px; border: 1px solid var(--line-media); border-radius: 6px; background: var(--bg); color: var(--ink); font: 500 15px var(--f-text); text-align: right; }
 .admin-prod__num:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .admin-prod__color { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; outline: 2px solid transparent; outline-offset: 3px; }
 .admin-prod__color.is-on { outline-color: var(--ink); }
@@ -374,3 +395,36 @@
 .mensajes__cuerpo p { margin: 0 0 6px; line-height: 1.55; }
 .panel h2 .estado { margin-left: 8px; vertical-align: middle; font-family: var(--f-text); }
 @media (max-width: 760px) { .tueste-form__grid { grid-template-columns: 1fr; } }
+
+/* ---------- Descargas de reportes y comprobantes ---------- */
+
+.equipo__acciones { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.descargas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.descargas .btn { height: 40px; padding: 0 16px; font-size: 15px; }
+.descargas__error { width: 100%; margin: 0; font-size: 14px; color: var(--error); }
+
+@media (max-width: 639px) {
+  .equipo__acciones { width: 100%; }
+  .descargas { width: 100%; }
+  .descargas .btn { flex: 1; }
+}
+
+/* Descargas de bodega: sobre las pestañas, alineadas a la derecha. */
+.erp__descargas { justify-content: flex-end; margin: -16px 0 20px; }
+@media (max-width: 639px) { .erp__descargas { margin-top: 0; } }
+
+/* Las pestañas, los filtros y los formularios no van al papel. */
+@media print {
+  .pestanas,
+  .filtros__opciones,
+  .segmentado,
+  .caja__productos,
+  .caja__pago,
+  .dialogo__filas,
+  .caja__comprobante .link { display: none !important; }
+}
+/* En oscuro, la flecha del select va en tinta clara (el SVG no puede leer variables). */
+[data-theme="dark"] .tueste-form__select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23f0e8e0' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
+}

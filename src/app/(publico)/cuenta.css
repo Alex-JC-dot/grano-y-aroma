@@ -38,7 +38,7 @@
 .inicio .menu-cuenta__panel {
   position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; min-width: 240px;
   display: flex; flex-direction: column; padding: 8px; border-radius: 10px; background: var(--bg);
-  border: 1px solid var(--line); box-shadow: 0 18px 40px rgba(42, 31, 26, 0.2);
+  border: 1px solid var(--line); box-shadow: var(--sombra-3);
 }
 .inicio .menu-cuenta__quien { margin: 0; padding: 10px 12px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
 .inicio .menu-cuenta__quien span { font-size: 13px; color: var(--muted); }
@@ -48,7 +48,7 @@
   font: 400 15px var(--f-text); text-align: left; text-decoration: none; cursor: pointer;
 }
 .inicio .menu-cuenta__panel a:hover,
-.inicio .menu-cuenta__panel button:hover { background: rgba(42, 31, 26, 0.06); }
+.inicio .menu-cuenta__panel button:hover { background: var(--ink-roce); }
 
 .guardia { min-height: 70vh; display: grid; place-items: center; padding: 40px 16px; }
 .guardia__caja { width: min(100%, 460px); padding: 8px; border-radius: 14px; background: var(--surface); }

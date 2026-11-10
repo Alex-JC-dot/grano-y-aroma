@@ -1,38 +1,21 @@
 /*
- * Página de inicio — sistema visual nuevo (guía: taste-skill).
- * Todo vive bajo .inicio para no afectar a los paneles internos heredados del Lab 8,
- * que siguen usando el tema oscuro de globals.css.
+ * Sistema visual de las páginas públicas.
  *
- * Paleta: base "Warm paper and walnut" de taste-skill, con el fondo ajustado al crema
- * del video del hero y el acento nogal (#7A4A2C), el color del grano tostado.
+ * El color, la tipografía, los radios y las sombras salen de tokens.css, que define los dos
+ * temas. Antes este archivo declaraba su propia paleta dentro de .inicio y carrito.css
+ * repetía la misma por su cuenta: con tres copias del mismo crema, el modo oscuro era
+ * imposible. Aquí quedan solo las medidas propias del diseño de estas páginas —alto de la
+ * barra, márgenes laterales, ritmo vertical—, que no dependen del tema.
+ *
+ * También desapareció body:has(.inicio){background}, que existía para tapar el tema oscuro
+ * del Laboratorio 8; ese tema ya no está, y el fondo lo pone <body> desde globals.css.
  */
 
-body:has(.inicio) {
-  background: #e6ded4;
-}
-
 .inicio {
-  --bg: #e6ded4; /* crema del video (borde inferior izquierdo del hero) */
-  --surface: #dcd2c6; /* un paso más oscuro, del lado derecho del video */
-  --ink: #2a1f1a;
-  --muted: #65574c;
-  --line: rgba(42, 31, 26, 0.14);
-  --accent: #7a4a2c;
-  --accent-hover: #643a20;
-  --accent-ink: #ffffff;
-
-  --r-btn: 6px;  /* esquinas levemente redondeadas: ni planas ni "amigables" */
-  --r-card: 10px;
-
   --nav: 72px;
   --gut: 80px;
   --padt: 120px;
   --padb: 96px;
-
-  --f-display: var(--font-fraunces), Georgia, serif;
-  --f-text: var(--font-figtree), system-ui, sans-serif;
-
-  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
   background: var(--bg);
   color: var(--ink);
@@ -95,7 +78,7 @@ body:has(.inicio) {
 .inicio .btn--primary { background: var(--accent); color: var(--accent-ink); }
 .inicio .btn--primary:hover { background: var(--accent-hover); }
 
-.inicio .btn--secondary { background: transparent; color: var(--ink); border-color: rgba(42, 31, 26, 0.35); }
+.inicio .btn--secondary { background: transparent; color: var(--ink); border-color: var(--line-maxima); }
 .inicio .btn--secondary:hover { border-color: var(--ink); }
 
 .inicio .btn svg { transition: transform 0.18s var(--ease); }
@@ -154,7 +137,7 @@ body:has(.inicio) {
   right: 0;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
-  box-shadow: 0 18px 30px -18px rgba(42, 31, 26, 0.35);
+  box-shadow: var(--sombra-apoyo);
 }
 .inicio .nav__movil[hidden] { display: none; }
 .inicio .nav__movil ul { list-style: none; margin: 0; padding: 8px var(--gut) 24px; display: flex; flex-direction: column; }
@@ -167,7 +150,7 @@ body:has(.inicio) {
   height: 48px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(42, 31, 26, 0.35);
+  border: 1px solid var(--line-maxima);
   border-radius: var(--r-btn);
   background: transparent;
   color: var(--ink);
@@ -189,6 +172,52 @@ body:has(.inicio) {
   text-align: center;
 }
 
+/*
+ * Botón de tema. Mismo tamaño y caja que el carrito para que la barra no salte al montar.
+ * El icono entra con un giro corto: hace legible que el cambio fue intencional.
+ */
+.inicio .boton-tema {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-maxima);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--t-rapida) var(--ease), transform var(--t-rapida) var(--ease),
+    background-color var(--t-rapida) var(--ease);
+}
+.inicio .boton-tema:hover:not(:disabled) { border-color: var(--ink); transform: translateY(-1px); }
+.inicio .boton-tema:disabled { cursor: default; } /* mientras monta: hueco reservado, sin icono */
+.inicio .boton-tema svg { animation: tema-entra 0.3s var(--ease); }
+
+@keyframes tema-entra {
+  from { opacity: 0; transform: rotate(-35deg) scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inicio .boton-tema svg { animation: none; }
+}
+
+/*
+ * Entrar: hoy es solo el lugar reservado del inicio de sesión (ver NavInicio.tsx).
+ * Se estila como enlace terciario para que no compita con "Comprar café", que es la
+ * acción principal de una tienda.
+ */
+.inicio .nav__entrar {
+  height: 48px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 500 16px/1 var(--f-text);
+  cursor: default;
+  transition: color var(--t-rapida) var(--ease);
+}
+.inicio .nav__entrar:hover { color: var(--ink); }
+
 @media (max-width: 1099px) {
   .inicio .nav__row { display: flex; justify-content: space-between; }
   .inicio .nav__centro { display: none; }
@@ -204,6 +233,44 @@ body:has(.inicio) {
 }
 
 /* ---------- Hero con animación por scroll ---------- */
+
+/*
+ * El hero en modo oscuro.
+ *
+ * La escena es un video de fondo crema sobre el que se dibuja el grano. Un video no se
+ * puede teñir con CSS sin apagar justo lo que la escena muestra, así que en oscuro el hero
+ * se mantiene como un bloque iluminado dentro de la página: una ventana encendida entre la
+ * barra oscura y el resto del contenido.
+ *
+ * Lo que sí hay que fijar es la tinta de lo que va ENCIMA del video. Sin esto el título
+ * hereda el --ink claro del tema y queda crema sobre crema, ilegible. Redeclarar aquí los
+ * tokens de la paleta clara hace que todo lo de dentro —título, pasos, barra de progreso,
+ * botón— vuelva solo a sus colores de siempre, sin tocar ninguna regla más.
+ *
+ * Si se prefiere un hero oscuro, se cambia este bloque por un filtro sobre .hero__canvas
+ * más un velo; pero el grano tostado es oscuro y tiende a perderse contra un fondo oscuro.
+ */
+[data-theme="dark"] .inicio .hero__stage {
+  --bg: #e6ded4;
+  --surface: #dcd2c6;
+  --surface-alta: #d4c9bc;
+  --ink: #2a1f1a;
+  --muted: #65574c;
+  --soft: rgba(42, 31, 26, 0.55);
+  --line: rgba(42, 31, 26, 0.14);
+  --line-maxima: rgba(42, 31, 26, 0.35);
+  --accent: #7a4a2c;
+  --accent-hover: #643a20;
+  --accent-ink: #ffffff;
+
+  /*
+   * Imprescindible: no basta con redeclarar los tokens.
+   * Los elementos que no traen `color` propio —como .step__title— heredan el color ya
+   * calculado en .inicio, que se resolvió con el --ink del tema oscuro. Fijando `color`
+   * aquí, la cadena de herencia vuelve a arrancar desde la paleta clara.
+   */
+  color: var(--ink);
+}
 
 .inicio .hero {
   position: relative;
@@ -380,7 +447,7 @@ body:has(.inicio) {
   border-bottom: 1px solid var(--line);
   transition: background-color 0.25s var(--ease);
 }
-.inicio .row:hover { background: rgba(122, 74, 44, 0.04); }
+.inicio .row:hover { background: var(--accent-roce); }
 .inicio .row__name { grid-column: 1 / span 4; }
 .inicio .row__name h3 { margin: 0; font: 400 26px/1.2 var(--f-display); letter-spacing: -0.015em; }
 .inicio .row__name p { margin: 6px 0 0; font-size: 15px; color: var(--muted); }
@@ -479,8 +546,7 @@ body:has(.inicio) {
  * texto en crema sobre la zona oscura de la izquierda. Es la única sección oscura de la página.
  */
 .inicio .foot__dark {
-  --dark: #0e0703; /* el negro cálido del propio video */
-  --on-dark: #f3ebe1;
+  /* --dark y --on-dark son globales y fijos: esta banda se ve igual en ambos temas. */
   position: relative;
   height: clamp(480px, 50vw, 860px);
   overflow: hidden;
@@ -525,8 +591,9 @@ body:has(.inicio) {
   max-width: 34ch;
   font-size: 18px;
   line-height: 1.55;
-  color: rgba(243, 235, 225, 0.82);
+  color: var(--on-dark-soft);
 }
+/* Sobre el hero oscuro: colores fijos a propósito, no dependen del tema. */
 .inicio .btn--light { background: var(--on-dark); color: #2a1f1a; }
 .inicio .btn--light:hover { background: #ffffff; }
 .inicio .foot__dark :focus-visible { outline-color: var(--on-dark); }
@@ -597,13 +664,13 @@ html[data-revelar-activo="on"] .inicio [data-revelar][data-visible] {
 }
 
 /* ---------- Contáctanos (bajo la taza, sobre el mismo marrón oscuro) ---------- */
-.inicio .contacto { scroll-margin-top: var(--nav); background: #0e0703; color: #f3ebe1; padding: 24px 0 112px; }
+.inicio .contacto { scroll-margin-top: var(--nav); background: var(--dark); color: var(--on-dark); padding: 24px 0 112px; }
 .inicio .contacto__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: start; }
 .inicio .contacto__texto { grid-column: 1 / span 5; padding-top: 24px; }
 .inicio .contacto__texto h2 { margin: 0; font: 400 clamp(44px, 4.6vw, 72px) / 1 var(--f-display); letter-spacing: -0.03em; }
-.inicio .contacto__lead { margin: 24px 0 40px; font-size: 18px; line-height: 1.6; color: rgba(243, 235, 225, 0.82); max-width: 40ch; }
+.inicio .contacto__lead { margin: 24px 0 40px; font-size: 18px; line-height: 1.6; color: var(--on-dark-soft); max-width: 40ch; }
 .inicio .contacto__datos { margin: 0; display: flex; flex-direction: column; gap: 20px; }
-.inicio .contacto__datos dt { font-size: 14px; color: rgba(243, 235, 225, 0.65); margin-bottom: 4px; }
+.inicio .contacto__datos dt { font-size: 14px; color: var(--on-dark-mute); margin-bottom: 4px; }
 .inicio .contacto__datos dd { margin: 0; font: 400 22px/1.3 var(--f-display); }
 .inicio .contacto__form {
   grid-column: 7 / span 6;
@@ -612,9 +679,10 @@ html[data-revelar-activo="on"] .inicio [data-revelar][data-visible] {
   gap: 20px;
   padding: 40px;
   border-radius: 20px;
-  background: var(--bg);
+  /* Tarjeta dentro de la franja oscura: en claro crema, en oscuro superficie elevada. */
+  background: var(--panel-sobre-dark);
   color: var(--ink);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--sombra-3);
 }
 .inicio .contacto__fila { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .inicio .contacto__campo label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500; }
@@ -624,24 +692,24 @@ html[data-revelar-activo="on"] .inicio [data-revelar][data-visible] {
   width: 100%;
   padding: 0 16px;
   height: 52px;
-  border: 1px solid rgba(42, 31, 26, 0.18);
+  border: 1px solid var(--line-suave);
   border-radius: 10px;
-  background: #efe9e1;
+  background: var(--surface-hundida);
   color: var(--ink);
   font: 400 16px var(--f-text);
   transition: border-color 0.18s var(--ease), background-color 0.18s var(--ease);
 }
 .inicio .contacto__campo textarea { height: auto; min-height: 120px; padding: 14px 16px; resize: vertical; }
-.inicio .contacto__campo :is(input, select, textarea):hover { border-color: rgba(42, 31, 26, 0.4); }
-.inicio .contacto__campo :is(input, select, textarea):focus { background: #f6f1ea; border-color: var(--accent); }
-.inicio .contacto__campo [aria-invalid="true"] { border-color: #b3261e; }
-.inicio .contacto__error { margin: 6px 0 0; font-size: 14px; color: #b3261e; }
+.inicio .contacto__campo :is(input, select, textarea):hover { border-color: var(--line-hover); }
+.inicio .contacto__campo :is(input, select, textarea):focus { background: var(--surface-foco); border-color: var(--accent); }
+.inicio .contacto__campo [aria-invalid="true"] { border-color: var(--error); }
+.inicio .contacto__error { margin: 6px 0 0; font-size: 14px; color: var(--error); }
 .inicio .contacto__enviar { height: 56px; border-radius: 999px; justify-content: space-between; padding: 0 12px 0 28px; font-size: 17px; }
 .inicio .contacto__enviar svg { width: 32px; height: 32px; padding: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.95); color: var(--accent); }
 .inicio .contacto__listo { padding: 24px 0; }
 .inicio .contacto__listo h3 { margin: 0 0 8px; font: 400 34px/1.1 var(--f-display); }
 .inicio .contacto__listo p { margin: 0 0 24px; }
-.inicio .contacto :focus-visible { outline-color: #f3ebe1; }
+.inicio .contacto :focus-visible { outline-color: var(--on-dark); }
 .inicio .contacto__form :focus-visible { outline-color: var(--accent); }
 @media (max-width: 1023px) {
   .inicio .contacto__texto, .inicio .contacto__form { grid-column: 1 / -1; }
