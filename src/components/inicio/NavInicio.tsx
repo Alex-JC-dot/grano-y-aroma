@@ -99,6 +99,11 @@ export default function NavInicio() {
           {ENLACES.map((e) => (
             <li key={e.href}>{enlace(e)}</li>
           ))}
+          {/* En celular el tema vive aquí: en la barra no cabe junto a Login, carrito y menú. */}
+          <li className="nav__movil-tema">
+            <span>Modo claro u oscuro</span>
+            <BotonTema />
+          </li>
           <li>
             <Link href="/tienda" className="btn btn--primary" onClick={() => setMenu(false)}>
               Comprar café

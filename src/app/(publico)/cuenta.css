@@ -105,6 +105,11 @@
 .inicio .menu-cuenta__entrar:hover { background: var(--ink, #2a1f1a); color: var(--bg, #e6ded4); transform: translateY(-1px); }
 .inicio .menu-cuenta__entrar:focus-visible { outline: 2px solid var(--accent, #7a4a2c); outline-offset: 2px; }
 @media (max-width: 600px) { .inicio .menu-cuenta__entrar { padding: 0 12px; gap: 6px; } }
+/* En celulares angostos solo el ícono, para que el botón de menú quepa en la barra. */
+@media (max-width: 389px) {
+  .inicio .menu-cuenta__entrar { width: 44px; height: 44px; padding: 0; justify-content: center; }
+  .inicio .menu-cuenta__texto { display: none; }
+}
 
 /* =====================================================================
    Tarjeta de cuenta: molino en loop + panel espresso (login, ventana y equipo)
