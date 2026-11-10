@@ -6,7 +6,7 @@ import { useAuth } from "@/store/authStore";
 import { PANELES } from "@/lib/supabase";
 
 /**
- * Cuenta en la barra: sin sesión, un "Entrar" discreto que abre la ventana de cuenta; con
+ * Cuenta en la barra: sin sesión, un botón "Login" con borde que abre la ventana de cuenta; con
  * sesión, la inicial con su menú. Las acciones que guardan datos también piden la cuenta solas.
  */
 export default function MenuCuenta() {
@@ -34,7 +34,11 @@ export default function MenuCuenta() {
     if (cargando) return null;
     return (
       <button type="button" className="menu-cuenta__entrar" onClick={() => pedirCuenta("Entra o crea tu cuenta para ver tus pedidos, puntos y suscripción.")}>
-        Entrar
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4.4 3.6-7.5 8-7.5s8 3.1 8 7.5" />
+        </svg>
+        Login
       </button>
     );
   }
