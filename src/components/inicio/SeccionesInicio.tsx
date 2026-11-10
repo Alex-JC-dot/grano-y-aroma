@@ -191,6 +191,7 @@ export function PieInicio() {
               <li><Link href="/pos" className="link">Caja</Link></li>
               <li><Link href="/erp" className="link">Bodega y tueste</Link></li>
               <li><Link href="/admin" className="link">Administración</Link></li>
+              <li><Link href="/admin" className="link">Acceso del equipo</Link></li>
             </ul>
           </div>
         </div>

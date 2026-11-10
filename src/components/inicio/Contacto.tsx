@@ -1,7 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useRuta } from "@/lib/ruta";
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Sección "Contáctanos": va en el pie, bajo la taza, pero solo se muestra en el Inicio.
@@ -17,12 +18,14 @@ type Campos = { nombre: string; email: string; telefono: string; motivo: string;
 const VACIO: Campos = { nombre: "", email: "", telefono: "", motivo: "", mensaje: "" };
 
 export default function Contacto() {
-  const ruta = usePathname();
+  const ruta = useRuta();
   const [c, setC] = useState<Campos>(VACIO);
   const [err, setErr] = useState<Partial<Record<keyof Campos, string>>>({});
   const [enviado, setEnviado] = useState<string | null>(null);
 
-  const enviar = (e: React.FormEvent) => {
+  const [enviando, setEnviando] = useState(false);
+  const [fallo, setFallo] = useState("");
+  const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     const x: typeof err = {};
     if (!c.nombre.trim()) x.nombre = "Escribe tu nombre.";
@@ -33,6 +36,20 @@ export default function Contacto() {
     setErr(x);
     if (Object.keys(x).length) {
       document.getElementById(`ct-${Object.keys(x)[0]}`)?.focus();
+      return;
+    }
+    setEnviando(true);
+    setFallo("");
+    const { error: errorBase } = await supabase.from("mensajes").insert({
+      nombre: c.nombre.trim(),
+      email: c.email.trim(),
+      telefono: c.telefono.trim() || null,
+      motivo: c.motivo,
+      mensaje: c.mensaje.trim(),
+    });
+    setEnviando(false);
+    if (errorBase) {
+      setFallo("No pudimos enviar tu mensaje. Revisa tu conexión o escríbenos por WhatsApp.");
       return;
     }
     setEnviado(c.nombre.trim().split(" ")[0]);
@@ -116,8 +133,9 @@ export default function Contacto() {
                 <textarea id="ct-mensaje" rows={4} value={c.mensaje} onChange={cambiar("mensaje")} {...ayuda("mensaje")} />
                 {error("mensaje")}
               </div>
-              <button type="submit" className="btn btn--primary contacto__enviar">
-                Enviar mensaje
+              {fallo && <p className="contacto__error" role="alert">{fallo}</p>}
+              <button type="submit" className="btn btn--primary contacto__enviar" disabled={enviando}>
+                {enviando ? "Enviando…" : "Enviar mensaje"}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
                 </svg>

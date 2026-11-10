@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { products } from "@/lib/data";
+import { useProductos } from "@/store/catalogoStore";
 import { CATEGORIAS, categoriaDe, esCafe, opcionesDeFiltro } from "@/lib/catalogo";
 import TarjetaCafe from "./TarjetaCafe";
 
@@ -13,7 +13,8 @@ type IdCategoria = (typeof CATEGORIAS)[number]["id"];
  * Dentro de un grupo los filtros se suman (Chocolate o Frutal); entre grupos se combinan.
  */
 export default function Catalogo() {
-  const opciones = useMemo(() => opcionesDeFiltro(products), []);
+  const products = useProductos();
+  const opciones = useMemo(() => opcionesDeFiltro(products), [products]);
   const [categoria, setCategoria] = useState<IdCategoria>("todos");
   const [origenes, setOrigenes] = useState<string[]>([]);
   const [tuestes, setTuestes] = useState<string[]>([]);

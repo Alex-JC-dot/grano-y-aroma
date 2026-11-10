@@ -1,87 +1,32 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
-import { useEffect, useState } from "react";
 import { formatBs } from "@/lib/utils";
+import { useAuth } from "@/store/authStore";
+import { segundosA, useSubastas, type Subasta } from "@/store/subastasStore";
+import { tiempo } from "./EnVivo";
 
 /**
  * Partes de la página de Subastas: pestañas, próximas subastas (con aviso de apertura),
- * historial de subastas cerradas (RF-16) y "Cómo funciona". Datos de demostración hasta
- * que las subastas se publiquen desde el panel con Supabase.
+ * historial de subastas cerradas (RF-16) y "Cómo funciona". Todo sale de Supabase; el admin
+ * publica los lotes desde su panel.
  */
 
 export type Pestana = "vivo" | "proximas" | "cerradas";
 
-const PROXIMAS = [
-  {
-    id: "p1",
-    titulo: "Typica Villa Serrano — Cosecha temprana",
-    origen: "Villa Serrano, Chuquisaca · 1.900 msnm · 12 kg",
-    texto: "Cerezas recogidas a mano en la primera pasada de la cosecha, proceso lavado.",
-    salida: 380,
-    abreEnSeg: 2 * 86400 + 5 * 3600,
-    img: "/images/subastas/cosecha.webp",
-    alt: "Canasta de mimbre con cerezas de café rojas y amarillas entre los cafetos",
-  },
-  {
-    id: "p2",
-    titulo: "Caturra Padilla — Honey amarillo",
-    origen: "Padilla, Chuquisaca · 1.720 msnm · 15 kg",
-    texto: "Secado lento en pergamino durante tres semanas. Dulzor de panela y durazno.",
-    salida: 300,
-    abreEnSeg: 5 * 86400 + 2 * 3600,
-    img: "/images/subastas/pergamino.webp",
-    alt: "Café en pergamino extendido en una cama de secado con un rastrillo de madera",
-  },
-];
-
-const CERRADAS = [
-  {
-    id: "c1",
-    titulo: "Gesha Villa Serrano — Lote 2024",
-    origen: "Villa Serrano, Chuquisaca · 8 kg",
-    ganador: "Café Mirador SCZ",
-    final: 920,
-    salida: 450,
-    pujas: 14,
-    fecha: "18 de septiembre de 2025",
-    img: "/images/subastas/catacion.webp",
-    alt: "Taza de catación con una cuchara rompiendo la costra del café molido",
-  },
-  {
-    id: "c2",
-    titulo: "Bourbon rojo Padilla — Natural",
-    origen: "Padilla, Chuquisaca · 20 kg",
-    ganador: "Roasters del Sur",
-    final: 540,
-    salida: 260,
-    pujas: 11,
-    fecha: "2 de septiembre de 2025",
-    img: "/images/subastas/entrega.webp",
-    alt: "Saco pequeño de café verde con una etiqueta, listo para enviar junto a una caja",
-  },
-];
-
-function cuenta(seg: number) {
-  const d = Math.floor(seg / 86400);
-  const h = Math.floor((seg % 86400) / 3600);
-  const m = Math.floor((seg % 3600) / 60);
-  return d > 0 ? `${d} d ${h} h ${String(m).padStart(2, "0")} min` : `${h} h ${String(m).padStart(2, "0")} min`;
-}
-
 export function Pestanas({
   pestana,
   setPestana,
-  enVivo,
+  n,
 }: {
   pestana: Pestana;
   setPestana: (p: Pestana) => void;
-  enVivo: number;
+  n: Record<Pestana, number>;
 }) {
-  const items: { id: Pestana; label: string; n: number }[] = [
-    { id: "vivo", label: "En vivo", n: enVivo },
-    { id: "proximas", label: "Próximas", n: PROXIMAS.length },
-    { id: "cerradas", label: "Cerradas", n: CERRADAS.length },
+  const items: { id: Pestana; label: string }[] = [
+    { id: "vivo", label: "En vivo" },
+    { id: "proximas", label: "Próximas" },
+    { id: "cerradas", label: "Cerradas" },
   ];
   return (
     <div className="categorias subastas__pestanas" role="tablist" aria-label="Subastas" data-revelar>
@@ -94,81 +39,107 @@ export function Pestanas({
           className={`categoria${pestana === it.id ? " is-on" : ""}`}
           onClick={() => setPestana(it.id)}
         >
-          {it.id === "vivo" && <span className="en-vivo" aria-hidden="true" />} {it.label} <span>{it.n}</span>
+          {it.id === "vivo" && <span className="en-vivo" aria-hidden="true" />} {it.label} <span>{n[it.id]}</span>
         </button>
       ))}
     </div>
   );
 }
 
-export function Proximas() {
-  const [pasados, setPasados] = useState(0);
-  const [avisar, setAvisar] = useState<Record<string, boolean>>({});
+export function Proximas({ lista, ahora }: { lista: Subasta[]; ahora: number }) {
+  const avisos = useSubastas((s) => s.avisos);
+  const alternar = useSubastas((s) => s.alternarAviso);
+  const pedirCuenta = useAuth((s) => s.pedirCuenta);
 
-  useEffect(() => {
-    const id = setInterval(() => setPasados((s) => s + 30), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
+  if (lista.length === 0) {
+    return <p className="filtros__vacio">No hay subastas programadas por ahora. Vuelve pronto.</p>;
+  }
   return (
     <div className="lotes" role="tabpanel" aria-label="Próximas subastas">
-      {PROXIMAS.map((p) => (
-        <article key={p.id} className="lote">
-          <div className="lote__visual">
-            <img src={p.img} alt={p.alt} loading="lazy" decoding="async" />
-            <span className="lote__reloj">Abre en {cuenta(Math.max(0, p.abreEnSeg - pasados))}</span>
-          </div>
-          <div className="lote__cuerpo">
-            <p className="lote__origen">{p.origen}</p>
-            <h2 className="lote__titulo">{p.titulo}</h2>
-            <p className="lote__desc">{p.texto}</p>
-            <div className="lote__puja">
-              <div>
-                <span className="lote__etiqueta">Precio de salida</span>
-                <span className="lote__monto">{formatBs(p.salida)}</span>
-              </div>
+      {lista.map((p) => {
+        const avisar = avisos.has(p.id);
+        return (
+          <article key={p.id} className="lote">
+            <div className="lote__visual">
+              {p.imagen && <img src={p.imagen} alt={p.imagen_alt ?? ""} loading="lazy" decoding="async" />}
+              <span className="lote__reloj">Abre en {tiempo(segundosA(p.abre_en, ahora))}</span>
             </div>
-            <button
-              type="button"
-              className={`btn ${avisar[p.id] ? "btn--secondary" : "btn--primary"} lote__avisar`}
-              aria-pressed={!!avisar[p.id]}
-              onClick={() => setAvisar((a) => ({ ...a, [p.id]: !a[p.id] }))}
-            >
-              {avisar[p.id] ? "Te avisaremos cuando abra ✓" : "Avisarme cuando abra"}
-            </button>
-          </div>
-        </article>
-      ))}
+            <div className="lote__cuerpo">
+              <p className="lote__origen">
+                {p.origen}
+                {p.altitud ? ` · ${p.altitud.toLocaleString("es-BO")} msnm` : ""}
+                {p.cantidad_kg ? ` · ${p.cantidad_kg.toLocaleString("es-BO")} kg` : ""}
+              </p>
+              <h2 className="lote__titulo">{p.titulo}</h2>
+              <p className="lote__desc">{p.descripcion}</p>
+              <div className="lote__puja">
+                <div>
+                  <span className="lote__etiqueta">Precio de salida</span>
+                  <span className="lote__monto">{formatBs(p.precio_base)}</span>
+                </div>
+                <div className="lote__lider">
+                  <span className="lote__etiqueta">Abre el</span>
+                  <span>{new Date(p.abre_en).toLocaleString("es-BO", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: false })}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`btn ${avisar ? "btn--secondary" : "btn--primary"} lote__avisar`}
+                aria-pressed={avisar}
+                onClick={async () => {
+                  if (!avisar && !(await pedirCuenta("Para avisarte cuando abra necesitamos tu cuenta."))) return;
+                  await alternar(p.id);
+                }}
+              >
+                {avisar ? "Te avisaremos cuando abra ✓" : "Avisarme cuando abra"}
+              </button>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
 
-export function Cerradas() {
+export function Cerradas({ lista }: { lista: Subasta[] }) {
+  if (lista.length === 0) return <p className="filtros__vacio">Todavía no hay subastas cerradas.</p>;
   return (
     <div className="lotes" role="tabpanel" aria-label="Subastas cerradas">
-      {CERRADAS.map((c) => (
-        <article key={c.id} className="lote">
-          <div className="lote__visual">
-            <img src={c.img} alt={c.alt} loading="lazy" decoding="async" />
-            <span className="lote__reloj">Cerró el {c.fecha}</span>
-          </div>
-          <div className="lote__cuerpo">
-            <p className="lote__origen">{c.origen}</p>
-            <h2 className="lote__titulo">{c.titulo}</h2>
-            <div className="lote__puja">
-              <div>
-                <span className="lote__etiqueta">Precio final</span>
-                <span className="lote__monto">{formatBs(c.final)}</span>
-              </div>
-              <div className="lote__lider">
-                <span className="lote__etiqueta">{c.pujas} pujas</span>
-                <span>+{Math.round((c.final / c.salida - 1) * 100)} % sobre la salida</span>
-              </div>
+      {lista.map((c) => {
+        const final = c.puja_actual;
+        return (
+          <article key={c.id} className="lote">
+            <div className="lote__visual">
+              {c.imagen && <img src={c.imagen} alt={c.imagen_alt ?? ""} loading="lazy" decoding="async" />}
+              <span className="lote__reloj">
+                Cerró el {new Date(c.cierra_en).toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" })}
+              </span>
             </div>
-            <p className="lote__resultado">Ganó {c.ganador}. Salió en {formatBs(c.salida)}.</p>
-          </div>
-        </article>
-      ))}
+            <div className="lote__cuerpo">
+              <p className="lote__origen">
+                {c.origen}
+                {c.cantidad_kg ? ` · ${c.cantidad_kg.toLocaleString("es-BO")} kg` : ""}
+              </p>
+              <h2 className="lote__titulo">{c.titulo}</h2>
+              <div className="lote__puja">
+                <div>
+                  <span className="lote__etiqueta">{final ? "Precio final" : "Precio de salida"}</span>
+                  <span className="lote__monto">{formatBs(final ?? c.precio_base)}</span>
+                </div>
+                <div className="lote__lider">
+                  <span className="lote__etiqueta">{c.num_pujas === 1 ? "1 puja" : `${c.num_pujas} pujas`}</span>
+                  {final && <span>+{Math.round((final / c.precio_base - 1) * 100)} % sobre la salida</span>}
+                </div>
+              </div>
+              <p className="lote__resultado">
+                {c.ganador_nombre
+                  ? `Ganó ${c.ganador_nombre}. Salió en ${formatBs(c.precio_base)}.`
+                  : "Cerró sin pujas: el lote no se adjudicó."}
+              </p>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }

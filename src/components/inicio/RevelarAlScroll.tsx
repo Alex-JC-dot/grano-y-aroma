@@ -1,7 +1,7 @@
 "use client";
 
+import { useRuta } from "@/lib/ruta";
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
 
 /**
  * Hace aparecer los bloques marcados con `data-revelar` cuando entran en pantalla:
@@ -13,7 +13,7 @@ import { usePathname } from "next/navigation";
  */
 export default function RevelarAlScroll() {
   // El layout no se vuelve a montar al navegar entre páginas: se reobserva en cada ruta.
-  const ruta = usePathname();
+  const ruta = useRuta();
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;

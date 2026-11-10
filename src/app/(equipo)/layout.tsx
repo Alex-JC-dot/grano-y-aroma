@@ -5,6 +5,9 @@ import "../(publico)/club-subastas.css";
 import "../(publico)/carrito.css";
 import "./equipo.css";
 import MenuEquipo from "@/components/equipo/MenuEquipo";
+import GuardiaEquipo from "@/components/equipo/GuardiaEquipo";
+import Sesion from "@/components/cuenta/Sesion";
+import "../(publico)/cuenta.css";
 
 export const metadata: Metadata = {
   title: "Equipo · Grano y Aroma",
@@ -21,8 +24,9 @@ export default function LayoutEquipo({ children }: { children: React.ReactNode }
     <div className="inicio equipo">
       <MenuEquipo />
       <main className="equipo__main" id="contenido">
-        {children}
+        <GuardiaEquipo>{children}</GuardiaEquipo>
       </main>
+      <Sesion />
     </div>
   );
 }

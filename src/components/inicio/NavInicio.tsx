@@ -1,9 +1,10 @@
 "use client";
 
+import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
+import MenuCuenta from "@/components/cuenta/MenuCuenta";
 
 const ENLACES = [
   { href: "/tienda", label: "Tienda" },
@@ -17,7 +18,7 @@ const ENLACES = [
 export default function NavInicio() {
   const cantidad = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const abrirCarrito = useCartStore((s) => s.toggleCart);
-  const ruta = usePathname();
+  const ruta = useRuta();
   const [menu, setMenu] = useState(false);
   const esActual = (href: string) => href.startsWith("/") && (ruta === href || ruta.startsWith(href + "/"));
 
@@ -57,6 +58,7 @@ export default function NavInicio() {
           </ul>
         </nav>
         <div className="nav__actions">
+          <MenuCuenta />
           <button
             type="button"
             className="cart-btn"

@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
+import { useAuth } from "@/store/authStore";
 import { formatBs } from "@/lib/utils";
+import { mensajeDeError, supabase } from "@/lib/supabase";
 import BolsaVisual from "@/components/tienda/BolsaVisual";
 
 /**
  * Carrito y checkout en 3 pasos (RNF-05): carrito → datos de entrega → pago.
- * El pago es simulado (QR o tarjeta) hasta conectar la pasarela; al confirmar se muestra el
- * número de pedido en el propio panel.
+ * Al confirmar, la base de datos (confirmar_pedido) valida y descuenta el stock en una sola
+ * transacción, guarda el pedido y suma los puntos (RF-02, RF-21). El pago es de demostración.
  */
 
 const PASOS = ["Carrito", "Entrega", "Pago"];
@@ -24,7 +26,9 @@ export default function CartDrawer() {
   const [datos, setDatos] = useState<Datos>(VACIO);
   const [errores, setErrores] = useState<Partial<Record<keyof Datos, string>>>({});
   const [pago, setPago] = useState<"qr" | "tarjeta">("qr");
-  const [pedido, setPedido] = useState<string | null>(null);
+  const [pedido, setPedido] = useState<{ codigo: string; total: number } | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const [errorPedido, setErrorPedido] = useState("");
   const cerrarRef = useRef<HTMLButtonElement>(null);
 
   // Al abrir, el foco va al botón de cerrar; Escape cierra.
@@ -53,15 +57,45 @@ export default function CartDrawer() {
     return Object.keys(e).length === 0;
   };
 
-  const siguiente = () => {
+  const pedirCuenta = useAuth((s) => s.pedirCuenta);
+  const siguiente = async () => {
+    if (paso === 0) {
+      // La cuenta se pide recién aquí: el carrito sigue intacto y, al entrar, se pasa a la entrega.
+      if (!(await pedirCuenta("Para hacer tu pedido necesitas una cuenta. Tu carrito se mantiene."))) return;
+      const p = useAuth.getState().perfil;
+      if (p) setDatos((d) => ({ ...d, nombre: d.nombre || p.nombre, telefono: d.telefono || p.telefono || "", direccion: d.direccion || p.direccion || "" }));
+    }
     if (paso === 1 && !validar()) return;
     setPaso((p) => p + 1);
   };
 
-  const confirmar = () => {
-    setPedido(`GA-${Date.now().toString().slice(-6)}`);
-    clearCart();
-    setDatos(VACIO);
+  const confirmar = async () => {
+    setErrorPedido("");
+    if (!(await pedirCuenta("Tu sesión se cerró. Entra de nuevo para confirmar el pedido."))) return;
+    setEnviando(true);
+    try {
+      const { data, error } = await supabase.rpc("confirmar_pedido", {
+        items: items.map((it) => ({ producto_id: it.id, cantidad: it.quantity, molienda: it.selectedGrind })),
+        p_canal: "web",
+        p_metodo: pago,
+        p_nombre: datos.nombre.trim(),
+        p_telefono: datos.telefono.trim(),
+        p_direccion: datos.direccion.trim(),
+        p_referencia: datos.referencia.trim() || null,
+      });
+      if (error) throw error;
+      // Guarda teléfono y dirección en el perfil para rellenarlos la próxima vez.
+      const id = useAuth.getState().session?.user.id;
+      if (id) await supabase.from("perfiles").update({ telefono: datos.telefono.trim(), direccion: datos.direccion.trim() }).eq("id", id);
+      await useAuth.getState().cargarPerfil();
+      setPedido({ codigo: data.codigo, total: Number(data.total) });
+      clearCart();
+      setDatos(VACIO);
+    } catch (err) {
+      setErrorPedido(mensajeDeError(err));
+    } finally {
+      setEnviando(false);
+    }
   };
 
   const campo = (k: keyof Datos, etiqueta: string, tipo = "text", auto?: string) => (
@@ -112,11 +146,17 @@ export default function CartDrawer() {
         <div className="carrito__cuerpo">
           {pedido ? (
             <div className="carrito__listo">
-              <p className="carrito__numero">{pedido}</p>
-              <p>Recibimos tu pedido. Te avisaremos por WhatsApp cuando salga a entrega.</p>
-              <button type="button" className="btn btn--primary" onClick={cerrar}>
-                Seguir comprando
-              </button>
+              <p className="carrito__numero">{pedido.codigo}</p>
+              <p>Recibimos tu pedido por {formatBs(pedido.total)}. Te avisaremos por WhatsApp cuando salga a entrega.</p>
+              <p className="carrito__nota">Sumaste {Math.floor(pedido.total / 10)} puntos. Puedes seguir tu pedido en Mi cuenta.</p>
+              <div className="carrito__fila">
+                <button type="button" className="btn btn--primary" onClick={cerrar}>
+                  Seguir comprando
+                </button>
+                <Link href="/cuenta" className="btn btn--secondary" onClick={cerrar}>
+                  Ver mi pedido
+                </Link>
+              </div>
             </div>
           ) : paso === 0 ? (
             items.length === 0 ? (
@@ -195,9 +235,12 @@ export default function CartDrawer() {
                 {paso === 0 ? "Continuar con la entrega" : "Continuar con el pago"}
               </button>
             ) : (
-              <button type="button" className="btn btn--primary carrito__boton" onClick={confirmar}>
-                Confirmar pedido · {formatBs(total)}
-              </button>
+              <>
+                {errorPedido && <p className="carrito__error" role="alert">{errorPedido}</p>}
+                <button type="button" className="btn btn--primary carrito__boton" onClick={confirmar} disabled={enviando}>
+                  {enviando ? "Confirmando…" : `Confirmar pedido · ${formatBs(total)}`}
+                </button>
+              </>
             )}
             {paso > 0 && (
               <button type="button" className="link carrito__volver" onClick={() => setPaso((p) => p - 1)}>

@@ -1,0 +1,107 @@
+/* Ventana de cuenta, menú de cuenta, acceso del equipo y página Mi cuenta */
+
+.cuenta-dialogo {
+  width: min(100% - 32px, 440px);
+  padding: 0;
+  margin: auto;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 0;
+  border-radius: 14px;
+  background: var(--bg, #e6ded4);
+  color: var(--ink, #2a1f1a);
+  box-shadow: 0 30px 80px rgba(42, 31, 26, 0.35);
+}
+.cuenta-dialogo::backdrop { background: rgba(42, 31, 26, 0.45); }
+.cuenta-form { display: flex; flex-direction: column; gap: 16px; padding: 28px; font-family: var(--font-figtree), system-ui, sans-serif; }
+.cuenta-form__cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.cuenta-form__cabeza h2 { margin: 0 0 6px; font: 400 28px/1.15 var(--font-fraunces), Georgia, serif; }
+.cuenta-form__cabeza p { margin: 0; color: var(--muted, #65574c); font-size: 15px; }
+.cuenta-form__modos { display: flex; }
+.cuenta-form__modos button { flex: 1; }
+.cuenta-form .carrito__campo label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; }
+.cuenta-form .carrito__campo input {
+  width: 100%; height: 48px; padding: 0 14px; border: 1px solid rgba(42, 31, 26, 0.3); border-radius: 6px;
+  background: #efe9e1; color: inherit; font-size: 16px; font-family: inherit;
+}
+.cuenta-form .carrito__error { margin: 0; font-size: 14px; color: #b3261e; }
+.cuenta-form__aviso { margin: 0; padding: 12px 14px; border-radius: 6px; background: rgba(70, 110, 60, 0.14); color: #2f5a25; font-size: 15px; }
+.cuenta-form__boton { width: 100%; }
+.cuenta-form__boton:disabled { opacity: 0.6; cursor: wait; }
+.cuenta-form .carrito__cerrar {
+  flex: none; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgba(42, 31, 26, 0.3);
+  border-radius: 6px; background: transparent; color: inherit; cursor: pointer;
+}
+
+.inicio .menu-cuenta { position: relative; }
+.inicio .menu-cuenta__boton span { font: 500 16px/1 var(--f-text); }
+.inicio .menu-cuenta__panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; min-width: 240px;
+  display: flex; flex-direction: column; padding: 8px; border-radius: 10px; background: var(--bg);
+  border: 1px solid var(--line); box-shadow: 0 18px 40px rgba(42, 31, 26, 0.2);
+}
+.inicio .menu-cuenta__quien { margin: 0; padding: 10px 12px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.inicio .menu-cuenta__quien span { font-size: 13px; color: var(--muted); }
+.inicio .menu-cuenta__panel a,
+.inicio .menu-cuenta__panel button {
+  display: block; padding: 10px 12px; border: 0; border-radius: 6px; background: none; color: var(--ink);
+  font: 400 15px var(--f-text); text-align: left; text-decoration: none; cursor: pointer;
+}
+.inicio .menu-cuenta__panel a:hover,
+.inicio .menu-cuenta__panel button:hover { background: rgba(42, 31, 26, 0.06); }
+
+.guardia { min-height: 70vh; display: grid; place-items: center; padding: 40px 16px; }
+.guardia__caja { width: min(100%, 460px); padding: 8px; border-radius: 14px; background: var(--surface); }
+.guardia__caja > h1 { margin: 20px 20px 10px; font: 400 30px/1.15 var(--f-display); }
+.guardia__caja > p { margin: 0 20px 20px; }
+.guardia__caja > .equipo__fila { margin: 0 20px 20px; }
+
+.inicio .cuenta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.inicio .cuenta__bloque { padding: 28px; border-radius: var(--r-card); background: var(--surface); }
+.inicio .cuenta__bloque h2 { margin: 0 0 14px; font: 400 24px/1.2 var(--f-display); }
+.inicio .cuenta__bloque p { margin: 0 0 8px; }
+.inicio .cuenta__puntos { font: 400 44px/1 var(--f-display); }
+@media (max-width: 899px) { .inicio .cuenta { grid-template-columns: 1fr; } }
+.cuenta-form .segmentado { display: flex; padding: 4px; gap: 4px; border-radius: 6px; background: #dcd2c6; }
+.cuenta-form .segmentado button { flex: 1; height: 40px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: 500 15px var(--font-figtree), system-ui, sans-serif; cursor: pointer; }
+.cuenta-form .segmentado button.is-on { background: #2a1f1a; color: #e6ded4; }
+.cuenta-form .btn { display: inline-flex; align-items: center; justify-content: center; height: 48px; border: 0; border-radius: 6px; background: #7a4a2c; color: #fff; font: 500 16px var(--font-figtree), system-ui, sans-serif; cursor: pointer; }
+
+/* Ver / ocultar contraseña */
+.cuenta-form__clave { position: relative; }
+.cuenta-form__clave input { padding-right: 52px; }
+.cuenta-form__ojo { position: absolute; top: 4px; right: 4px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 4px; background: transparent; color: #65574c; cursor: pointer; }
+.cuenta-form__ojo:hover { color: #2a1f1a; background: rgba(42, 31, 26, 0.06); }
+.cuenta-form__ojo:focus-visible { outline: 2px solid #7a4a2c; outline-offset: 1px; }
+
+/* Aviso de cuenta creada */
+.aviso-cuenta { position: fixed; right: 24px; bottom: 24px; z-index: 60; width: min(100% - 32px, 380px); display: flex; gap: 14px; align-items: flex-start; padding: 18px 48px 18px 18px; border-radius: 10px; background: #2f5a25; color: #f1ece4; box-shadow: 0 18px 40px rgba(42, 31, 26, 0.35); animation: aviso-cuenta-entra 0.45s cubic-bezier(0.16, 1, 0.3, 1); font-family: var(--font-figtree), system-ui, sans-serif; }
+.aviso-cuenta svg { flex: none; margin-top: 2px; }
+.aviso-cuenta div { display: flex; flex-direction: column; gap: 4px; }
+.aviso-cuenta strong { font: 400 20px/1.2 var(--font-fraunces), Georgia, serif; }
+.aviso-cuenta span { font-size: 15px; line-height: 1.45; color: rgba(241, 236, 228, 0.88); }
+.aviso-cuenta__cerrar { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 22px; cursor: pointer; }
+.aviso-cuenta__cerrar:hover { background: rgba(255, 255, 255, 0.12); }
+@keyframes aviso-cuenta-entra { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .aviso-cuenta { animation: none; } }
+@media (max-width: 600px) { .aviso-cuenta { right: 16px; bottom: 16px; } }
+
+/* "Login" en la barra cuando no hay sesión: con borde, a la altura del carrito */
+.inicio .menu-cuenta__entrar {
+  height: 48px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--ink, #2a1f1a);
+  border-radius: var(--r-btn, 6px);
+  background: transparent;
+  color: var(--ink, #2a1f1a);
+  font: 600 15px var(--font-figtree), system-ui, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.inicio .menu-cuenta__entrar:hover { background: var(--ink, #2a1f1a); color: var(--bg, #e6ded4); transform: translateY(-1px); }
+.inicio .menu-cuenta__entrar:focus-visible { outline: 2px solid var(--accent, #7a4a2c); outline-offset: 2px; }
+@media (max-width: 600px) { .inicio .menu-cuenta__entrar { padding: 0 12px; gap: 6px; } }

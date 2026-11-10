@@ -23,11 +23,13 @@ export interface Product {
   foto?: FotoProducto;
   /** Para lo que no es café: "Frasco de 250 g", "Botella de 500 ml"… */
   presentacion?: string;
+  /** Color de la franja de la bolsa (si no tiene foto propia). */
+  color?: string;
   /** Producto de prueba (marcas de terceros): no se incluye en el build de producción. */
   prueba?: boolean;
 }
 
-export type Categoria = "grano" | "molido" | "jarabe" | "equipo" | "accesorio";
+export type Categoria = "grano" | "molido" | "jarabe" | "equipo" | "accesorio" | "bebida";
 
 /**
  * Foto de producto con la etiqueta en blanco. `etiqueta` es la zona de la etiqueta en % de

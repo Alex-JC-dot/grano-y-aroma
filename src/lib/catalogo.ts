@@ -2,8 +2,8 @@ import { products } from "./data";
 import type { Product } from "./types";
 
 /**
- * Utilidades del catálogo público. Hoy leen los datos de prueba de data.ts; cuando la tienda
- * pase a Supabase, solo cambia de dónde salen los productos, no las páginas que los usan.
+ * Utilidades del catálogo público. La tienda lee los productos de Supabase (useProductos);
+ * "products"/"cafes" son la copia fija para las secciones informativas (inicio, nosotros).
  */
 
 /** Dirección legible del café: "Villa Serrano Natural" → "villa-serrano-natural". */
@@ -20,9 +20,9 @@ export function rutaCafe(p: Pick<Product, "name">): string {
   return `/tienda/cafe?c=${slugDe(p)}`;
 }
 
-export function buscarCafe(slug: string | null): Product | undefined {
+export function buscarCafe(slug: string | null, lista: Product[] = products): Product | undefined {
   if (!slug) return undefined;
-  return products.find((p) => slugDe(p) === slug);
+  return lista.find((p) => slugDe(p) === slug);
 }
 
 /**
@@ -51,8 +51,8 @@ export function imagenOrigen(p: Pick<Product, "region" | "origin">): { src: stri
   return { src: "/images/origen/chuquisaca.webp", alt: "Valles de Chuquisaca con una rama de cafeto con cerezas rojas" };
 }
 
-export function colorDe(p: Pick<Product, "id">): string {
-  return COLORES[p.id] ?? "#7a4a2c";
+export function colorDe(p: Pick<Product, "id" | "color">): string {
+  return p.color ?? COLORES[p.id] ?? "#7a4a2c";
 }
 
 /** Opciones de los filtros de la tienda, sacadas de los propios productos. */

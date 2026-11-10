@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useRuta } from "@/lib/ruta";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
 // Video del cierre por página: en Nosotros la tostadora (con sombra a la izquierda para el
@@ -28,7 +28,7 @@ function suscribirReducir(alCambiar: () => void) {
 }
 
 export default function TazaPie({ children }: { children: React.ReactNode }) {
-  const ruta = usePathname();
+  const ruta = useRuta();
   const clave = ruta === "/nosotros" ? "tostadora" : "taza";
   const v = VIDEOS[clave];
   const seccionRef = useRef<HTMLDivElement>(null);
