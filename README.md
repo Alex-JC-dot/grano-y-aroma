@@ -140,3 +140,10 @@ docs/           documento de visión, capturas y referencias de diseño
 - `main` siempre debe compilar; Render publica cada cambio que entra a `main`.
 - Cada funcionalidad va en su propia rama (`feat/…`, `fix/…`) y entra a `main` por Pull Request.
 - Los mensajes de commit van en español y describen el cambio.
+
+## Créditos de imágenes
+
+Las imágenes y videos del sitio se generaron con Kling AI, salvo dos fotografías de Wikimedia Commons:
+
+- **Tueste:** [Jameswasswa](https://commons.wikimedia.org/wiki/File:Closer_look_at_the_coffee_beans_from_the_coffee_roasting_machine_looking_at_their_progress.jpg), CC BY-SA 4.0.
+- **Tu taza:** [Kim Sanso](https://commons.wikimedia.org/wiki/File:Manual_drip_(pour-over)_coffee.jpg), CC0.

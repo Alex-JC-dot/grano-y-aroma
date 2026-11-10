@@ -230,6 +230,31 @@
   .inicio .nav__brand { font-size: 19px; }
   .inicio .nav__comprar { display: none; } /* en celular "Comprar café" está dentro del menú */
   .inicio .cart-btn { width: 44px; height: 44px; }
+  .inicio .nav__actions { gap: 8px; }
+}
+@media (max-width: 359px) {
+  .inicio .nav__brand { font-size: 17px; }
+  .inicio .nav__actions { gap: 6px; }
+  .inicio .cart-btn,
+  .inicio .menu-cuenta__entrar { width: 40px; height: 40px; }
+}
+/*
+ * Mientras se usa el menú de las 3 rayas, el botón de tema va dentro del menú: en la barra no
+ * caben Login, tema, carrito, "Comprar café" y menú, y el menú quedaba fuera de la pantalla.
+ */
+.inicio .nav__movil-tema { display: none; }
+@media (max-width: 1099px) {
+  .inicio .nav__actions .boton-tema { display: none; }
+  .inicio .nav__movil-tema {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    font: 400 22px/1.2 var(--f-display);
+  }
+  .inicio .nav__movil-tema .boton-tema { width: 44px; height: 44px; }
 }
 
 /* ---------- Hero con animación por scroll ---------- */
