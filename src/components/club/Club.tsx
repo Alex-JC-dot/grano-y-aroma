@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
 import { products } from "@/lib/data";
@@ -148,12 +148,16 @@ async function guardar(s: Suscripcion | null) {
   }
 }
 
+const sinSuscripcion = () => () => {};
+
 export default function Club() {
   const uid = useAuth((s) => s.session?.user.id ?? null);
   useEffect(() => {
     cargarSub(uid);
   }, [uid]);
   const sub = useClubStore((s) => s.sub);
+  // Las fechas dependen del día de hoy: se escriben en el navegador, no al compilar la página.
+  const enNavegador = useSyncExternalStore(sinSuscripcion, () => true, () => false);
 
   // Formulario
   const [frecuencia, setFrecuencia] = useState<Frecuencia>(30);
@@ -420,7 +424,7 @@ export default function Club() {
                 <div className="club__primeros">
                   <span>Primeros envíos</span>
                   <ol>
-                    {fechasNuevas.map((f, i) => <li key={i}>{fechaLarga(f)}</li>)}
+                    {fechasNuevas.map((f, i) => <li key={i}>{enNavegador ? fechaLarga(f) : "…"}</li>)}
                   </ol>
                 </div>
               )}
