@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/store/authStore";
 import { PANELES } from "@/lib/supabase";
+import { useRuta } from "@/lib/ruta";
 
 /**
- * Cuenta en la barra: sin sesión, un botón "Login" con borde que abre la ventana de cuenta; con
+ * Cuenta en la barra: sin sesión, un botón "Login" con borde que lleva a /login (y vuelve aquí); con
  * sesión, la inicial con su menú. Las acciones que guardan datos también piden la cuenta solas.
  */
 export default function MenuCuenta() {
@@ -14,7 +15,7 @@ export default function MenuCuenta() {
   const perfil = useAuth((s) => s.perfil);
   const salir = useAuth((s) => s.salir);
   const cargando = useAuth((s) => s.cargando);
-  const pedirCuenta = useAuth((s) => s.pedirCuenta);
+  const ruta = useRuta();
   const [abierto, setAbierto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -33,13 +34,16 @@ export default function MenuCuenta() {
   if (!session) {
     if (cargando) return null;
     return (
-      <button type="button" className="menu-cuenta__entrar" onClick={() => pedirCuenta("Entra o crea tu cuenta para ver tus pedidos, puntos y suscripción.")}>
+      <Link
+        href={ruta === "/" || ruta.startsWith("/login") ? "/login/" : `/login/?volver=${encodeURIComponent(ruta + "/")}`}
+        className="menu-cuenta__entrar"
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
           <circle cx="12" cy="8" r="4" />
           <path d="M4 21c0-4.4 3.6-7.5 8-7.5s8 3.1 8 7.5" />
         </svg>
         Login
-      </button>
+      </Link>
     );
   }
   const nombre = perfil?.nombre || session.user.email?.split("@")[0] || "Mi cuenta";

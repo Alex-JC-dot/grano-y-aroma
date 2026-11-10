@@ -13,8 +13,62 @@ if (!url || !clave) {
   console.warn("Faltan NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local)");
 }
 
+/**
+ * "Recordarme": con la casilla marcada la sesión se guarda en localStorage (sigue al cerrar el
+ * navegador); sin marcar, en sessionStorage (se borra al cerrarlo).
+ */
+const CLAVE_RECORDAR = "ga-recordar";
+const recordando = () => {
+  try {
+    return localStorage.getItem(CLAVE_RECORDAR) !== "0";
+  } catch {
+    return true;
+  }
+};
+export function recordarSesion(si: boolean) {
+  try {
+    localStorage.setItem(CLAVE_RECORDAR, si ? "1" : "0");
+  } catch {
+    // Sin almacenamiento: la sesión dura lo que dure la página.
+  }
+}
+const almacen = {
+  getItem: (k: string) => {
+    try {
+      return localStorage.getItem(k) ?? sessionStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (k: string, v: string) => {
+    try {
+      if (recordando()) {
+        sessionStorage.removeItem(k);
+        localStorage.setItem(k, v);
+      } else {
+        localStorage.removeItem(k);
+        sessionStorage.setItem(k, v);
+      }
+    } catch {
+      // Modo privado sin almacenamiento.
+    }
+  },
+  removeItem: (k: string) => {
+    try {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    } catch {
+      // nada que borrar
+    }
+  },
+};
+
 export const supabase = createClient(url ?? "http://localhost", clave ?? "falta-clave", {
-  auth: { persistSession: true, autoRefreshToken: true },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storage: typeof window === "undefined" ? undefined : almacen,
+  },
 });
 
 export type Rol = "cliente" | "cajero" | "tostador" | "admin";

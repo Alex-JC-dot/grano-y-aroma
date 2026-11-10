@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/store/authStore";
-import { mensajeDeError, supabase } from "@/lib/supabase";
+import { mensajeDeError, recordarSesion, supabase } from "@/lib/supabase";
 
 /**
- * Ventana "Entrar / Crear cuenta". Aparece solo cuando una acción la pide (useAuth.pedirCuenta)
- * y, al entrar, la acción continúa sola. También la usa el acceso del equipo.
+ * Cuenta de Grano y Aroma con un solo diseño en toda la web: la tarjeta con el molino en
+ * loop a la izquierda y el formulario sobre fondo espresso a la derecha.
+ *  · VentanaCuenta: la ventana que aparece cuando una acción necesita cuenta (comprar, pujar…);
+ *    al entrar, la acción sigue sola.
+ *  · TarjetaCuenta: la misma tarjeta para la página /login y el acceso del equipo.
+ *  · Modos: iniciar sesión, crear cuenta, recuperar la contraseña y escribir una nueva.
  */
+
 export default function VentanaCuenta() {
   const modal = useAuth((s) => s.modal);
   const cerrar = useAuth((s) => s.cerrarModal);
@@ -22,47 +28,81 @@ export default function VentanaCuenta() {
 
   return (
     <dialog ref={ref} className="cuenta-dialogo" aria-labelledby="cuenta-titulo" onCancel={() => cerrar(false)}>
-      {modal && <FormularioCuenta motivo={modal.motivo} alTerminar={() => cerrar(true)} alCancelar={() => cerrar(false)} />}
+      {modal && <TarjetaCuenta motivo={modal.motivo} alTerminar={() => cerrar(true)} alCancelar={() => cerrar(false)} />}
     </dialog>
   );
 }
 
-export function FormularioCuenta({
-  motivo,
-  alTerminar,
-  alCancelar,
-  soloEntrar = false,
-}: {
-  motivo: string;
+type Modo = "entrar" | "crear" | "recuperar" | "nueva";
+
+type Props = {
+  motivo?: string;
   alTerminar: () => void;
   alCancelar?: () => void;
   soloEntrar?: boolean;
-}) {
-  const [modo, setModo] = useState<"entrar" | "crear">("entrar");
+  modoInicial?: Modo;
+};
+
+export function TarjetaCuenta(props: Props) {
+  return (
+    <div className="tarjeta-cuenta">
+      <div className="tarjeta-cuenta__media">
+        <FondoMolino />
+        <div className="tarjeta-cuenta__marca">
+          <strong>Grano y Aroma</strong>
+          <span>Café de especialidad tostado en Sucre</span>
+        </div>
+        <svg className="tarjeta-cuenta__ola" viewBox="0 0 64 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M64 0H38C24 12 46 24 34 38C22 52 8 58 22 72C34 84 44 90 30 100H64Z" />
+        </svg>
+      </div>
+      <div className="tarjeta-cuenta__panel">
+        <FormularioCuenta {...props} />
+      </div>
+    </div>
+  );
+}
+
+/** El formulario de la tarjeta (también lo usa el acceso del equipo). */
+export function FormularioCuenta({ motivo, alTerminar, alCancelar, soloEntrar = false, modoInicial = "entrar" }: Props) {
+  const [modo, setModo] = useState<Modo>(modoInicial);
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [clave, setClave] = useState("");
+  const [clave2, setClave2] = useState("");
+  const [recordar, setRecordar] = useState(true);
+  const [verClave, setVerClave] = useState(false);
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [verClave, setVerClave] = useState(false);
+
+  const cambiarModo = (m: Modo) => {
+    setModo(m);
+    setError("");
+    setAviso("");
+  };
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setAviso("");
+    const correo = email.trim();
     if (modo === "crear" && !nombre.trim()) return setError("Escribe tu nombre.");
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError("Escribe un correo válido, con @.");
-    if (clave.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+    if (modo !== "nueva" && !/^\S+@\S+\.\S+$/.test(correo)) return setError("Escribe un correo válido, con @.");
+    if (modo !== "recuperar" && clave.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+    if ((modo === "crear" || modo === "nueva") && clave !== clave2) return setError("Las dos contraseñas no coinciden.");
+
     setEnviando(true);
     try {
       if (modo === "entrar") {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: clave });
+        recordarSesion(recordar);
+        const { error } = await supabase.auth.signInWithPassword({ email: correo, password: clave });
         if (error) throw error;
         alTerminar();
-      } else {
+      } else if (modo === "crear") {
+        recordarSesion(true);
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: correo,
           password: clave,
           options: { data: { nombre: nombre.trim() } },
         });
@@ -77,6 +117,17 @@ export function FormularioCuenta({
           setAviso("Te enviamos un correo para confirmar tu cuenta. Ábrelo y luego entra con tu contraseña.");
           setModo("entrar");
         }
+      } else if (modo === "recuperar") {
+        const { error } = await supabase.auth.resetPasswordForEmail(correo, {
+          redirectTo: `${window.location.origin}/cuenta/nueva-clave/`,
+        });
+        if (error) throw error;
+        setAviso("Si ese correo tiene una cuenta, te llegará un enlace para elegir una contraseña nueva. Revisa también la carpeta de spam.");
+      } else {
+        const { error } = await supabase.auth.updateUser({ password: clave });
+        if (error) throw error;
+        useAuth.getState().avisar("Contraseña actualizada", "Ya puedes usar tu contraseña nueva.");
+        alTerminar();
       }
     } catch (err) {
       setError(mensajeDeError(err));
@@ -85,74 +136,142 @@ export function FormularioCuenta({
     }
   };
 
+  const titulo = {
+    entrar: ["Hola de nuevo", "Qué bueno verte por aquí."],
+    crear: ["Únete a Grano y Aroma", "Crea tu cuenta en un minuto y sigue con tu café."],
+    recuperar: ["Recupera tu acceso", "Escribe tu correo y te mandamos un enlace para elegir una contraseña nueva."],
+    nueva: ["Elige tu contraseña nueva", "Escríbela dos veces para confirmarla."],
+  }[modo];
+  const boton = { entrar: "Iniciar sesión", crear: "Crear cuenta", recuperar: "Enviar enlace", nueva: "Guardar contraseña" }[modo];
+
   return (
-    <form className="cuenta-form" onSubmit={enviar} noValidate>
-      <div className="cuenta-form__cabeza">
-        <div>
-          <h2 id="cuenta-titulo">{modo === "entrar" ? "Entra a tu cuenta" : "Crea tu cuenta"}</h2>
-          <p>{motivo}</p>
-        </div>
-        {alCancelar && (
-          <button type="button" className="carrito__cerrar" aria-label="Cerrar" onClick={alCancelar}>
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" /></svg>
-          </button>
-        )}
+    <form className="tc-form" onSubmit={enviar} noValidate>
+      {alCancelar && (
+        <button type="button" className="tc-form__cerrar" aria-label="Cerrar" onClick={alCancelar}>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" /></svg>
+        </button>
+      )}
+
+      <div className="tc-form__cabeza">
+        <h2 id="cuenta-titulo">{titulo[0]}</h2>
+        <p>{titulo[1]}</p>
+        {motivo && (modo === "entrar" || modo === "crear") && <p className="tc-form__motivo">{motivo}</p>}
       </div>
 
-      {!soloEntrar && (
-        <div className="segmentado cuenta-form__modos" role="tablist">
-          <button type="button" role="tab" aria-selected={modo === "entrar"} className={modo === "entrar" ? "is-on" : ""} onClick={() => setModo("entrar")}>Entrar</button>
-          <button type="button" role="tab" aria-selected={modo === "crear"} className={modo === "crear" ? "is-on" : ""} onClick={() => setModo("crear")}>Crear cuenta</button>
+      {!soloEntrar && (modo === "entrar" || modo === "crear") && (
+        <div className="tc-form__modos" role="tablist" aria-label="Cuenta">
+          <button type="button" role="tab" aria-selected={modo === "entrar"} className={modo === "entrar" ? "is-on" : ""} onClick={() => cambiarModo("entrar")}>
+            Iniciar sesión
+          </button>
+          <button type="button" role="tab" aria-selected={modo === "crear"} className={modo === "crear" ? "is-on" : ""} onClick={() => cambiarModo("crear")}>
+            Crear cuenta
+          </button>
         </div>
       )}
 
       {modo === "crear" && (
-        <div className="carrito__campo">
+        <div className="tc-campo">
           <label htmlFor="cu-nombre">Nombre</label>
           <input id="cu-nombre" autoComplete="name" value={nombre} onChange={(e) => setNombre(e.target.value)} />
         </div>
       )}
-      <div className="carrito__campo">
-        <label htmlFor="cu-email">Correo</label>
-        <input id="cu-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-      </div>
-      <div className="carrito__campo">
-        <label htmlFor="cu-clave">Contraseña</label>
-        <div className="cuenta-form__clave">
-          <input
-            id="cu-clave"
-            type={verClave ? "text" : "password"}
-            autoComplete={modo === "entrar" ? "current-password" : "new-password"}
-            value={clave}
-            onChange={(e) => setClave(e.target.value)}
-          />
-          <button
-            type="button"
-            className="cuenta-form__ojo"
-            aria-label={verClave ? "Ocultar contraseña" : "Mostrar contraseña"}
-            aria-pressed={verClave}
-            onClick={() => setVerClave((v) => !v)}
-          >
-            {verClave ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-                <path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A9.8 9.8 0 0112 5c5 0 9 4.5 10 7a13 13 0 01-3.2 4.3M6.2 6.2C3.9 7.6 2.5 9.8 2 12c1 2.5 5 7 10 7a9.6 9.6 0 004.3-1" />
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-                <path d="M2 12c1-2.5 5-7 10-7s9 4.5 10 7c-1 2.5-5 7-10 7S3 14.5 2 12z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            )}
+
+      {modo !== "nueva" && (
+        <div className="tc-campo">
+          <label htmlFor="cu-email">Correo</label>
+          <input id="cu-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nombre@correo.com" />
+        </div>
+      )}
+
+      {modo !== "recuperar" && (
+        <div className="tc-campo">
+          <label htmlFor="cu-clave">{modo === "nueva" ? "Contraseña nueva" : "Contraseña"}</label>
+          <div className="tc-campo__clave">
+            <input
+              id="cu-clave"
+              type={verClave ? "text" : "password"}
+              autoComplete={modo === "entrar" ? "current-password" : "new-password"}
+              value={clave}
+              onChange={(e) => setClave(e.target.value)}
+            />
+            <button
+              type="button"
+              className="tc-campo__ojo"
+              aria-label={verClave ? "Ocultar contraseña" : "Mostrar contraseña"}
+              aria-pressed={verClave}
+              onClick={() => setVerClave((v) => !v)}
+            >
+              {verClave ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                  <path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A9.8 9.8 0 0112 5c5 0 9 4.5 10 7a13 13 0 01-3.2 4.3M6.2 6.2C3.9 7.6 2.5 9.8 2 12c1 2.5 5 7 10 7a9.6 9.6 0 004.3-1" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                  <path d="M2 12c1-2.5 5-7 10-7s9 4.5 10 7c-1 2.5-5 7-10 7S3 14.5 2 12z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {(modo === "crear" || modo === "nueva") && (
+        <div className="tc-campo">
+          <label htmlFor="cu-clave2">Repite la contraseña</label>
+          <input id="cu-clave2" type={verClave ? "text" : "password"} autoComplete="new-password" value={clave2} onChange={(e) => setClave2(e.target.value)} />
+        </div>
+      )}
+
+      {modo === "entrar" && (
+        <div className="tc-form__fila">
+          <label className="tc-form__recordar">
+            <input type="checkbox" checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
+            Recordarme
+          </label>
+          <button type="button" className="tc-form__enlace" onClick={() => cambiarModo("recuperar")}>
+            ¿Olvidaste tu contraseña?
           </button>
         </div>
-      </div>
+      )}
 
-      {error && <p className="carrito__error" role="alert">{error}</p>}
-      {aviso && <p className="cuenta-form__aviso" role="status">{aviso}</p>}
+      {error && <p className="tc-form__error" role="alert">{error}</p>}
+      {aviso && <p className="tc-form__aviso" role="status">{aviso}</p>}
 
-      <button type="submit" className="btn btn--primary cuenta-form__boton" disabled={enviando}>
-        {enviando ? "Un momento…" : modo === "entrar" ? "Entrar" : "Crear cuenta"}
+      <button type="submit" className="tc-form__boton" disabled={enviando}>
+        {enviando ? "Un momento…" : boton}
       </button>
+
+      {modo === "recuperar" && (
+        <button type="button" className="tc-form__enlace tc-form__volver" onClick={() => cambiarModo("entrar")}>
+          ← Volver a iniciar sesión
+        </button>
+      )}
+      {modo === "entrar" && !soloEntrar && (
+        <p className="tc-form__pie">
+          ¿Primera vez aquí?{" "}
+          <button type="button" className="tc-form__enlace" onClick={() => cambiarModo("crear")}>Crea tu cuenta</button>
+        </p>
+      )}
     </form>
+  );
+}
+
+const CONSULTA_REDUCIR = "(prefers-reduced-motion: reduce)";
+function suscribirReducir(alCambiar: () => void) {
+  const mq = window.matchMedia(CONSULTA_REDUCIR);
+  mq.addEventListener("change", alCambiar);
+  return () => mq.removeEventListener("change", alCambiar);
+}
+
+/** El molino en loop (4 s, sin corte). Con "reducir movimiento" queda la imagen fija. */
+function FondoMolino() {
+  const reducir = useSyncExternalStore(suscribirReducir, () => window.matchMedia(CONSULTA_REDUCIR).matches, () => false);
+  if (reducir) return <img src="/video/login-molino-inicio.webp" alt="" aria-hidden="true" />;
+  return (
+    <video autoPlay muted loop playsInline preload="auto" poster="/video/login-molino-inicio.webp" aria-hidden="true">
+      <source src="/video/login-molino.webm" type="video/webm" />
+      <source src="/video/login-molino.mp4" type="video/mp4" />
+    </video>
   );
 }
