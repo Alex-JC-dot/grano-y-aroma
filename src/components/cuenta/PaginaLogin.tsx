@@ -7,8 +7,9 @@ import { PANELES, supabase, type Rol } from "@/lib/supabase";
 import { TarjetaCuenta } from "./VentanaCuenta";
 
 /**
- * /login: la tarjeta de cuenta a página completa. Al entrar vuelve a donde estaba la persona
- * (?volver=/subastas/) o, si es del equipo, a su panel; si no, a Mi cuenta.
+ * /login a pantalla completa: el molino en loop a la izquierda, la ola y el formulario sobre
+ * fondo espresso. Al entrar vuelve a donde estaba la persona (?volver=/subastas/) o, si es del
+ * equipo, a su panel; si no, a Mi cuenta.
  */
 export default function PaginaLogin() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function PaginaLogin() {
     const v = params.get("volver");
     return v && v.startsWith("/") && !v.startsWith("//") && !v.startsWith("/login") ? v : null;
   })();
+  const enlaceVolver = { href: volver ?? "/", texto: volver ? "Volver" : "Volver a la tienda" };
 
   const alTerminar = async () => {
     const { data } = await supabase.auth.getUser();
@@ -33,22 +35,23 @@ export default function PaginaLogin() {
   };
 
   return (
-    <section className="login-pagina" aria-label="Cuenta">
-      <div className="login-pagina__fondo" aria-hidden="true" />
-      <div className="login-pagina__marco">
-        {!cargando && sesion ? (
-          <div className="login-pagina__ya">
-            <h1>Ya iniciaste sesión</h1>
-            <p>Estás dentro como {perfil?.nombre || sesion.user.email}.</p>
-            <div className="equipo__fila">
-              <Link href={volver ?? "/cuenta/"} className="btn btn--primary">{volver ? "Seguir" : "Ir a mi cuenta"}</Link>
-              <Link href="/tienda/" className="btn btn--secondary">Ver la tienda</Link>
+    <section className="login-pantalla" aria-label="Cuenta">
+      {!cargando && sesion ? (
+        <TarjetaCuenta pantalla volver={enlaceVolver} alTerminar={() => {}}>
+          <div className="tc-form">
+            <div className="tc-form__cabeza">
+              <h1 id="cuenta-titulo">Ya iniciaste sesión</h1>
+              <p>Estás dentro como {perfil?.nombre || sesion.user.email}.</p>
             </div>
+            <Link href={volver ?? "/cuenta/"} className="tc-form__boton tc-form__boton--enlace">
+              {volver ? "Seguir donde estaba" : "Ir a mi cuenta"}
+            </Link>
+            <Link href="/tienda/" className="tc-form__enlace tc-form__volver">Ver la tienda</Link>
           </div>
-        ) : (
-          <TarjetaCuenta key={modo} modoInicial={modo} alTerminar={alTerminar} />
-        )}
-      </div>
+        </TarjetaCuenta>
+      ) : (
+        <TarjetaCuenta key={modo} pantalla volver={enlaceVolver} modoInicial={modo} alTerminar={alTerminar} />
+      )}
     </section>
   );
 }

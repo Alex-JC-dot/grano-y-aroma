@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
+import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/store/authStore";
 import { mensajeDeError, recordarSesion, supabase } from "@/lib/supabase";
@@ -43,21 +44,43 @@ type Props = {
   modoInicial?: Modo;
 };
 
-export function TarjetaCuenta(props: Props) {
+type PropsTarjeta = Props & {
+  /** A pantalla completa (página /login): sin bordes, con la ola grande y el enlace para volver. */
+  pantalla?: boolean;
+  volver?: { href: string; texto: string };
+  /** Contenido propio del panel en lugar del formulario (por ejemplo "Ya iniciaste sesión"). */
+  children?: React.ReactNode;
+};
+
+export function TarjetaCuenta({ pantalla = false, volver, children, ...props }: PropsTarjeta) {
   return (
-    <div className="tarjeta-cuenta">
+    <div className={`tarjeta-cuenta${pantalla ? " tarjeta-cuenta--pantalla" : ""}`}>
       <div className="tarjeta-cuenta__media">
         <FondoMolino />
+        {volver && (
+          <Link href={volver.href} className="tarjeta-cuenta__volver">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+            {volver.texto}
+          </Link>
+        )}
         <div className="tarjeta-cuenta__marca">
           <strong>Grano y Aroma</strong>
           <span>Café de especialidad tostado en Sucre</span>
         </div>
-        <svg className="tarjeta-cuenta__ola" viewBox="0 0 64 100" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M64 0H38C24 12 46 24 34 38C22 52 8 58 22 72C34 84 44 90 30 100H64Z" />
-        </svg>
+        {pantalla ? (
+          <svg className="tarjeta-cuenta__ola tarjeta-cuenta__ola--grande" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M100 0H70C44 10 30 22 46 38C62 54 12 60 22 78C30 92 58 94 48 100H100Z" />
+          </svg>
+        ) : (
+          <svg className="tarjeta-cuenta__ola" viewBox="0 0 64 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M64 0H38C24 12 46 24 34 38C22 52 8 58 22 72C34 84 44 90 30 100H64Z" />
+          </svg>
+        )}
       </div>
       <div className="tarjeta-cuenta__panel">
-        <FormularioCuenta {...props} />
+        <div className="tarjeta-cuenta__contenido">{children ?? <FormularioCuenta {...props} />}</div>
       </div>
     </div>
   );

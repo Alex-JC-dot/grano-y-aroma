@@ -13,25 +13,27 @@ export default function NuevaClave() {
   const router = useRouter();
   const sesion = useAuth((s) => s.session);
   const cargando = useAuth((s) => s.cargando);
+  const volver = { href: "/", texto: "Volver a la tienda" };
 
   return (
-    <section className="login-pagina" aria-label="Contraseña nueva">
-      <div className="login-pagina__fondo" aria-hidden="true" />
-      <div className="login-pagina__marco">
-        {cargando ? (
-          <p aria-busy="true">Un momento…</p>
-        ) : sesion ? (
-          <TarjetaCuenta modoInicial="nueva" soloEntrar alTerminar={() => router.replace("/cuenta/")} />
-        ) : (
-          <div className="login-pagina__ya">
-            <h1>El enlace ya no sirve</h1>
-            <p>Los enlaces para cambiar la contraseña vencen pronto o ya se usaron. Pide uno nuevo desde “¿Olvidaste tu contraseña?”.</p>
-            <div className="equipo__fila">
-              <Link href="/login/" className="btn btn--primary">Ir a iniciar sesión</Link>
+    <section className="login-pantalla" aria-label="Contraseña nueva">
+      {cargando ? (
+        <TarjetaCuenta pantalla volver={volver} alTerminar={() => {}}>
+          <p className="tc-form__cabeza" aria-busy="true">Un momento…</p>
+        </TarjetaCuenta>
+      ) : sesion ? (
+        <TarjetaCuenta pantalla volver={volver} modoInicial="nueva" soloEntrar alTerminar={() => router.replace("/cuenta/")} />
+      ) : (
+        <TarjetaCuenta pantalla volver={volver} alTerminar={() => {}}>
+          <div className="tc-form">
+            <div className="tc-form__cabeza">
+              <h1 id="cuenta-titulo">El enlace ya no sirve</h1>
+              <p>Los enlaces para cambiar la contraseña vencen pronto o ya se usaron. Pide uno nuevo desde “¿Olvidaste tu contraseña?”.</p>
             </div>
+            <Link href="/login/" className="tc-form__boton tc-form__boton--enlace">Ir a iniciar sesión</Link>
           </div>
-        )}
-      </div>
+        </TarjetaCuenta>
+      )}
     </section>
   );
 }
