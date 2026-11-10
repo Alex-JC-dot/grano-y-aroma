@@ -75,11 +75,11 @@ export default function Contacto() {
           <dl className="contacto__datos">
             <div>
               <dt>Correo</dt>
-              <dd><a href="mailto:alexcalatayud9@gmail.com" className="link">alexcalatayud9@gmail.com</a></dd>
+              <dd><a href="mailto:alexcalatayud@gmail.com" className="link">alexcalatayud@gmail.com</a></dd>
             </div>
             <div>
               <dt>WhatsApp</dt>
-              <dd><a href="https://wa.me/59174214581" className="link" target="_blank" rel="noreferrer">+591 742 14581</a></dd>
+              <dd><a href="https://wa.me/59174212541" className="link" target="_blank" rel="noreferrer">+591 742 12541</a></dd>
             </div>
             <div>
               <dt>Ubicación</dt>

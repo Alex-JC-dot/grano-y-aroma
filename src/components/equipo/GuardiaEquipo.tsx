@@ -4,7 +4,7 @@ import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
 import { useAuth } from "@/store/authStore";
 import { PANELES } from "@/lib/supabase";
-import { FormularioCuenta } from "@/components/cuenta/VentanaCuenta";
+import { TarjetaCuenta } from "@/components/cuenta/VentanaCuenta";
 
 /**
  * Protege los paneles del equipo según el rol: sin sesión muestra el acceso del equipo; con
@@ -20,8 +20,8 @@ export default function GuardiaEquipo({ children }: { children: React.ReactNode 
   if (!session) {
     return (
       <div className="guardia">
-        <div className="guardia__caja">
-          <FormularioCuenta soloEntrar motivo="Acceso del equipo: entra con la cuenta que te dio el administrador." alTerminar={() => {}} />
+        <div className="guardia__tarjeta">
+          <TarjetaCuenta soloEntrar motivo="Acceso del equipo: entra con la cuenta que te dio el administrador." alTerminar={() => {}} />
         </div>
       </div>
     );
