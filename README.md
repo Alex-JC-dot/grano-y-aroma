@@ -23,7 +23,7 @@ Para revisar el sistema con cada rol. Se entra con el botón **Login** (arriba a
 
 | Rol | Correo | Contraseña | Qué puede ver |
 |---|---|---|---|
-| Administrador | `prueba.admin@granoyaroma.test` | `<contraseña>` | Todo: panel general, productos, subastas, usuarios, caja, bodega y logística |
+| Administrador | `prueba.admin@granoyaroma.test` | `Cafe-Sucre-2026` | Todo: panel general, productos, subastas, usuarios, caja, bodega y logística |
 | Cajero | `cajero@granoyaroma.test` | `<contraseña>` | Caja de la cafetería |
 | Tostador | `tostador@granoyaroma.test` | `<contraseña>` | Bodega y tueste |
 
