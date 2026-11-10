@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { inventoryItems } from "@/lib/data";
+import BotonesDocumento from "@/components/ui/BotonesDocumento";
+import { fechaISO } from "@/lib/documento";
+import HojaDocumento from "@/components/ui/HojaDocumento";
+import type { HojaExcel } from "@/lib/excel";
 
 /**
  * Bodega y tueste: inventario de café verde, tostado e insumos con alerta de stock mínimo
@@ -57,7 +61,7 @@ export default function PaginaBodega() {
     const lote = `${pref}-${anio}-TOS-${n}`;
     const nuevo: Registro = {
       id: `RT-${n}`,
-      fecha: new Date().toISOString().slice(0, 10),
+      fecha: fechaISO(),
       verde,
       kg: form.kg,
       perfil: form.perfil.trim(),
@@ -70,6 +74,66 @@ export default function PaginaBodega() {
     setAbierto(false);
     setAviso(`Lote ${lote} registrado${p >= APTO_SUBASTA ? ". Es apto para subasta." : "."}`);
   };
+
+  /**
+   * Las dos hojas del libro: inventario y lotes de tueste.
+   *
+   * La columna "Faltante" no está en la pantalla y sí en el Excel a propósito: es la resta
+   * entre el mínimo y lo que hay, y es justo el número con el que se arma una orden de
+   * compra. En pantalla basta con la alerta; en la planilla hace falta la cifra.
+   */
+  const hojasExcel = (): HojaExcel[] => [
+    {
+      nombre: "Inventario",
+      columnas: [
+        { titulo: "Insumo", clave: "nombre" },
+        { titulo: "Tipo", clave: "tipo" },
+        { titulo: "Origen", clave: "origen" },
+        { titulo: "Lote", clave: "lote" },
+        { titulo: "Cantidad", clave: "cantidad", formato: "numero" },
+        { titulo: "Unidad", clave: "unidad" },
+        { titulo: "Stock mínimo", clave: "minimo", formato: "numero" },
+        { titulo: "Faltante", clave: "faltante", formato: "numero" },
+        { titulo: "Estado", clave: "estado" },
+      ],
+      filas: inventoryItems.map((i) => ({
+        nombre: i.name,
+        tipo: TIPOS[i.type],
+        origen: i.origin ?? "",
+        lote: i.lotCode ?? "",
+        cantidad: i.quantity,
+        unidad: i.unit,
+        minimo: i.minStock,
+        faltante: Math.max(0, i.minStock - i.quantity),
+        estado: i.quantity < i.minStock ? "Bajo el mínimo" : "Suficiente",
+      })),
+    },
+    {
+      nombre: "Lotes de tueste",
+      columnas: [
+        { titulo: "Registro", clave: "id" },
+        { titulo: "Fecha", clave: "fecha", formato: "fecha" },
+        { titulo: "Café verde", clave: "verde" },
+        { titulo: "Kilos", clave: "kg", formato: "numero" },
+        { titulo: "Perfil de tueste", clave: "perfil" },
+        { titulo: "Puntaje", clave: "puntaje", formato: "numero" },
+        { titulo: "Apto para subasta", clave: "apto" },
+        { titulo: "Código de trazabilidad", clave: "lote" },
+        { titulo: "Notas de catación", clave: "notas" },
+      ],
+      filas: registros.map((r) => ({
+        id: r.id,
+        fecha: new Date(r.fecha + "T12:00:00"),
+        verde: r.verde,
+        kg: Number(r.kg),
+        perfil: r.perfil,
+        puntaje: r.puntaje,
+        apto: r.puntaje >= APTO_SUBASTA ? "Sí" : "No",
+        lote: r.lote,
+        notas: r.notas,
+      })),
+    },
+  ];
 
   const campo = (k: keyof Form, etiqueta: string, ayuda: string, tipo = "text") => (
     <div className="carrito__campo">
@@ -95,6 +159,14 @@ export default function PaginaBodega() {
           <p className="eyebrow">Producción e inventario</p>
           <h1>Bodega y tueste</h1>
         </div>
+      </div>
+
+      <div className="equipo__acciones erp__descargas">
+        <BotonesDocumento
+          concepto={pestana === "inventario" ? "inventario" : "lotes-de-tueste"}
+          tituloPdf="Bodega y tueste - Grano y Aroma"
+          hojas={hojasExcel}
+        />
       </div>
 
       <div className="pestanas" role="tablist" aria-label="Secciones">
@@ -205,6 +277,76 @@ export default function PaginaBodega() {
           </ul>
         </>
       )}
+      {/* Versión en papel: inventario y lotes de tueste en un solo documento. */}
+      <HojaDocumento
+        className="solo-papel imprimible"
+        titulo="Bodega y producción"
+        subtitulo="Inventario actual y registro de lotes de tueste"
+        numero={`BP-${fechaISO()}`}
+        etiquetaNumero="Reporte"
+        aviso="Datos de demostración: el inventario definitivo se descontará con cada venta registrada."
+      >
+        <section className="doc__bloque">
+          <h3>Inventario</h3>
+          <table className="doc__tabla">
+            <thead>
+              <tr>
+                <th scope="col">Insumo</th>
+                <th scope="col">Tipo</th>
+                <th scope="col" className="num">Cantidad</th>
+                <th scope="col" className="num">Mínimo</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inventoryItems.map((i) => (
+                <tr key={i.id}>
+                  <td>
+                    {i.name}
+                    {i.origin && <small>{i.origin}</small>}
+                  </td>
+                  <td>{TIPOS[i.type]}</td>
+                  <td className="num">{i.quantity} {i.unit}</td>
+                  <td className="num">{i.minStock} {i.unit}</td>
+                  <td>{i.quantity < i.minStock ? "Bajo el mínimo" : "Suficiente"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section className="doc__bloque">
+          <h3>Lotes de tueste</h3>
+          <table className="doc__tabla">
+            <thead>
+              <tr>
+                <th scope="col">Lote</th>
+                <th scope="col">Fecha</th>
+                <th scope="col">Perfil</th>
+                <th scope="col" className="num">Puntaje</th>
+                <th scope="col" className="num">Kilos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {registros.map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    {r.lote}
+                    <small>de {r.verde}</small>
+                  </td>
+                  <td>{r.fecha}</td>
+                  <td>
+                    {r.perfil}
+                    {r.notas && <small>{r.notas}</small>}
+                  </td>
+                  <td className="num">{r.puntaje.toFixed(1)}</td>
+                  <td className="num">{r.kg} kg</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </HojaDocumento>
     </div>
   );
 }

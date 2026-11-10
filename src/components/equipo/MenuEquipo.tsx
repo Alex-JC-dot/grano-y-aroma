@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import BotonTema from "@/components/ui/BotonTema";
 
 const ENLACES = [
   { href: "/admin", label: "Panel general", detalle: "Ventas y reportes" },
@@ -31,9 +32,14 @@ export default function MenuEquipo() {
           ))}
         </ul>
       </nav>
-      <Link href="/tienda" className="equipo__tienda link">
-        Ver la tienda →
-      </Link>
+      <div className="equipo__pie">
+        <Link href="/tienda" className="link">
+          Ver la tienda →
+        </Link>
+        {/* El tema también se cambia desde aquí: quien trabaja en caja o bodega no pasa
+            por la tienda, y de noche el panel claro encandila. */}
+        <BotonTema />
+      </div>
     </header>
   );
 }

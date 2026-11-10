@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
+import BotonTema from "@/components/ui/BotonTema";
 
 const ENLACES = [
   { href: "/tienda", label: "Tienda" },
@@ -57,6 +58,18 @@ export default function NavInicio() {
           </ul>
         </nav>
         <div className="nav__actions">
+          {/*
+            Entrar: solo el estilo, sin funcionalidad.
+            TODO(Alex): la pantalla de inicio de sesión y su conexión con Supabase se están
+            construyendo en otra rama. Aquí se deja el lugar ocupado y con el aspecto
+            definitivo —en ambos temas— para que al integrar esa rama solo haya que
+            reemplazar este botón por un Link a /login. Así el conflicto de fusión es de una
+            línea y no de un módulo entero.
+          */}
+          <button type="button" className="nav__entrar" aria-disabled="true" title="Inicio de sesión en desarrollo">
+            Entrar
+          </button>
+          <BotonTema />
           <button
             type="button"
             className="cart-btn"

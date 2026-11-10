@@ -21,8 +21,8 @@
 .inicio .curva__grafico { grid-column: 1 / span 8; margin: 0; }
 .inicio .curva__grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
 .inicio .curva__etapa { fill: var(--bg); }
-.inicio .curva__etapa--2 { fill: rgba(196, 149, 47, 0.12); }
-.inicio .curva__etapa--3 { fill: rgba(122, 74, 44, 0.12); }
+.inicio .curva__etapa--2 { fill: var(--aviso-tenue); }
+.inicio .curva__etapa--3 { fill: var(--accent-velo); }
 .inicio .curva__etiqueta-etapa { font: 500 13px var(--f-text); fill: var(--muted); text-anchor: middle; }
 .inicio .curva__guia { stroke: var(--line); stroke-width: 1; }
 .inicio .curva__eje { font: 400 12px var(--f-text); fill: var(--muted); }

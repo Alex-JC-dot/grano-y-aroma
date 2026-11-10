@@ -5,16 +5,32 @@ import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { formatBs } from "@/lib/utils";
 import BolsaVisual from "@/components/tienda/BolsaVisual";
+import HojaDocumento from "@/components/ui/HojaDocumento";
+import { imprimirDocumento, numeroDocumento } from "@/lib/documento";
 
 /**
  * Carrito y checkout en 3 pasos (RNF-05): carrito → datos de entrega → pago.
- * El pago es simulado (QR o tarjeta) hasta conectar la pasarela; al confirmar se muestra el
- * número de pedido en el propio panel.
+ * El pago es simulado (QR o tarjeta) hasta conectar la pasarela.
+ *
+ * Al confirmar se emite el comprobante electrónico de compra (RF-03), descargable en PDF.
+ * Antes solo se mostraba un número de pedido suelto, que no es un comprobante: ahora se
+ * guarda el detalle de la compra —líneas, método de pago y datos de entrega— en el momento
+ * de confirmar, porque justo después se vacía el carrito y esa información se perdería.
  */
 
 const PASOS = ["Carrito", "Entrega", "Pago"];
 type Datos = { nombre: string; telefono: string; direccion: string; referencia: string };
 const VACIO: Datos = { nombre: "", telefono: "", direccion: "", referencia: "" };
+
+/** Lo que queda registrado al confirmar: el carrito se vacía enseguida. */
+type Comprobante = {
+  numero: string;
+  fecha: string;
+  lineas: { nombre: string; detalle: string; cantidad: number; precio: number }[];
+  total: number;
+  metodo: string;
+  cliente: Datos;
+};
 
 export default function CartDrawer() {
   const { items, isOpen, toggleCart, removeItem, updateQuantity, clearCart } = useCartStore();
@@ -24,7 +40,7 @@ export default function CartDrawer() {
   const [datos, setDatos] = useState<Datos>(VACIO);
   const [errores, setErrores] = useState<Partial<Record<keyof Datos, string>>>({});
   const [pago, setPago] = useState<"qr" | "tarjeta">("qr");
-  const [pedido, setPedido] = useState<string | null>(null);
+  const [pedido, setPedido] = useState<Comprobante | null>(null);
   const cerrarRef = useRef<HTMLButtonElement>(null);
 
   // Al abrir, el foco va al botón de cerrar; Escape cierra.
@@ -59,7 +75,20 @@ export default function CartDrawer() {
   };
 
   const confirmar = () => {
-    setPedido(`GA-${Date.now().toString().slice(-6)}`);
+    // El detalle se copia ANTES de vaciar el carrito; si no, el comprobante saldría vacío.
+    setPedido({
+      numero: numeroDocumento("GA"),
+      fecha: new Date().toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" }),
+      lineas: items.map((i) => ({
+        nombre: i.name,
+        detalle: i.selectedGrind === "Única" ? (i.presentacion ?? "") : i.selectedGrind,
+        cantidad: i.quantity,
+        precio: i.price,
+      })),
+      total,
+      metodo: pago === "qr" ? "QR Bolivia" : "Tarjeta de débito o crédito",
+      cliente: datos,
+    });
     clearCart();
     setDatos(VACIO);
   };
@@ -112,11 +141,25 @@ export default function CartDrawer() {
         <div className="carrito__cuerpo">
           {pedido ? (
             <div className="carrito__listo">
-              <p className="carrito__numero">{pedido}</p>
+              <p className="carrito__numero">{pedido.numero}</p>
               <p>Recibimos tu pedido. Te avisaremos por WhatsApp cuando salga a entrega.</p>
-              <button type="button" className="btn btn--primary" onClick={cerrar}>
-                Seguir comprando
-              </button>
+              <dl className="carrito__resumen">
+                <dt>Entrega estimada</dt><dd>Hoy o mañana en Sucre</dd>
+                <dt>Método de pago</dt><dd>{pedido.metodo}</dd>
+                <dt>Total pagado</dt><dd>{formatBs(pedido.total)}</dd>
+              </dl>
+              <div className="carrito__acciones-listo">
+                <button
+                  type="button"
+                  className="btn btn--secondary"
+                  onClick={() => imprimirDocumento(`Comprobante ${pedido.numero} - Grano y Aroma`)}
+                >
+                  Descargar comprobante
+                </button>
+                <button type="button" className="btn btn--primary" onClick={cerrar}>
+                  Seguir comprando
+                </button>
+              </div>
             </div>
           ) : paso === 0 ? (
             items.length === 0 ? (
@@ -207,6 +250,68 @@ export default function CartDrawer() {
           </footer>
         )}
       </aside>
+
+      {/* Comprobante electrónico (RF-03). Invisible en pantalla; es lo único que se imprime. */}
+      {pedido && (
+        <HojaDocumento
+          className="solo-papel imprimible"
+          titulo="Comprobante de compra"
+          subtitulo={`Emitido el ${pedido.fecha}`}
+          numero={pedido.numero}
+          etiquetaNumero="Pedido"
+          aviso="Comprobante de demostración: esta compra no generó ningún cobro real."
+        >
+          <section className="doc__bloque">
+            <h3>Datos de entrega</h3>
+            <dl className="doc__datos">
+              <div><dt>Cliente</dt><dd>{pedido.cliente.nombre}</dd></div>
+              <div><dt>WhatsApp</dt><dd>{pedido.cliente.telefono}</dd></div>
+              <div><dt>Dirección</dt><dd>{pedido.cliente.direccion}</dd></div>
+              {pedido.cliente.referencia && (
+                <div><dt>Referencia</dt><dd>{pedido.cliente.referencia}</dd></div>
+              )}
+              <div><dt>Método de pago</dt><dd>{pedido.metodo}</dd></div>
+            </dl>
+          </section>
+
+          <section className="doc__bloque">
+            <h3>Detalle</h3>
+            <table className="doc__tabla">
+              <thead>
+                <tr>
+                  <th scope="col">Producto</th>
+                  <th scope="col" className="num">Cantidad</th>
+                  <th scope="col" className="num">Precio unitario</th>
+                  <th scope="col" className="num">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pedido.lineas.map((l, i) => (
+                  <tr key={`${l.nombre}-${l.detalle}-${i}`}>
+                    <td>
+                      {l.nombre}
+                      {l.detalle && <small>{l.detalle}</small>}
+                    </td>
+                    <td className="num">{l.cantidad}</td>
+                    <td className="num">{formatBs(l.precio)}</td>
+                    <td className="num">{formatBs(l.precio * l.cantidad)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={3}>Envío en Sucre</td>
+                  <td className="num">Sin costo</td>
+                </tr>
+                <tr className="doc__gran-total">
+                  <td colSpan={3}>Total</td>
+                  <td className="num">{formatBs(pedido.total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </section>
+        </HojaDocumento>
+      )}
     </>
   );
 }
