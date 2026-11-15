@@ -1,12 +1,13 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import type { FilaProducto } from "@/store/catalogoStore";
 import type { Categoria } from "@/lib/types";
+import SelectorFoto from "@/components/equipo/SelectorFoto";
+import { subirFoto } from "@/lib/archivos";
 
 /**
  * Productos del administrador (RF-01, RF-05, RF-21): agregar productos a la tienda o a la
@@ -65,6 +66,9 @@ export default function PaginaProductos() {
   const [abierto, setAbierto] = useState(false);
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
+  // "Cambiar foto" en la tabla: un solo selector de archivo para la fila elegida.
+  const archivoFila = useRef<HTMLInputElement>(null);
+  const [filaFoto, setFilaFoto] = useState<Fila | null>(null);
 
   const cargar = useCallback(async () => {
     const { data } = await supabase.from("productos").select("*").order("categoria").order("orden").order("creado_en");
@@ -104,6 +108,27 @@ export default function PaginaProductos() {
     setAviso(p.activo ? `${p.nombre} ya no se ve en la tienda.` : `${p.nombre} vuelve a la tienda.`);
   };
 
+  const cambiarFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = "";
+    const p = filaFoto;
+    if (!archivo || !p) return;
+    setGuardando(p.id);
+    try {
+      const src = await subirFoto(archivo, "productos");
+      const foto = { src };
+      const { error } = await supabase.from("productos").update({ foto }).eq("id", p.id);
+      if (error) throw new Error(mensajeDeError(error));
+      setFilas((xs) => xs.map((x) => (x.id === p.id ? { ...x, foto } : x)));
+      setAviso(`Nueva foto para ${p.nombre}. Ya se ve en la tienda.`);
+    } catch (err) {
+      setAviso(err instanceof Error ? err.message : "No se pudo cambiar la foto.");
+    } finally {
+      setGuardando(null);
+      setFilaFoto(null);
+    }
+  };
+
   const crear = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -132,7 +157,7 @@ export default function PaginaProductos() {
       puntaje: cafe ? n(f.puntaje) : null,
       fecha_tueste: cafe ? new Date().toISOString().slice(0, 10) : null,
       moliendas: cafe ? f.moliendas.split(",").map((x) => x.trim()).filter(Boolean) : ["Única"],
-      foto: !cafe && f.foto ? { src: f.foto } : null,
+      foto: f.categoria !== "bebida" && f.foto ? { src: f.foto } : null,
       color: cafe ? f.color : null,
       grupo: f.categoria === "bebida" ? f.grupo : null,
     };
@@ -240,7 +265,7 @@ export default function PaginaProductos() {
             </fieldset>
           )}
 
-          {cafe ? (
+          {cafe && (
             <fieldset>
               <legend>Color de la etiqueta</legend>
               <div className="equipo__fila" role="radiogroup" aria-label="Color de la etiqueta">
@@ -252,17 +277,18 @@ export default function PaginaProductos() {
                 ))}
               </div>
             </fieldset>
-          ) : f.categoria !== "bebida" && (
+          )}
+          {f.categoria !== "bebida" && (
             <fieldset>
-              <legend>Foto</legend>
-              <div className="admin-sub__fotos" role="radiogroup" aria-label="Foto del producto">
-                {FOTOS.map((src) => (
-                  <label key={src || "ninguna"} className={`admin-sub__foto${f.foto === src ? " is-on" : ""}`}>
-                    <input type="radio" name="foto" value={src} checked={f.foto === src} onChange={cambiar("foto")} className="sr-only" />
-                    {src ? <img src={src} alt="" loading="lazy" /> : <span className="admin-prod__sinfoto">Sin foto</span>}
-                  </label>
-                ))}
-              </div>
+              <legend>{cafe ? "Foto propia (opcional: si no subes una, se usa la bolsa con el color)" : "Foto"}</legend>
+              <SelectorFoto
+                carpeta="productos"
+                etiqueta="Foto del producto"
+                valor={f.foto}
+                galeria={cafe ? [] : FOTOS.filter(Boolean).map((src) => ({ src }))}
+                alCambiar={(src) => setF((x) => ({ ...x, foto: src }))}
+                conSinFoto
+              />
             </fieldset>
           )}
 
@@ -283,6 +309,8 @@ export default function PaginaProductos() {
         </div>
         <p className="equipo__aviso" role="status">{aviso}</p>
       </div>
+
+      <input ref={archivoFila} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={cambiarFoto} />
 
       {cargando ? (
         <p className="caja__vacia" aria-busy="true">Cargando productos…</p>
@@ -338,6 +366,19 @@ export default function PaginaProductos() {
                         {c && (
                           <button type="button" className="link" disabled={guardando === p.id} onClick={() => guardarFila(p)}>
                             Guardar
+                          </button>
+                        )}
+                        {p.categoria !== "bebida" && (
+                          <button
+                            type="button"
+                            className="link"
+                            disabled={guardando === p.id}
+                            onClick={() => {
+                              setFilaFoto(p);
+                              archivoFila.current?.click();
+                            }}
+                          >
+                            {guardando === p.id && filaFoto?.id === p.id ? "Subiendo…" : "Cambiar foto"}
                           </button>
                         )}
                         <button type="button" className="link" disabled={guardando === p.id} onClick={() => alternarActivo(p)}>

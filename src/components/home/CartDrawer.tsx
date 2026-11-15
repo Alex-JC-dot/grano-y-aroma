@@ -9,6 +9,7 @@ import { mensajeDeError, supabase } from "@/lib/supabase";
 import BolsaVisual from "@/components/tienda/BolsaVisual";
 import HojaDocumento from "@/components/ui/HojaDocumento";
 import { imprimirDocumento, numeroDocumento } from "@/lib/documento";
+import { QrPago, SubirComprobante } from "@/components/cuenta/PagoPedido";
 
 /**
  * Carrito y checkout en 3 pasos (RNF-05): carrito → datos de entrega → pago.
@@ -26,6 +27,9 @@ const VACIO: Datos = { nombre: "", telefono: "", direccion: "", referencia: "" }
 
 /** Lo que queda registrado al confirmar: el carrito se vacía enseguida. */
 type Comprobante = {
+  id: number;
+  /** Pago por QR: hay que pagar con el código y subir el comprobante. */
+  porQr: boolean;
   numero: string;
   fecha: string;
   lineas: { nombre: string; detalle: string; cantidad: number; precio: number }[];
@@ -113,6 +117,8 @@ export default function CartDrawer() {
       if (id) await supabase.from("perfiles").update({ telefono: datos.telefono.trim(), direccion: datos.direccion.trim() }).eq("id", id);
       await useAuth.getState().cargarPerfil();
       setPedido({
+        id: data.id,
+        porQr: pago === "qr",
         numero: data.codigo ?? numeroDocumento("GA"),
         fecha: new Date().toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" }),
         lineas,
@@ -178,11 +184,20 @@ export default function CartDrawer() {
           {pedido ? (
             <div className="carrito__listo">
               <p className="carrito__numero">{pedido.numero}</p>
-              <p>Recibimos tu pedido. Te avisaremos por WhatsApp cuando salga a entrega.</p>
+              {pedido.porQr ? (
+                <>
+                  <p>Tu pedido está reservado. Paga con este QR y sube el comprobante para que lo preparemos.</p>
+                  <QrPago codigo={pedido.numero} total={pedido.total} />
+                  <SubirComprobante pedidoId={pedido.id} estado="pendiente" />
+                  <p className="carrito__nota">Si ahora no puedes, súbelo después desde Mi cuenta.</p>
+                </>
+              ) : (
+                <p>Recibimos tu pedido y tu pago. Te avisaremos por WhatsApp cuando salga a entrega.</p>
+              )}
               <dl className="carrito__resumen">
                 <dt>Entrega estimada</dt><dd>Hoy o mañana en Sucre</dd>
                 <dt>Método de pago</dt><dd>{pedido.metodo}</dd>
-                <dt>Total pagado</dt><dd>{formatBs(pedido.total)}</dd>
+                <dt>{pedido.porQr ? "Total a pagar" : "Total pagado"}</dt><dd>{formatBs(pedido.total)}</dd>
               </dl>
               <p className="carrito__nota">Sumaste {Math.floor(pedido.total / 10)} puntos. Puedes seguir tu pedido en Mi cuenta.</p>
               <div className="carrito__acciones-listo">
@@ -245,7 +260,7 @@ export default function CartDrawer() {
               <fieldset className="carrito__pagos">
                 <legend>Método de pago</legend>
                 {[
-                  { v: "qr" as const, t: "QR Bolivia", d: "Escaneas el código desde la app de tu banco." },
+                  { v: "qr" as const, t: "QR Bolivia", d: "Al confirmar te mostramos el QR; pagas desde la app de tu banco y subes el comprobante." },
                   { v: "tarjeta" as const, t: "Tarjeta de débito o crédito", d: "Visa o Mastercard." },
                 ].map((m) => (
                   <label key={m.v} className={`carrito__pago${pago === m.v ? " is-on" : ""}`}>

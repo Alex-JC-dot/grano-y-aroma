@@ -1,12 +1,12 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { abierta, segundosA, useSubastas, type Subasta } from "@/store/subastasStore";
 import { tiempo, useSubastasEnVivo } from "@/components/subastas/EnVivo";
+import SelectorFoto from "@/components/equipo/SelectorFoto";
 
 /**
  * Subastas del administrador (RF-10, RF-15): publicar un lote, abrirlo o cerrarlo antes de
@@ -46,6 +46,7 @@ const nuevoFormulario = () => ({
   abre_en: local(new Date()),
   cierra_en: local(new Date(Date.now() + 48 * 3600 * 1000)),
   imagen: IMAGENES[0].src,
+  imagen_alt: "",
   catacion: Object.fromEntries(ATRIBUTOS.map((a) => [a, ""])) as Record<string, string>,
 });
 
@@ -102,7 +103,7 @@ export default function PaginaSubastasAdmin() {
       finca: txt(f.finca),
       historia: txt(f.historia),
       imagen: f.imagen,
-      imagen_alt: IMAGENES.find((i) => i.src === f.imagen)?.alt ?? null,
+      imagen_alt: IMAGENES.find((i) => i.src === f.imagen)?.alt ?? (f.imagen_alt.trim() || f.titulo.trim()),
       catacion: notas.length >= 3 ? notas : null,
       precio_base: base,
       incremento: Number(f.incremento),
@@ -263,14 +264,18 @@ export default function PaginaSubastasAdmin() {
 
           <fieldset>
             <legend>Foto</legend>
-            <div className="admin-sub__fotos" role="radiogroup" aria-label="Foto del lote">
-              {IMAGENES.map((i) => (
-                <label key={i.src} className={`admin-sub__foto${f.imagen === i.src ? " is-on" : ""}`}>
-                  <input type="radio" name="imagen" value={i.src} checked={f.imagen === i.src} onChange={cambiar("imagen")} className="sr-only" />
-                  <img src={i.src} alt={i.alt} loading="lazy" />
-                </label>
-              ))}
-            </div>
+            <SelectorFoto
+              carpeta="subastas"
+              etiqueta="Foto del lote"
+              valor={f.imagen}
+              galeria={IMAGENES}
+              alCambiar={(src) => setF((x) => ({ ...x, imagen: src }))}
+            />
+            {!IMAGENES.some((i) => i.src === f.imagen) && (
+              <Campo id="s-alt" etiqueta="Describe la foto (para quien no puede verla)" ancho>
+                <input id="s-alt" value={f.imagen_alt} onChange={cambiar("imagen_alt")} placeholder="Cerezas maduras en la rama, al amanecer" />
+              </Campo>
+            )}
           </fieldset>
 
           <fieldset>
