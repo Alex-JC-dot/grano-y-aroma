@@ -1,0 +1,143 @@
+/* =====================================================================
+   Escenas atadas al scroll: el vertido del Club (VertidoScroll) y el paisaje
+   de los Yungas en Nosotros (PaisajeYungas). El componente escribe --p (0 a 1)
+   y data-paso; sin JS la escena se ve quieta y completa.
+   ===================================================================== */
+
+/* ---------- Club: vertido ---------- */
+.inicio .vertido { --p: 0; position: relative; height: 300vh; }
+.inicio .vertido__escena { position: sticky; top: 0; height: 100vh; height: 100dvh; overflow: hidden; background: #2a1d16; }
+.inicio .vertido__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.inicio .vertido__texto {
+  position: absolute;
+  right: max(var(--gut), calc((100vw - 1280px) / 2));
+  bottom: max(48px, 8vh);
+  width: min(440px, 42vw);
+  padding: 28px 30px 30px;
+  border-radius: 18px;
+  background: rgba(28, 20, 15, 0.74);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #f4ece2;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+}
+.inicio .vertido__texto .eyebrow { color: #d9a77a; }
+.inicio .vertido__texto h2 { margin: 6px 0 20px; font: 400 clamp(28px, 2.6vw, 38px) / 1.08 var(--f-display); letter-spacing: -0.01em; color: #f4ece2; }
+
+/* Los tres pasos ocupan la misma celda: se ve el del tramo de scroll actual. */
+.inicio .vertido__pasos { list-style: none; margin: 0 0 22px; padding: 0; display: grid; }
+.inicio .vertido__pasos li {
+  grid-area: 1 / 1;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.45s var(--ease), transform 0.45s var(--ease);
+}
+.inicio .vertido[data-paso="0"] li[data-i="0"],
+.inicio .vertido[data-paso="1"] li[data-i="1"],
+.inicio .vertido[data-paso="2"] li[data-i="2"] { opacity: 1; transform: none; }
+.inicio .vertido[data-paso="todos"] .vertido__pasos { gap: 16px; }
+.inicio .vertido[data-paso="todos"] .vertido__pasos li { grid-area: auto; opacity: 1; transform: none; }
+.inicio .vertido__num { font: 400 34px/1 var(--f-display); color: #d9a77a; min-width: 2ch; }
+.inicio .vertido__pasos h3 { margin: 2px 0 6px; font: 500 19px/1.25 var(--f-text); color: #f4ece2; }
+.inicio .vertido__pasos p { margin: 0; font-size: 16px; line-height: 1.5; color: rgba(244, 236, 226, 0.75); }
+.inicio .vertido__cta { width: 100%; justify-content: center; }
+
+.inicio .vertido__barra { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(244, 236, 226, 0.15); }
+.inicio .vertido__barra span { display: block; height: 100%; background: #d9a77a; transform-origin: left; transform: scaleX(var(--p)); }
+
+@media (max-width: 767px) {
+  .inicio .vertido { height: 260vh; }
+  .inicio .vertido__texto { left: 12px; right: 12px; bottom: 16px; width: auto; padding: 20px 20px 22px; }
+  .inicio .vertido__texto h2 { margin-bottom: 14px; font-size: 26px; }
+  .inicio .vertido__pasos { margin-bottom: 16px; }
+}
+
+/* ---------- Nosotros: paisaje de los Yungas en capas ---------- */
+.inicio .yungas { --p: 0; position: relative; height: 240vh; }
+.inicio .yungas__escena { position: sticky; top: 0; height: 100vh; height: 100dvh; overflow: hidden; background: #d99a78; }
+.inicio .yungas__capa { position: absolute; pointer-events: none; user-select: none; will-change: transform; }
+
+/* Fondo: montañas casi quietas, con un leve acercamiento al bajar. */
+.inicio .yungas__fondo {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 35%;
+  transform: translate3d(0, calc(var(--p) * -4%), 0) scale(calc(1.14 - var(--p) * 0.06));
+}
+
+/* Ladera con el cafetal: sube desde abajo. Un toque cálido para que case con el atardecer. */
+.inicio .yungas__medio {
+  left: -2%;
+  bottom: 0;
+  width: 104%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 100%;
+  filter: saturate(0.9) sepia(0.14) brightness(0.96);
+  /* Sube hasta quedar un poco abajo, para que al final se sigan viendo las montañas. */
+  transform: translate3d(0, calc((1 - var(--p)) * 20% + 8%), 0);
+}
+
+/* Ramas con cerezas a los costados: las capas más rápidas, se abren hacia afuera. */
+.inicio .yungas__rama { width: auto; }
+/* Medida para que, desde el inicio, la rama no llegue al texto centrado. */
+.inicio .yungas__rama--izq {
+  left: -10%;
+  top: -4%;
+  height: 64%;
+  transform: translate3d(calc(var(--p) * -30%), calc(var(--p) * -22%), 0);
+}
+.inicio .yungas__rama--der {
+  right: 0;
+  bottom: -14%;
+  height: 62%;
+  filter: blur(1.5px);
+  transform: translate3d(calc(var(--p) * 34%), calc(var(--p) * 12%), 0) scaleX(-1);
+}
+
+/* Niebla hecha con degradados: cruza despacio entre las capas. */
+.inicio .yungas__niebla {
+  position: absolute;
+  left: -25%;
+  width: 150%;
+  height: 34%;
+  background:
+    radial-gradient(ellipse 30% 50% at 28% 55%, rgba(255, 244, 236, 0.55), transparent 70%),
+    radial-gradient(ellipse 26% 45% at 72% 45%, rgba(255, 240, 230, 0.45), transparent 70%);
+  filter: blur(18px);
+  pointer-events: none;
+  will-change: transform;
+}
+.inicio .yungas__niebla--lejos { top: 40%; opacity: 0.7; transform: translate3d(calc(var(--p) * -10%), 0, 0); }
+.inicio .yungas__niebla--cerca { bottom: 6%; opacity: calc(0.65 - var(--p) * 0.45); transform: translate3d(calc(var(--p) * 14%), 0, 0); }
+
+.inicio .yungas__texto {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--nav, 88px) + 5vh);
+  width: min(100% - 2 * var(--gut), 760px);
+  text-align: center;
+  color: #fff8ef;
+  text-shadow: 0 2px 24px rgba(70, 30, 12, 0.45);
+  transform: translate3d(-50%, calc(var(--p) * -60px), 0);
+}
+.inicio .yungas__eyebrow { margin: 0 0 10px; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; }
+.inicio .yungas__texto h2 { margin: 0 0 14px; font: 400 clamp(34px, 4.6vw, 68px) / 1.04 var(--f-display); letter-spacing: -0.02em; color: #fff8ef; }
+.inicio .yungas__texto p:last-child { margin: 0 auto; max-width: 52ch; font-size: clamp(16px, 1.3vw, 19px); line-height: 1.55; }
+
+@media (max-width: 767px) {
+  .inicio .yungas { height: 200vh; }
+  .inicio .yungas__rama--izq { left: -18%; height: 36%; top: 48%; }
+  .inicio .yungas__rama--der { height: 34%; }
+  .inicio .yungas__texto { top: calc(var(--nav, 60px) + 3vh); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inicio .vertido__pasos li { transition: none; }
+}

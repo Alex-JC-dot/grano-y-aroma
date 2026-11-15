@@ -5,6 +5,7 @@ import Galeria from "@/components/nosotros/Galeria";
 import MapaOrigenes from "@/components/inicio/MapaOrigenes";
 import Cifras from "@/components/nosotros/Cifras";
 import CurvaTueste from "@/components/nosotros/CurvaTueste";
+import PaisajeYungas from "@/components/nosotros/PaisajeYungas";
 
 export const metadata: Metadata = {
   title: "Nosotros: tostaduría y cafetería en Sucre · Grano y Aroma",
@@ -48,6 +49,7 @@ export default function PaginaNosotros() {
         </div>
       </section>
       <Cifras />
+      <PaisajeYungas />
       <MapaOrigenes conRegiones />
       <AsiTrabajamos />
       <CurvaTueste />

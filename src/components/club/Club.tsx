@@ -7,6 +7,7 @@ import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
 import { categoriaDe, esCafe } from "@/lib/catalogo";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
+import VertidoScroll from "./VertidoScroll";
 import { useAuth } from "@/store/authStore";
 
 /**
@@ -235,6 +236,9 @@ export default function Club() {
           </div>
         </div>
       </section>
+
+      {/* El vertido que avanza con el scroll, antes de armar la suscripción. */}
+      <VertidoScroll />
 
       {/* 3. Tu suscripción (si existe) */}
       {vigente && ps && (
