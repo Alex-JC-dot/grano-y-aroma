@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AsiTrabajamos, Visita } from "@/components/inicio/SeccionesInicio";
+import { Visita } from "@/components/inicio/SeccionesInicio";
+import Recorrido from "@/components/nosotros/Recorrido";
 import Galeria from "@/components/nosotros/Galeria";
 import MapaOrigenes from "@/components/inicio/MapaOrigenes";
 import Cifras from "@/components/nosotros/Cifras";
@@ -49,7 +50,7 @@ export default function PaginaNosotros() {
       </section>
       <Cifras />
       <MapaOrigenes conRegiones />
-      <AsiTrabajamos />
+      <Recorrido />
       <CurvaTueste />
       <Galeria />
       <Visita />

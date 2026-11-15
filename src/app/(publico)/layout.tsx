@@ -4,6 +4,7 @@ import "./club-subastas.css";
 import "./mapa.css";
 import "./carrito.css";
 import "./nosotros.css";
+import "./scroll.css";
 import CartDrawer from "@/components/home/CartDrawer";
 import NavInicio from "@/components/inicio/NavInicio";
 import { PieInicio } from "@/components/inicio/SeccionesInicio";
