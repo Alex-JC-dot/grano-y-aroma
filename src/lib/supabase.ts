@@ -86,8 +86,8 @@ export type Perfil = {
 export const PANELES: Record<Rol, string[]> = {
   cliente: [],
   cajero: ["/pos"],
-  tostador: ["/erp"],
-  admin: ["/admin", "/admin/productos", "/admin/subastas", "/admin/usuarios", "/pos", "/erp", "/logistica"],
+  tostador: ["/erp", "/admin/proveedores"],
+  admin: ["/admin", "/admin/productos", "/admin/subastas", "/admin/usuarios", "/admin/proveedores", "/pos", "/erp", "/logistica"],
 };
 
 /** Traduce los errores de Supabase Auth a mensajes claros en español. */

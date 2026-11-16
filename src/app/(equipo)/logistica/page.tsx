@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
-import { verComprobante } from "@/lib/archivos";
 import { TEXTO_PAGO, type PagoEstado } from "@/components/cuenta/PagoPedido";
+import DialogoEntrega from "@/components/equipo/DialogoEntrega";
+import DialogoEtapa from "@/components/equipo/DialogoEtapa";
+import VisorArchivo from "@/components/equipo/VisorArchivo";
 
 /**
  * Logística (RF-29 a RF-31): pedidos de la tienda en línea y de subastas desde Supabase, por
@@ -14,6 +16,11 @@ import { TEXTO_PAGO, type PagoEstado } from "@/components/cuenta/PagoPedido";
  * Pagos por QR: el pedido no puede pasar a preparación hasta que el equipo abre el
  * comprobante y lo aprueba (la base también lo impide). Si lo rechaza, escribe el motivo y el
  * cliente puede enviar otro desde Mi cuenta.
+ *
+ * Cada etapa deja constancia de quién la hizo (migración 011): quién preparó el pedido, qué
+ * repartidor lo lleva y quién registró la entrega, con foto, nombre de quien recibió y firma.
+ * Ninguna se puede saltar ni cerrar sin su evidencia, porque la regla vive en la base: los
+ * botones abren un diálogo, no cambian el estado por sí solos.
  *
  * El botón de WhatsApp abre un chat con el cliente con un mensaje ya escrito según el estado.
  */
@@ -33,7 +40,23 @@ type Pedido = {
   metodo_pago: string;
   pago_estado: PagoEstado;
   pago_nota: string | null;
+  pago_nombre: { nombre: string } | null;   // quién revisó el pago (FK a perfiles)
+  pago_revisado_en: string | null;
   comprobante: string | null;
+  cliente_id: string | null;
+  entrega_foto: string | null;
+  entrega_recibido_por: string | null;
+  entrega_tipo: string | null;
+  entrega_nota: string | null;
+  entrega_firma: string | null;
+  entregado_en: string | null;
+  preparacion_en: string | null;
+  en_camino_en: string | null;
+  preparado_nota: string | null;
+  preparo: { nombre: string } | null;        // FK preparado_por → perfiles
+  despacho: { nombre: string } | null;       // FK despachado_por → perfiles
+  entrego: { nombre: string } | null;        // FK entrega_registrada_por → perfiles
+  reparto: { nombre: string; telefono: string | null; vehiculo: string | null } | null;
   creado_en: string;
   pedido_items: { cantidad: number; molienda: string | null; productos: { nombre: string } | null }[];
 };
@@ -80,6 +103,18 @@ function enlaceWhatsapp(p: Pedido): string | null {
   return `https://wa.me/${numero}?text=${encodeURIComponent(`${hola} ${cuerpo}`)}`;
 }
 
+/** En qué calidad recibió el pedido (los valores los valida la base en la 010). */
+const CALIDAD: Record<string, string> = {
+  titular: "La persona que pidió",
+  familiar: "Un familiar",
+  portero: "Portería o recepción",
+  vecino: "Un vecino",
+  otro: "Otra persona",
+};
+
+const fechaHora = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleString("es-BO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }) : "—";
+
 const productosDe = (p: Pedido) =>
   p.pedido_items.length
     ? p.pedido_items.map((i) => `${i.cantidad} × ${i.productos?.nombre ?? "Producto"}${i.molienda && i.molienda !== "Única" ? ` (${i.molienda})` : ""}`).join(", ")
@@ -90,16 +125,25 @@ export default function PaginaLogistica() {
   const [cargando, setCargando] = useState(true);
   const [elegidoId, setElegidoId] = useState<number | null>(null);
   const [filtro, setFiltro] = useState<Estado | "todos">("todos");
-  const [repartidor, setRepartidor] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [nota, setNota] = useState("");
   const [rechazando, setRechazando] = useState(false);
+  const [etapa, setEtapa] = useState<"preparacion" | "despacho" | "entrega" | null>(null);
+  const [viendo, setViendo] = useState<{ bucket: "comprobantes" | "entregas"; ruta: string; titulo: string } | null>(null);
 
   const cargar = useCallback(async () => {
     const { data } = await supabase
       .from("pedidos")
-      .select("*, pedido_items(cantidad, molienda, productos(nombre))")
+      // pago_nombre llega por la clave foránea pago_revisado_por → perfiles (migración 010).
+      .select(
+        "*, pedido_items(cantidad, molienda, productos(nombre))," +
+          "pago_nombre:perfiles!pedidos_pago_revisado_por_fkey(nombre)," +
+          "preparo:perfiles!pedidos_preparado_por_fkey(nombre)," +
+          "despacho:perfiles!pedidos_despachado_por_fkey(nombre)," +
+          "entrego:perfiles!pedidos_entrega_registrada_por_fkey(nombre)," +
+          "reparto:repartidores!pedidos_repartidor_id_fkey(nombre, telefono, vehiculo)",
+      )
       .in("canal", ["web", "subasta"])
       .order("creado_en", { ascending: false })
       .limit(200);
@@ -122,17 +166,19 @@ export default function PaginaLogistica() {
   const elegido = pedidos.find((p) => p.id === elegidoId) ?? pedidos[0] ?? null;
   const lista = pedidos.filter((p) => filtro === "todos" || p.estado === filtro);
 
-  const cambiarEstado = async (p: Pedido, estado: Estado) => {
-    setGuardando(true);
-    setError("");
-    const cambios: Partial<Pedido> = { estado };
-    if (estado === "en_camino" && repartidor.trim()) cambios.repartidor = repartidor.trim();
-    const { error } = await supabase.from("pedidos").update(cambios).eq("id", p.id);
-    setGuardando(false);
-    if (error) return setError(mensajeDeError(error));
-    setPedidos((ps) => ps.map((x) => (x.id === p.id ? { ...x, ...cambios } : x)));
-    setRepartidor("");
-  };
+  /*
+   * Ya no hay un "cambiar estado" genérico. Cada avance pasa por su diálogo, que recoge la
+   * evidencia y llama a la función correspondiente de la base. Un UPDATE suelto sobre el
+   * estado lo rechazan los triggers de las migraciones 010 y 011.
+   */
+  const siguienteEtapa = (p: Pedido): "preparacion" | "despacho" | "entrega" | null =>
+    p.estado === "recibido" ? "preparacion" : p.estado === "preparacion" ? "despacho" : p.estado === "en_camino" ? "entrega" : null;
+
+  const TEXTO_ETAPA = {
+    preparacion: "Empezar a preparar…",
+    despacho: "Despachar…",
+    entrega: "Confirmar entrega…",
+  } as const;
 
   // Cancelar pasa por la base para devolver el stock y los puntos.
   const cancelar = async (p: Pedido) => {
@@ -145,16 +191,12 @@ export default function PaginaLogistica() {
     cargar();
   };
 
-  const abrirComprobante = async (p: Pedido) => {
-    if (!p.comprobante) return;
-    // La pestaña se abre antes de pedir el enlace para que el navegador no la bloquee.
-    const ventana = window.open("", "_blank");
-    const url = await verComprobante(p.comprobante);
-    if (url && ventana) ventana.location.href = url;
-    else {
-      ventana?.close();
-      setError("No se pudo abrir el comprobante.");
-    }
+  // El comprobante y la foto de entrega se ven dentro de la página, junto a los datos del
+  // pedido: revisar un pago comparando el monto de memoria en otra pestaña es cómo se cuelan
+  // los errores.
+  const verArchivo = (bucket: "comprobantes" | "entregas", ruta: string | null, titulo: string) => {
+    if (!ruta) return;
+    setViendo({ bucket, ruta, titulo });
   };
 
   const revisarPago = async (p: Pedido, aprobado: boolean) => {
@@ -235,13 +277,37 @@ export default function PaginaLogistica() {
                   <span className={`estado ${CLASE[elegido.estado]}`}>{NOMBRE[elegido.estado]}</span>
                 </div>
 
-                <ol className="avance">
-                  {ESTADOS.map((e, i) => (
-                    <li key={e} className={i <= ESTADOS.indexOf(elegido.estado) ? "is-on" : ""}>
-                      <span className="avance__punto" aria-hidden="true" />
-                      {NOMBRE[e]}
-                    </li>
-                  ))}
+                {/*
+                  La línea de avance ya no es solo el nombre del estado: cada paso cumplido
+                  muestra su hora y quién lo hizo. Es lo que convierte "En preparación" en
+                  información útil para quien atiende un reclamo.
+                */}
+                <ol className="avance avance--detalle">
+                  {ESTADOS.map((e, i) => {
+                    const hecho = i <= ESTADOS.indexOf(elegido.estado);
+                    const cuando =
+                      e === "recibido" ? elegido.creado_en
+                      : e === "preparacion" ? elegido.preparacion_en
+                      : e === "en_camino" ? elegido.en_camino_en
+                      : elegido.entregado_en;
+                    const quien =
+                      e === "preparacion" ? elegido.preparo?.nombre
+                      : e === "en_camino" ? elegido.reparto?.nombre
+                      : e === "entregado" ? elegido.entrega_recibido_por
+                      : null;
+                    const etiqueta = e === "en_camino" ? "Lleva" : e === "entregado" ? "Recibió" : "Preparó";
+                    return (
+                      <li key={e} className={hecho ? "is-on" : ""}>
+                        <span className="avance__punto" aria-hidden="true" />
+                        <span className="avance__texto">
+                          <strong>{NOMBRE[e]}</strong>
+                          {hecho && cuando && <small>{fechaHora(cuando)}</small>}
+                          {hecho && quien && <small>{etiqueta}: {quien}</small>}
+                          {e === "preparacion" && hecho && elegido.preparado_nota && <small>“{elegido.preparado_nota}”</small>}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ol>
 
                 <dl className="panel__datos panel__datos--3">
@@ -253,9 +319,33 @@ export default function PaginaLogistica() {
                     <dd>
                       {elegido.metodo_pago === "qr" ? "QR" : elegido.metodo_pago === "tarjeta" ? "Tarjeta" : elegido.metodo_pago} · {formatBs(elegido.total)}
                       {elegido.pago_estado && elegido.pago_estado !== "no_aplica" && <small>{TEXTO_PAGO[elegido.pago_estado]}</small>}
+                      {/* Quién revisó el comprobante: sin esto, "aprobado" no dice quién respondió por él. */}
+                      {elegido.pago_revisado_en && (
+                        <small>
+                          {elegido.pago_estado === "rechazado" ? "Rechazado" : "Aprobado"} por {elegido.pago_nombre?.nombre ?? "el equipo"} ·{" "}
+                          {new Date(elegido.pago_revisado_en).toLocaleString("es-BO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })}
+                        </small>
+                      )}
                     </dd>
                   </div>
-                  <div><dt>Repartidor</dt><dd>{elegido.repartidor || "Sin asignar"}</dd></div>
+                  <div>
+                    <dt>Repartidor</dt>
+                    <dd>
+                      {elegido.reparto?.nombre ?? elegido.repartidor ?? "Sin asignar"}
+                      {elegido.reparto?.vehiculo && <small>{elegido.reparto.vehiculo}</small>}
+                      {elegido.reparto?.telefono && <small>Tel. {elegido.reparto.telefono}</small>}
+                      {elegido.despacho?.nombre && <small>Despachó {elegido.despacho.nombre}</small>}
+                    </dd>
+                  </div>
+                  {elegido.preparo?.nombre && (
+                    <div>
+                      <dt>Preparó</dt>
+                      <dd>
+                        {elegido.preparo.nombre}
+                        {elegido.preparado_nota && <small>“{elegido.preparado_nota}”</small>}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
 
                 {/* Revisión del comprobante de pago por QR */}
@@ -265,7 +355,7 @@ export default function PaginaLogistica() {
                       <>
                         <p><strong>El cliente envió su comprobante.</strong> Revísalo y confirma que el monto sea {formatBs(elegido.total)}.</p>
                         <div className="equipo__fila">
-                          <button type="button" className="btn btn--secondary" onClick={() => abrirComprobante(elegido)}>Ver comprobante</button>
+                          <button type="button" className="btn btn--secondary" onClick={() => verArchivo("comprobantes", elegido.comprobante, `Comprobante del pedido ${elegido.codigo}`)}>Ver comprobante</button>
                           <button type="button" className="btn btn--primary" disabled={guardando} onClick={() => revisarPago(elegido, true)}>Aprobar pago</button>
                           <button type="button" className="link" disabled={guardando} onClick={() => setRechazando((x) => !x)}>Rechazar</button>
                         </div>
@@ -288,30 +378,56 @@ export default function PaginaLogistica() {
                   </div>
                 )}
 
-                {elegido.estado === "preparacion" && (
-                  <div className="carrito__campo" style={{ maxWidth: 360, marginBottom: 16 }}>
-                    <label htmlFor="repartidor">Repartidor (opcional)</label>
-                    <input id="repartidor" value={repartidor} onChange={(e) => setRepartidor(e.target.value)} placeholder="Carlos M." />
-                  </div>
-                )}
-
                 {error && <p className="carrito__error" role="alert">{error}</p>}
 
                 {elegido.estado === "entregado" ? (
-                  <p className="caja__comprobante"><strong>Pedido entregado</strong></p>
+                  /* Prueba de entrega: lo que permite responder un "a mí nunca me llegó". */
+                  <div className="prueba">
+                    <div className="prueba__datos">
+                      <p className="prueba__titulo"><strong>Entregado</strong> · {fechaHora(elegido.entregado_en)}</p>
+                      <dl className="panel__datos">
+                        <div><dt>Recibió</dt><dd>{elegido.entrega_recibido_por ?? "—"}{elegido.entrega_tipo ? <small>{CALIDAD[elegido.entrega_tipo] ?? elegido.entrega_tipo}</small> : null}</dd></div>
+                        {elegido.reparto?.nombre && (<div><dt>Lo llevó</dt><dd>{elegido.reparto.nombre}{elegido.reparto.vehiculo ? <small>{elegido.reparto.vehiculo}</small> : null}</dd></div>)}
+                        {elegido.entrego?.nombre && (<div><dt>Registró</dt><dd>{elegido.entrego.nombre}</dd></div>)}
+                        {elegido.entrega_nota && (<div><dt>Nota</dt><dd>{elegido.entrega_nota}</dd></div>)}
+                      </dl>
+                    </div>
+                    <div className="prueba__archivos">
+                      {elegido.entrega_foto ? (
+                        <button type="button" className="prueba__foto" onClick={() => verArchivo("entregas", elegido.entrega_foto, `Entrega del pedido ${elegido.codigo}`)}>
+                          Ver la foto
+                        </button>
+                      ) : (
+                        /* Pedidos cerrados antes de la 010: quedaron sin prueba y conviene decirlo. */
+                        <p className="caja__sub">Este pedido se cerró antes de que se pidiera foto de entrega.</p>
+                      )}
+                      {elegido.entrega_firma && (
+                        <button type="button" className="prueba__foto" onClick={() => verArchivo("entregas", elegido.entrega_firma, `Firma de ${elegido.entrega_recibido_por ?? "quien recibió"}`)}>
+                          Ver la firma
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 ) : elegido.estado === "cancelado" ? (
                   <p className="caja__comprobante"><strong>Pedido cancelado</strong></p>
                 ) : (
                   <div className="equipo__fila">
-                    <button
-                      type="button"
-                      className="btn btn--primary detalle__boton"
-                      disabled={guardando || (elegido.estado === "recibido" && !pagoListo(elegido))}
-                      title={elegido.estado === "recibido" && !pagoListo(elegido) ? "Primero aprueba el pago" : undefined}
-                      onClick={() => cambiarEstado(elegido, ESTADOS[ESTADOS.indexOf(elegido.estado) + 1])}
-                    >
-                      Pasar a “{NOMBRE[ESTADOS[ESTADOS.indexOf(elegido.estado) + 1]]}”
-                    </button>
+                    {(() => {
+                      const paso = siguienteEtapa(elegido);
+                      if (!paso) return null;
+                      const faltaPago = elegido.estado === "recibido" && !pagoListo(elegido);
+                      return (
+                        <button
+                          type="button"
+                          className="btn btn--primary detalle__boton"
+                          disabled={guardando || faltaPago}
+                          title={faltaPago ? "Primero aprueba el pago" : undefined}
+                          onClick={() => { setError(""); setEtapa(paso); }}
+                        >
+                          {TEXTO_ETAPA[paso]}
+                        </button>
+                      );
+                    })()}
                     {elegido.estado === "recibido" && (
                       <button type="button" className="btn btn--secondary" disabled={guardando} onClick={() => cancelar(elegido)}>
                         Cancelar pedido
@@ -332,6 +448,29 @@ export default function PaginaLogistica() {
           </section>
         </div>
       )}
+
+      {etapa === "entrega" && elegido && (
+        <DialogoEntrega
+          pedidoId={elegido.id}
+          codigo={elegido.codigo}
+          clienteId={elegido.cliente_id}
+          nombreCliente={elegido.nombre}
+          alTerminar={cargar}
+          alCerrar={() => setEtapa(null)}
+        />
+      )}
+
+      {(etapa === "preparacion" || etapa === "despacho") && elegido && (
+        <DialogoEtapa
+          etapa={etapa}
+          pedidoId={elegido.id}
+          codigo={elegido.codigo}
+          alTerminar={cargar}
+          alCerrar={() => setEtapa(null)}
+        />
+      )}
+
+      {viendo && <VisorArchivo bucket={viendo.bucket} ruta={viendo.ruta} titulo={viendo.titulo} alCerrar={() => setViendo(null)} />}
     </div>
   );
 }
