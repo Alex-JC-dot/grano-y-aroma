@@ -3,7 +3,7 @@
 import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
 import { useAuth } from "@/store/authStore";
-import { PANELES } from "@/lib/supabase";
+import { panelesDe } from "@/lib/supabase";
 import BotonTema from "@/components/ui/BotonTema";
 
 const ENLACES = [
@@ -24,7 +24,7 @@ const NOMBRE_ROL = { cliente: "Cliente", cajero: "Cajero", tostador: "Tostador",
 export default function MenuEquipo() {
   const ruta = useRuta();
   const { perfil, session, salir } = useAuth();
-  const visibles = perfil ? ENLACES.filter((e) => PANELES[perfil.rol].includes(e.href)) : [];
+  const visibles = perfil ? ENLACES.filter((e) => panelesDe(perfil.rol).includes(e.href)) : [];
 
   return (
     <header className="equipo__menu">

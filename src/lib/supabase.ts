@@ -92,6 +92,12 @@ export const PANELES: Record<Rol, string[]> = {
   admin: ["/admin", "/admin/productos", "/admin/subastas", "/admin/usuarios", "/admin/proveedores", "/pos", "/erp", "/logistica"],
 };
 
+/**
+ * Paneles de un rol, sin romper nunca: si la base tiene un rol que esta versión de la web
+ * todavía no conoce (por ejemplo, un rol nuevo antes de publicar su pantalla), devuelve [].
+ */
+export const panelesDe = (rol?: string | null): string[] => (rol ? PANELES[rol as Rol] : undefined) ?? [];
+
 /** Traduce los errores de Supabase Auth a mensajes claros en español. */
 export function mensajeDeError(e: unknown): string {
   const m = (e as { message?: string })?.message ?? String(e);
