@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/store/authStore";
 import { mensajeDeError, recordarSesion, supabase } from "@/lib/supabase";
 
@@ -52,6 +52,64 @@ type PropsTarjeta = Props & {
   children?: React.ReactNode;
 };
 
+/*
+ * La ola entre la foto y el formulario, con acabado de chocolate satinado: el borde toma un
+ * tono de chocolate con leche que se oscurece hacia el panel (así el empalme no se nota), un
+ * reflejo claro recorre la curva como en una barra templada y una sombra le da volumen sobre
+ * la foto. Los trazos no se deforman al estirar el SVG (vector-effect: non-scaling-stroke).
+ */
+const OLAS = {
+  grande: {
+    vista: "0 0 100 100",
+    // Solo el borde curvo (para el brillo) y la forma completa (para el relleno).
+    borde: "M70 0C44 10 30 22 46 38C62 54 12 60 22 78C30 92 58 94 48 100",
+    cierre: "H100V0Z",
+    desde: 12,
+    hasta: 100,
+  },
+  chica: {
+    vista: "0 0 64 100",
+    borde: "M38 0C24 12 46 24 34 38C22 52 8 58 22 72C34 84 44 90 30 100",
+    cierre: "H64V0Z",
+    desde: 8,
+    hasta: 64,
+  },
+} as const;
+
+function OlaChocolate({ grande }: { grande: boolean }) {
+  const id = useId().replace(/:/g, "");
+  const o = grande ? OLAS.grande : OLAS.chica;
+  return (
+    <svg
+      className={`tarjeta-cuenta__ola${grande ? " tarjeta-cuenta__ola--grande" : ""}`}
+      viewBox={o.vista}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <defs>
+        {/* Relleno: chocolate con leche en el borde → espresso del panel. */}
+        <linearGradient id={`${id}-relleno`} gradientUnits="userSpaceOnUse" x1={o.desde} y1="0" x2={o.hasta} y2="0">
+          <stop offset="0" stopColor="#6b3f27" />
+          <stop offset="0.18" stopColor="#4a2c1d" />
+          <stop offset="0.45" stopColor="#2c1e17" />
+          <stop offset="0.75" stopColor="var(--tc-panel)" />
+        </linearGradient>
+        {/* El reflejo es más fuerte en el centro de la curva y se apaga en los extremos. */}
+        <linearGradient id={`${id}-brillo`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffe3c8" stopOpacity="0" />
+          <stop offset="0.3" stopColor="#ffe3c8" stopOpacity="0.55" />
+          <stop offset="0.62" stopColor="#ffe3c8" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#ffe3c8" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${o.borde}${o.cierre}`} fill={`url(#${id}-relleno)`} />
+      {/* Halo ancho y difuso + línea fina: así se ve el brillo de un chocolate templado. */}
+      <path d={o.borde} className="tarjeta-cuenta__ola-halo" stroke={`url(#${id}-brillo)`} />
+      <path d={o.borde} className="tarjeta-cuenta__ola-brillo" stroke={`url(#${id}-brillo)`} transform="translate(1.6 0)" />
+    </svg>
+  );
+}
+
 export function TarjetaCuenta({ pantalla = false, volver, children, ...props }: PropsTarjeta) {
   return (
     <div className={`tarjeta-cuenta${pantalla ? " tarjeta-cuenta--pantalla" : ""}`}>
@@ -69,15 +127,7 @@ export function TarjetaCuenta({ pantalla = false, volver, children, ...props }: 
           <strong>Grano y Aroma</strong>
           <span>Café de especialidad tostado en Sucre</span>
         </div>
-        {pantalla ? (
-          <svg className="tarjeta-cuenta__ola tarjeta-cuenta__ola--grande" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M100 0H70C44 10 30 22 46 38C62 54 12 60 22 78C30 92 58 94 48 100H100Z" />
-          </svg>
-        ) : (
-          <svg className="tarjeta-cuenta__ola" viewBox="0 0 64 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M64 0H38C24 12 46 24 34 38C22 52 8 58 22 72C34 84 44 90 30 100H64Z" />
-          </svg>
-        )}
+        <OlaChocolate grande={pantalla} />
       </div>
       <div className="tarjeta-cuenta__panel">
         <div className="tarjeta-cuenta__contenido">{children ?? <FormularioCuenta {...props} />}</div>
