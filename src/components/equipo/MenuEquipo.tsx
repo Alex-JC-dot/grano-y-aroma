@@ -3,7 +3,7 @@
 import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
 import { useAuth } from "@/store/authStore";
-import { PANELES } from "@/lib/supabase";
+import { panelesDe } from "@/lib/supabase";
 import BotonTema from "@/components/ui/BotonTema";
 
 const ENLACES = [
@@ -15,15 +15,16 @@ const ENLACES = [
   { href: "/pos", label: "Caja", detalle: "Venta en la cafetería" },
   { href: "/erp", label: "Bodega y tueste", detalle: "Stock y lotes" },
   { href: "/logistica", label: "Logística", detalle: "Pedidos y entregas" },
+  { href: "/repartidor", label: "Mis entregas", detalle: "Pedidos para llevar" },
 ];
 
-const NOMBRE_ROL = { cliente: "Cliente", cajero: "Cajero", tostador: "Tostador", admin: "Administrador" } as const;
+const NOMBRE_ROL = { cliente: "Cliente", cajero: "Cajero", tostador: "Tostador", repartidor: "Repartidor", admin: "Administrador" } as const;
 
 /** Barra lateral de los paneles internos: solo muestra los que el rol puede abrir. */
 export default function MenuEquipo() {
   const ruta = useRuta();
   const { perfil, session, salir } = useAuth();
-  const visibles = perfil ? ENLACES.filter((e) => PANELES[perfil.rol].includes(e.href)) : [];
+  const visibles = perfil ? ENLACES.filter((e) => panelesDe(perfil.rol).includes(e.href)) : [];
 
   return (
     <header className="equipo__menu">
