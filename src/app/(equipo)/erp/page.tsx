@@ -39,8 +39,11 @@ const num = (v: string) => Number(v.replace(",", "."));
 
 type FormTueste = { verde: string; kgVerde: string; kgTostado: string; perfil: string; puntaje: string; notas: string; producto: string; bolsas: string };
 const TUESTE_VACIO: FormTueste = { verde: "", kgVerde: "", kgTostado: "", perfil: "", puntaje: "", notas: "", producto: "", bolsas: "" };
-type FormVerde = { codigo: string; nombre: string; origen: string; proveedor: string; kg: string; costo: string };
-const VERDE_VACIO: FormVerde = { codigo: "", nombre: "", origen: "", proveedor: "", kg: "", costo: "" };
+// proveedorId: el id de uno de nuestros proveedores (tabla de la 011), "otro" o "" (ninguno).
+// proveedor: el nombre escrito a mano, solo cuando se elige "Otro".
+type FormVerde = { codigo: string; nombre: string; origen: string; proveedorId: string; proveedor: string; kg: string; costo: string };
+const VERDE_VACIO: FormVerde = { codigo: "", nombre: "", origen: "", proveedorId: "", proveedor: "", kg: "", costo: "" };
+type Proveedor = { id: number; nombre: string; region: string | null };
 
 export default function PaginaBodega() {
   const [pestana, setPestana] = useState<"inventario" | "tueste">("inventario");
@@ -48,6 +51,7 @@ export default function PaginaBodega() {
   const [insumos, setInsumos] = useState<Insumo[]>([]);
   const [tostados, setTostados] = useState<Tostado[]>([]);
   const [tuestes, setTuestes] = useState<Tueste[]>([]);
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [cargando, setCargando] = useState(true);
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
@@ -57,12 +61,14 @@ export default function PaginaBodega() {
   const [enviando, setEnviando] = useState(false);
 
   const cargar = useCallback(async () => {
-    const [v, i, t, tu] = await Promise.all([
+    const [v, i, t, tu, pr] = await Promise.all([
       supabase.from("cafe_verde").select("*").order("codigo"),
       supabase.from("insumos").select("*").order("nombre"),
       supabase.from("productos").select("id, nombre, stock, stock_minimo, codigo_lote, categoria").in("categoria", ["grano", "molido"]).order("orden"),
       supabase.from("tuestes").select("*, cafe_verde(codigo, nombre), productos(nombre)").order("creado_en", { ascending: false }),
+      supabase.from("proveedores").select("id, nombre, region").eq("activo", true).order("nombre"),
     ]);
+    setProveedores((pr.data as Proveedor[]) ?? []);
     setVerdes(((v.data as Verde[]) ?? []).map((x) => ({ ...x, kg: Number(x.kg), kg_minimo: Number(x.kg_minimo) })));
     setInsumos(((i.data as Insumo[]) ?? []).map((x) => ({ ...x, cantidad: Number(x.cantidad), minimo: Number(x.minimo) })));
     setTostados((t.data as Tostado[]) ?? []);
@@ -120,12 +126,17 @@ export default function PaginaBodega() {
     if (!/^[A-Z]{2,4}-\d{4}-GRN-\d{3}$/.test(codigo)) return setError("El código va así: VS-2025-GRN-013.");
     if (!fv.nombre.trim()) return setError("Escribe el nombre del café verde.");
     if (!(kg > 0)) return setError("Escribe los kilos que entraron.");
+    if (fv.proveedorId === "otro" && !fv.proveedor.trim()) return setError("Escribe el nombre del proveedor.");
+    // Uno de nuestros proveedores: se guarda el vínculo (proveedor_id) y su nombre, que es lo
+    // que leen las pantallas y reportes. "Otro": solo el nombre escrito a mano.
+    const elegido = proveedores.find((p) => String(p.id) === fv.proveedorId);
     setEnviando(true);
     const { error } = await supabase.from("cafe_verde").insert({
       codigo,
       nombre: fv.nombre.trim(),
       origen: fv.origen.trim() || null,
-      proveedor: fv.proveedor.trim() || null,
+      proveedor: elegido ? elegido.nombre : fv.proveedorId === "otro" ? fv.proveedor.trim() : null,
+      proveedor_id: elegido ? elegido.id : null,
       kg,
       costo_kg: fv.costo.trim() ? num(fv.costo) : null,
     });
@@ -257,7 +268,27 @@ export default function PaginaBodega() {
             {campo("v-codigo", "Código del lote", fv.codigo, (x) => setFv((f) => ({ ...f, codigo: x })), "VS-2025-GRN-013")}
             {campo("v-nombre", "Nombre", fv.nombre, (x) => setFv((f) => ({ ...f, nombre: x })), "Café verde Villa Serrano")}
             {campo("v-origen", "Origen", fv.origen, (x) => setFv((f) => ({ ...f, origen: x })), "Villa Serrano, Chuquisaca")}
-            {campo("v-prov", "Productor o proveedor", fv.proveedor, (x) => setFv((f) => ({ ...f, proveedor: x })))}
+            <div className="carrito__campo">
+              <label htmlFor="v-prov">Productor o proveedor</label>
+              <select
+                id="v-prov"
+                className="tueste-form__select"
+                value={fv.proveedorId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  const p = proveedores.find((x) => String(x.id) === id);
+                  // Al elegir uno de los nuestros, si el origen está vacío se completa con su región.
+                  setFv((f) => ({ ...f, proveedorId: id, proveedor: id === "otro" ? f.proveedor : "", origen: f.origen || p?.region || "" }));
+                }}
+              >
+                <option value="">Elige un proveedor…</option>
+                {proveedores.map((p) => (
+                  <option key={p.id} value={p.id}>{p.nombre}{p.region ? ` · ${p.region}` : ""}</option>
+                ))}
+                <option value="otro">Otro (escribir el nombre)</option>
+              </select>
+            </div>
+            {fv.proveedorId === "otro" && campo("v-prov-otro", "Nombre del proveedor", fv.proveedor, (x) => setFv((f) => ({ ...f, proveedor: x })), "Cooperativa de Caranavi")}
             {campo("v-kg", "Kilos que entraron", fv.kg, (x) => setFv((f) => ({ ...f, kg: x })), "60", "number")}
             {campo("v-costo", "Costo por kg (Bs.)", fv.costo, (x) => setFv((f) => ({ ...f, costo: x })), "45", "number")}
           </div>
