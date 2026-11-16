@@ -11,6 +11,7 @@ const ENLACES = [
   { href: "/admin/productos", label: "Productos", detalle: "Precios, stock y nuevos" },
   { href: "/admin/subastas", label: "Subastas", detalle: "Publicar y cerrar lotes" },
   { href: "/admin/usuarios", label: "Usuarios", detalle: "Cuentas y roles" },
+  { href: "/admin/proveedores", label: "Proveedores", detalle: "Compras y recepciones" },
   { href: "/pos", label: "Caja", detalle: "Venta en la cafetería" },
   { href: "/erp", label: "Bodega y tueste", detalle: "Stock y lotes" },
   { href: "/logistica", label: "Logística", detalle: "Pedidos y entregas" },

@@ -5,11 +5,16 @@ import { useCallback, useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { QrPago, SubirComprobante, TEXTO_PAGO, type PagoEstado } from "./PagoPedido";
+import PruebaEntrega from "./PruebaEntrega";
 
 /**
  * Mis pedidos (Mi cuenta): cada pedido con su línea de tiempo, el estado del pago y, si
  * corresponde, el QR y el botón para subir el comprobante. Mientras esté "Recibido" el cliente
  * puede cancelarlo (el stock vuelve a la tienda). Los cambios llegan en vivo (Realtime).
+ *
+ * Cuando el pedido se entrega, el cliente ve la prueba: la foto que tomó el repartidor, quién
+ * recibió y a qué hora. Eso cierra el círculo del seguimiento: el estado "Entregado" deja de
+ * ser una palabra y pasa a ser algo que se puede comprobar.
  */
 
 type Estado = "recibido" | "preparacion" | "en_camino" | "entregado" | "cancelado";
@@ -25,6 +30,13 @@ type Pedido = {
   pago_estado: PagoEstado;
   pago_nota: string | null;
   repartidor: string | null;
+  entrega_foto: string | null;
+  entrega_recibido_por: string | null;
+  entrega_tipo: string | null;
+  entrega_nota: string | null;
+  entrega_firma: string | null;
+  preparado_por: string | null;
+  reparto: { nombre: string; telefono: string | null; vehiculo: string | null } | null;
   creado_en: string;
   preparacion_en: string | null;
   en_camino_en: string | null;
@@ -64,7 +76,7 @@ export default function MisPedidos({ uid }: { uid: string }) {
   const cargar = useCallback(async () => {
     const { data } = await supabase
       .from("pedidos")
-      .select("id, codigo, canal, estado, total, nombre, direccion, metodo_pago, pago_estado, pago_nota, repartidor, creado_en, preparacion_en, en_camino_en, entregado_en, cancelado_en, pedido_items(cantidad, molienda, productos(nombre))")
+      .select("id, codigo, canal, estado, total, nombre, direccion, metodo_pago, pago_estado, pago_nota, repartidor, preparado_por, entrega_foto, entrega_recibido_por, entrega_tipo, entrega_nota, entrega_firma, creado_en, preparacion_en, en_camino_en, entregado_en, cancelado_en, pedido_items(cantidad, molienda, productos(nombre)), reparto:repartidores!pedidos_repartidor_id_fkey(nombre, telefono, vehiculo)")
       .eq("cliente_id", uid)
       .order("creado_en", { ascending: false });
     setPedidos(((data as unknown as Pedido[]) ?? []).map((p) => ({ ...p, total: Number(p.total) })));
@@ -137,11 +149,28 @@ export default function MisPedidos({ uid }: { uid: string }) {
                         <span>
                           <strong>{x.texto}</strong>
                           {i <= actual && <small>{hora(p[x.hora] as string | null)}</small>}
-                          {x.e === "en_camino" && i <= actual && p.repartidor && <small>Lo lleva {p.repartidor}</small>}
+                          {x.e === "en_camino" && i <= actual && (p.reparto?.nombre || p.repartidor) && (
+                          <small>
+                            Lo lleva {p.reparto?.nombre ?? p.repartidor}
+                            {p.reparto?.vehiculo ? ` · ${p.reparto.vehiculo}` : ""}
+                          </small>
+                        )}
                         </span>
                       </li>
                     ))}
                   </ol>
+                )}
+
+                {p.estado === "entregado" && (
+                  <PruebaEntrega
+                    foto={p.entrega_foto}
+                    recibidoPor={p.entrega_recibido_por}
+                    tipo={p.entrega_tipo}
+                    nota={p.entrega_nota}
+                    firma={p.entrega_firma}
+                    cuando={p.entregado_en}
+                    repartidor={p.reparto?.nombre ?? p.repartidor}
+                  />
                 )}
 
                 {p.estado !== "cancelado" && p.metodo_pago === "qr" && p.pago_estado !== "no_aplica" && (
