@@ -18,7 +18,9 @@ import { mensajeDeError, supabase } from "@/lib/supabase";
  *    era imposible saber cuántos pedidos llevaba cada uno.
  */
 
-type Repartidor = { id: number; nombre: string; telefono: string | null; vehiculo: string | null };
+// perfil_id: la cuenta con la que el repartidor entra (migración 012). Sin cuenta no podría
+// confirmar la entrega y el pedido quedaría trabado "En camino", así que no se puede elegir.
+type Repartidor = { id: number; nombre: string; telefono: string | null; vehiculo: string | null; perfil_id: string | null };
 
 export default function DialogoEtapa({
   etapa,
@@ -45,7 +47,7 @@ export default function DialogoEtapa({
   const cargarRepartidores = useCallback(async () => {
     const { data, error: e } = await supabase
       .from("repartidores")
-      .select("id, nombre, telefono, vehiculo")
+      .select("id, nombre, telefono, vehiculo, perfil_id")
       .eq("activo", true)
       .order("nombre");
     if (e) {
@@ -59,8 +61,9 @@ export default function DialogoEtapa({
     }
     const lista = (data as Repartidor[]) ?? [];
     setRepartidores(lista);
-    // Con un solo repartidor activo no tiene sentido obligar a elegirlo.
-    if (lista.length === 1) setElegido(lista[0].id);
+    // Con un solo repartidor con cuenta no tiene sentido obligar a elegirlo.
+    const conCuenta = lista.filter((r) => r.perfil_id);
+    if (conCuenta.length === 1) setElegido(conCuenta[0].id);
   }, []);
 
   useEffect(() => {
@@ -127,12 +130,14 @@ export default function DialogoEtapa({
                       value={r.id}
                       checked={elegido === r.id}
                       onChange={() => setElegido(r.id)}
-                      disabled={guardando}
+                      disabled={guardando || !r.perfil_id}
                     />
                     <span>
                       <strong>{r.nombre}</strong>
                       <small>
-                        {[r.vehiculo, r.telefono].filter(Boolean).join(" · ") || "Sin datos de contacto"}
+                        {r.perfil_id
+                          ? [r.vehiculo, r.telefono].filter(Boolean).join(" · ") || "Sin datos de contacto"
+                          : "Sin cuenta: dale el rol Repartidor en Usuarios para poder asignarle pedidos"}
                       </small>
                     </span>
                   </label>

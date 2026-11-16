@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/store/authStore";
-import { PANELES, supabase, type Rol } from "@/lib/supabase";
+import { panelesDe, supabase, type Rol } from "@/lib/supabase";
 import { TarjetaCuenta } from "./VentanaCuenta";
 
 /**
@@ -31,7 +31,7 @@ export default function PaginaLogin() {
       const r = await supabase.from("perfiles").select("rol").eq("id", data.user.id).maybeSingle();
       rol = (r.data?.rol as Rol | undefined) ?? undefined;
     }
-    router.replace(volver ?? (rol && rol !== "cliente" ? `${PANELES[rol][0]}/` : "/cuenta/"));
+    router.replace(volver ?? (rol && rol !== "cliente" ? `${panelesDe(rol)[0] ?? "/cuenta"}/` : "/cuenta/"));
   };
 
   return (

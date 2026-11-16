@@ -3,7 +3,7 @@
 import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
 import { useAuth } from "@/store/authStore";
-import { PANELES } from "@/lib/supabase";
+import { panelesDe } from "@/lib/supabase";
 import { TarjetaCuenta } from "@/components/cuenta/VentanaCuenta";
 
 /**
@@ -27,7 +27,7 @@ export default function GuardiaEquipo({ children }: { children: React.ReactNode 
     );
   }
 
-  const permitidos = perfil ? PANELES[perfil.rol] : [];
+  const permitidos = panelesDe(perfil?.rol);
   if (!permitidos.includes(ruta)) {
     return (
       <div className="guardia">

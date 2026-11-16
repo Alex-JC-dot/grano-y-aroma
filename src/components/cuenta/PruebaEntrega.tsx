@@ -24,6 +24,13 @@ const CALIDAD: Record<string, string> = {
   vecino: "un vecino",
   otro: "otra persona",
 };
+const CALIDAD_EQUIPO: Record<string, string> = {
+  titular: "la persona que pidió",
+  familiar: "un familiar",
+  portero: "portería o recepción",
+  vecino: "un vecino",
+  otro: "otra persona",
+};
 
 export default function PruebaEntrega({
   foto,
@@ -33,6 +40,7 @@ export default function PruebaEntrega({
   firma,
   cuando,
   repartidor,
+  paraEquipo = false,
 }: {
   foto: string | null;
   recibidoPor: string | null;
@@ -41,6 +49,8 @@ export default function PruebaEntrega({
   firma?: string | null;
   cuando: string | null;
   repartidor: string | null;
+  /** En Logística: el admin revisa lo que mandó el repartidor antes de cerrar el pedido. */
+  paraEquipo?: boolean;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [urlFirma, setUrlFirma] = useState<string | null>(null);
@@ -76,19 +86,19 @@ export default function PruebaEntrega({
     : null;
 
   return (
-    <section className="prueba-entrega" aria-label="Constancia de entrega">
-      <h3>Tu pedido fue entregado</h3>
+    <section className={`prueba-entrega${paraEquipo ? " prueba-entrega--equipo" : ""}`} aria-label="Constancia de entrega">
+      <h3>{paraEquipo ? "Lo que mandó el repartidor" : "Tu pedido fue entregado"}</h3>
 
       {foto && !fallo && (
         <figure className="prueba-entrega__foto">
           {url ? (
             <a href={url} target="_blank" rel="noreferrer">
-              <img src={url} alt="Foto tomada al entregar tu pedido" loading="lazy" />
+              <img src={url} alt={paraEquipo ? "Foto que tomó el repartidor al entregar" : "Foto tomada al entregar tu pedido"} loading="lazy" />
             </a>
           ) : (
             <span className="prueba-entrega__cargando" aria-busy="true">Cargando la foto…</span>
           )}
-          <figcaption>Foto tomada al dejar tu pedido.</figcaption>
+          <figcaption>{paraEquipo ? "Foto de la entrega. Tócala para verla en grande." : "Foto tomada al dejar tu pedido."}</figcaption>
         </figure>
       )}
 
@@ -104,7 +114,7 @@ export default function PruebaEntrega({
             <dt>Recibió</dt>
             <dd>
               {recibidoPor}
-              {tipo && CALIDAD[tipo] && <small>Quedó {CALIDAD[tipo]}.</small>}
+              {tipo && CALIDAD[tipo] && <small>{paraEquipo ? `En calidad de: ${CALIDAD_EQUIPO[tipo]}` : `Quedó ${CALIDAD[tipo]}.`}</small>}
             </dd>
           </div>
         )}
@@ -129,9 +139,11 @@ export default function PruebaEntrega({
         </figure>
       )}
 
-      <p className="prueba-entrega__pie">
-        ¿Algo no cuadra? Escríbenos por WhatsApp con el número de pedido y lo revisamos.
-      </p>
+      {!paraEquipo && (
+        <p className="prueba-entrega__pie">
+          ¿Algo no cuadra? Escríbenos por WhatsApp con el número de pedido y lo revisamos.
+        </p>
+      )}
     </section>
   );
 }
