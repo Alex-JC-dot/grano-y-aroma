@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { TEXTO_PAGO, type PagoEstado } from "@/components/cuenta/PagoPedido";
-import DialogoEntrega from "@/components/equipo/DialogoEntrega";
 import DialogoEtapa from "@/components/equipo/DialogoEtapa";
 import VisorArchivo from "@/components/equipo/VisorArchivo";
 
@@ -21,6 +20,10 @@ import VisorArchivo from "@/components/equipo/VisorArchivo";
  * repartidor lo lleva y quién registró la entrega, con foto, nombre de quien recibió y firma.
  * Ninguna se puede saltar ni cerrar sin su evidencia, porque la regla vive en la base: los
  * botones abren un diálogo, no cambian el estado por sí solos.
+ *
+ * La entrega la confirma SOLO el repartidor asignado, desde su pantalla "Mis entregas"
+ * (migración 012). Aquí el admin revisa esa prueba y la finaliza, o la devuelve con un motivo:
+ * el pedido vuelve a "En camino" y el repartidor ve qué corregir.
  *
  * El botón de WhatsApp abre un chat con el cliente con un mensaje ya escrito según el estado.
  */
@@ -56,6 +59,9 @@ type Pedido = {
   preparo: { nombre: string } | null;        // FK preparado_por → perfiles
   despacho: { nombre: string } | null;       // FK despachado_por → perfiles
   entrego: { nombre: string } | null;        // FK entrega_registrada_por → perfiles
+  verifico: { nombre: string } | null;       // FK entrega_verificada_por → perfiles (012)
+  entrega_verificada_en: string | null;
+  entrega_observacion: string | null;        // motivo si el admin devolvió la entrega
   reparto: { nombre: string; telefono: string | null; vehiculo: string | null } | null;
   creado_en: string;
   pedido_items: { cantidad: number; molienda: string | null; productos: { nombre: string } | null }[];
@@ -129,7 +135,9 @@ export default function PaginaLogistica() {
   const [error, setError] = useState("");
   const [nota, setNota] = useState("");
   const [rechazando, setRechazando] = useState(false);
-  const [etapa, setEtapa] = useState<"preparacion" | "despacho" | "entrega" | null>(null);
+  const [etapa, setEtapa] = useState<"preparacion" | "despacho" | null>(null);
+  const [devolviendo, setDevolviendo] = useState(false);
+  const [motivo, setMotivo] = useState("");
   const [viendo, setViendo] = useState<{ bucket: "comprobantes" | "entregas"; ruta: string; titulo: string } | null>(null);
 
   const cargar = useCallback(async () => {
@@ -142,6 +150,7 @@ export default function PaginaLogistica() {
           "preparo:perfiles!pedidos_preparado_por_fkey(nombre)," +
           "despacho:perfiles!pedidos_despachado_por_fkey(nombre)," +
           "entrego:perfiles!pedidos_entrega_registrada_por_fkey(nombre)," +
+          "verifico:perfiles!pedidos_entrega_verificada_por_fkey(nombre)," +
           "reparto:repartidores!pedidos_repartidor_id_fkey(nombre, telefono, vehiculo)",
       )
       .in("canal", ["web", "subasta"])
@@ -171,14 +180,38 @@ export default function PaginaLogistica() {
    * evidencia y llama a la función correspondiente de la base. Un UPDATE suelto sobre el
    * estado lo rechazan los triggers de las migraciones 010 y 011.
    */
-  const siguienteEtapa = (p: Pedido): "preparacion" | "despacho" | "entrega" | null =>
-    p.estado === "recibido" ? "preparacion" : p.estado === "preparacion" ? "despacho" : p.estado === "en_camino" ? "entrega" : null;
+  // "En camino" no tiene botón aquí: la entrega la confirma el repartidor desde su cuenta.
+  const siguienteEtapa = (p: Pedido): "preparacion" | "despacho" | null =>
+    p.estado === "recibido" ? "preparacion" : p.estado === "preparacion" ? "despacho" : null;
 
   const TEXTO_ETAPA = {
     preparacion: "Empezar a preparar…",
     despacho: "Despachar…",
-    entrega: "Confirmar entrega…",
   } as const;
+
+  /** Entregado por el repartidor pero todavía sin la revisión del admin. */
+  const porVerificar = (p: Pedido) => p.estado === "entregado" && !!p.entrega_foto && !p.entrega_verificada_en;
+
+  const finalizar = async (p: Pedido) => {
+    setGuardando(true);
+    setError("");
+    const { error } = await supabase.rpc("finalizar_entrega", { p_pedido: p.id });
+    setGuardando(false);
+    if (error) return setError(mensajeDeError(error));
+    cargar();
+  };
+
+  const devolver = async (p: Pedido) => {
+    if (!motivo.trim()) return setError("Escribe qué tiene que corregir el repartidor.");
+    setGuardando(true);
+    setError("");
+    const { error } = await supabase.rpc("devolver_entrega", { p_pedido: p.id, p_motivo: motivo.trim() });
+    setGuardando(false);
+    if (error) return setError(mensajeDeError(error));
+    setMotivo("");
+    setDevolviendo(false);
+    cargar();
+  };
 
   // Cancelar pasa por la base para devolver el stock y los puntos.
   const cancelar = async (p: Pedido) => {
@@ -243,7 +276,7 @@ export default function PaginaLogistica() {
             {lista.length === 0 && <li className="caja__vacia">No hay pedidos {filtro === "todos" ? "todavía" : "en este estado"}.</li>}
             {lista.map((p) => (
               <li key={p.id}>
-                <button type="button" className={`pedido${p.id === elegido?.id ? " is-on" : ""}`} onClick={() => { setElegidoId(p.id); setError(""); setNota(""); setRechazando(false); }}>
+                <button type="button" className={`pedido${p.id === elegido?.id ? " is-on" : ""}`} onClick={() => { setElegidoId(p.id); setError(""); setNota(""); setRechazando(false); setMotivo(""); setDevolviendo(false); }}>
                   <span className="pedido__fila">
                     <strong>{p.codigo}</strong>
                     <span className={`estado ${CLASE[p.estado]}`}>{NOMBRE[p.estado]}</span>
@@ -253,6 +286,8 @@ export default function PaginaLogistica() {
                       {p.pago_estado === "por_verificar" ? "Revisar comprobante" : TEXTO_PAGO[p.pago_estado]}
                     </span>
                   )}
+                  {porVerificar(p) && <span className="estado estado--camino pedido__pago">Revisar entrega</span>}
+                  {p.estado === "en_camino" && p.entrega_observacion && <span className="estado estado--pausada pedido__pago">Entrega devuelta</span>}
                   <span className="pedido__cliente">{p.canal === "subasta" ? "Subasta ganada" : p.nombre ?? "Cliente"}</span>
                   <span className="pedido__fila pedido__meta">
                     <span>{p.direccion ?? "Sin dirección"}</span>
@@ -407,6 +442,39 @@ export default function PaginaLogistica() {
                         </button>
                       )}
                     </div>
+
+                    {/* Revisión del admin: la prueba la mandó el repartidor; aquí se acepta o se devuelve. */}
+                    {porVerificar(elegido) ? (
+                      <div className="revision-pago revision-entrega">
+                        <p><strong>{elegido.reparto?.nombre ?? "El repartidor"} confirmó la entrega.</strong> Mira la foto y la firma y finalízala, o devuélvela si algo no cuadra.</p>
+                        <div className="equipo__fila">
+                          <button type="button" className="btn btn--primary" disabled={guardando} onClick={() => finalizar(elegido)}>Finalizar entrega</button>
+                          <button type="button" className="link" disabled={guardando} onClick={() => setDevolviendo((x) => !x)}>Hay un problema</button>
+                        </div>
+                        {devolviendo && (
+                          <div className="carrito__campo revision-pago__nota">
+                            <label htmlFor="motivo-entrega">Qué tiene que corregir (lo verá el repartidor)</label>
+                            <input id="motivo-entrega" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="La foto no muestra el paquete, falta la firma…" />
+                            <button type="button" className="btn btn--secondary" disabled={guardando} onClick={() => devolver(elegido)}>Devolver al repartidor</button>
+                          </div>
+                        )}
+                      </div>
+                    ) : elegido.entrega_verificada_en ? (
+                      <p className="pago-aviso pago-aviso--ok">
+                        Entrega finalizada por {elegido.verifico?.nombre ?? "el administrador"} · {fechaHora(elegido.entrega_verificada_en)}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : elegido.estado === "en_camino" ? (
+                  /* La entrega no se confirma aquí: la confirma el repartidor desde su cuenta. */
+                  <div className="revision-pago revision-entrega">
+                    <p>
+                      <strong>Esperando que {elegido.reparto?.nombre ?? elegido.repartidor ?? "el repartidor"} confirme la entrega</strong> desde
+                      su pantalla “Mis entregas”, con foto y nombre de quien recibe.
+                    </p>
+                    {elegido.entrega_observacion && (
+                      <p className="caja__sub">Le devolviste la entrega: “{elegido.entrega_observacion}”.</p>
+                    )}
                   </div>
                 ) : elegido.estado === "cancelado" ? (
                   <p className="caja__comprobante"><strong>Pedido cancelado</strong></p>
@@ -447,17 +515,6 @@ export default function PaginaLogistica() {
             )}
           </section>
         </div>
-      )}
-
-      {etapa === "entrega" && elegido && (
-        <DialogoEntrega
-          pedidoId={elegido.id}
-          codigo={elegido.codigo}
-          clienteId={elegido.cliente_id}
-          nombreCliente={elegido.nombre}
-          alTerminar={cargar}
-          alCerrar={() => setEtapa(null)}
-        />
       )}
 
       {(etapa === "preparacion" || etapa === "despacho") && elegido && (

@@ -91,7 +91,7 @@ async function subirAEntregas(blob: Blob, pedidoId: number, clienteId: string | 
   const { error } = await supabase.storage.from("entregas").upload(ruta, blob, { contentType: blob.type });
   if (error) {
     if (/bucket not found/i.test(error.message)) throw new Error('Falta la carpeta "entregas" en Supabase: corre la migración 010.');
-    throw new Error(/row-level security|unauthorized/i.test(error.message) ? "Solo el equipo puede registrar entregas." : error.message);
+    throw new Error(/row-level security|unauthorized/i.test(error.message) ? "Solo el repartidor, desde su cuenta, puede registrar entregas." : error.message);
   }
   return ruta;
 }

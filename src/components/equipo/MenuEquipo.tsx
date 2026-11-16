@@ -15,9 +15,10 @@ const ENLACES = [
   { href: "/pos", label: "Caja", detalle: "Venta en la cafetería" },
   { href: "/erp", label: "Bodega y tueste", detalle: "Stock y lotes" },
   { href: "/logistica", label: "Logística", detalle: "Pedidos y entregas" },
+  { href: "/repartidor", label: "Mis entregas", detalle: "Pedidos para llevar" },
 ];
 
-const NOMBRE_ROL = { cliente: "Cliente", cajero: "Cajero", tostador: "Tostador", admin: "Administrador" } as const;
+const NOMBRE_ROL = { cliente: "Cliente", cajero: "Cajero", tostador: "Tostador", repartidor: "Repartidor", admin: "Administrador" } as const;
 
 /** Barra lateral de los paneles internos: solo muestra los que el rol puede abrir. */
 export default function MenuEquipo() {

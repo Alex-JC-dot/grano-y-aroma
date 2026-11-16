@@ -71,7 +71,7 @@ export const supabase = createClient(url ?? "http://localhost", clave ?? "falta-
   },
 });
 
-export type Rol = "cliente" | "cajero" | "tostador" | "admin";
+export type Rol = "cliente" | "cajero" | "tostador" | "repartidor" | "admin";
 
 export type Perfil = {
   id: string;
@@ -87,6 +87,8 @@ export const PANELES: Record<Rol, string[]> = {
   cliente: [],
   cajero: ["/pos"],
   tostador: ["/erp", "/admin/proveedores"],
+  // Solo su pantalla: confirma las entregas que le asignaron (migración 012).
+  repartidor: ["/repartidor"],
   admin: ["/admin", "/admin/productos", "/admin/subastas", "/admin/usuarios", "/admin/proveedores", "/pos", "/erp", "/logistica"],
 };
 
