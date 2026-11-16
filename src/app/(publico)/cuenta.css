@@ -154,6 +154,12 @@
 .tarjeta-cuenta__marca strong { display: block; margin-bottom: 6px; font: 400 32px/1.05 var(--font-fraunces), Georgia, serif; letter-spacing: -0.01em; }
 .tarjeta-cuenta__marca span { font-size: 15px; color: var(--tc-suave); }
 .tarjeta-cuenta__ola { position: absolute; top: 0; right: -1px; width: 68px; height: 100%; z-index: 2; fill: var(--tc-panel); }
+/* Chocolate satinado: sombra que le da volumen sobre la foto y reflejo a lo largo del borde. */
+.tarjeta-cuenta__ola { overflow: visible; filter: drop-shadow(-10px 0 18px rgba(12, 7, 4, 0.55)); }
+.tarjeta-cuenta__ola-halo,
+.tarjeta-cuenta__ola-brillo { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.tarjeta-cuenta__ola-halo { stroke-width: 9px; opacity: 0.16; }
+.tarjeta-cuenta__ola-brillo { stroke-width: 1.6px; opacity: 0.9; }
 .tarjeta-cuenta__panel { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 56px 56px 48px 44px; }
 
 /* Formulario sobre el panel espresso */
