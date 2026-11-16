@@ -10,11 +10,14 @@ import BolsaVisual from "@/components/tienda/BolsaVisual";
 import HojaDocumento from "@/components/ui/HojaDocumento";
 import { imprimirDocumento, numeroDocumento } from "@/lib/documento";
 import { QrPago, SubirComprobante } from "@/components/cuenta/PagoPedido";
+import FormTarjeta, { TARJETA_VACIA, consultarBanco, validarTarjeta, type DatosTarjeta } from "@/components/ui/TarjetaSimulada";
 
 /**
  * Carrito y checkout en 3 pasos (RNF-05): carrito → datos de entrega → pago.
  * Al confirmar, la base de datos (confirmar_pedido) valida y descuenta el stock en una sola
- * transacción, guarda el pedido y suma los puntos (RF-02, RF-21). El pago es de demostración.
+ * transacción, guarda el pedido y suma los puntos (RF-02, RF-21). El pago es de demostración:
+ * con tarjeta se piden los datos (formulario simulado, igual que en la Caja), se validan y se
+ * "consulta al banco"; el pedido se crea solo si el pago se aprueba. Los datos no se guardan.
  *
  * Después se emite el comprobante electrónico de compra (RF-03), descargable en PDF. El detalle
  * (líneas, método de pago y datos de entrega) se copia antes de vaciar el carrito, porque justo
@@ -49,6 +52,8 @@ export default function CartDrawer() {
   const [pedido, setPedido] = useState<Comprobante | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [errorPedido, setErrorPedido] = useState("");
+  const [tarjeta, setTarjeta] = useState<DatosTarjeta>(TARJETA_VACIA);
+  const [consultando, setConsultando] = useState(false);
   const cerrarRef = useRef<HTMLButtonElement>(null);
 
   // Al abrir, el foco va al botón de cerrar; Escape cierra.
@@ -92,6 +97,21 @@ export default function CartDrawer() {
   const confirmar = async () => {
     setErrorPedido("");
     if (!(await pedirCuenta("Tu sesión se cerró. Entra de nuevo para confirmar el pedido."))) return;
+    // Tarjeta: primero se validan los datos y se "consulta al banco". Si el banco no autoriza,
+    // no se crea el pedido ni se toca el stock.
+    if (pago === "tarjeta") {
+      const problema = validarTarjeta(tarjeta);
+      if (problema) return setErrorPedido(problema);
+      setEnviando(true);
+      setConsultando(true);
+      const aprobado = await consultarBanco(tarjeta);
+      setConsultando(false);
+      if (!aprobado) {
+        setEnviando(false);
+        setTarjeta((t) => ({ ...t, numero: "", cvv: "" }));
+        return setErrorPedido("Tarjeta rechazada: el banco no autorizó el pago. Prueba con otra tarjeta o paga con QR.");
+      }
+    }
     setEnviando(true);
     // El detalle se copia ANTES de vaciar el carrito; si no, el comprobante saldría vacío.
     const lineas = items.map((i) => ({
@@ -128,6 +148,7 @@ export default function CartDrawer() {
       });
       clearCart();
       setDatos(VACIO);
+      setTarjeta(TARJETA_VACIA);
     } catch (err) {
       setErrorPedido(mensajeDeError(err));
     } finally {
@@ -261,10 +282,10 @@ export default function CartDrawer() {
                 <legend>Método de pago</legend>
                 {[
                   { v: "qr" as const, t: "QR Bolivia", d: "Al confirmar te mostramos el QR; pagas desde la app de tu banco y subes el comprobante." },
-                  { v: "tarjeta" as const, t: "Tarjeta de débito o crédito", d: "Visa o Mastercard." },
+                  { v: "tarjeta" as const, t: "Tarjeta de débito o crédito", d: "Visa o Mastercard. Escribe los datos aquí abajo." },
                 ].map((m) => (
                   <label key={m.v} className={`carrito__pago${pago === m.v ? " is-on" : ""}`}>
-                    <input type="radio" name="pago" checked={pago === m.v} onChange={() => setPago(m.v)} />
+                    <input type="radio" name="pago" checked={pago === m.v} onChange={() => { setPago(m.v); setErrorPedido(""); }} />
                     <span>
                       <strong>{m.t}</strong>
                       <small>{m.d}</small>
@@ -272,6 +293,20 @@ export default function CartDrawer() {
                   </label>
                 ))}
               </fieldset>
+              {pago === "tarjeta" && (
+                <fieldset className="carrito__tarjeta">
+                  <legend>Datos de la tarjeta</legend>
+                  <FormTarjeta
+                    datos={tarjeta}
+                    alCambiar={(t) => {
+                      setTarjeta(t);
+                      setErrorPedido(""); // al corregir los datos, el aviso anterior ya no aplica
+                    }}
+                    deshabilitado={enviando}
+                    prefijo="web-t"
+                  />
+                </fieldset>
+              )}
               <p className="carrito__nota">Pago de demostración: no se realiza ningún cobro real.</p>
               <dl className="carrito__resumen">
                 <dt>Subtotal</dt><dd>{formatBs(total)}</dd>
@@ -296,7 +331,13 @@ export default function CartDrawer() {
               <>
                 {errorPedido && <p className="carrito__error" role="alert">{errorPedido}</p>}
                 <button type="button" className="btn btn--primary carrito__boton" onClick={confirmar} disabled={enviando}>
-                  {enviando ? "Confirmando…" : `Confirmar pedido · ${formatBs(total)}`}
+                  {consultando
+                    ? "Consultando al banco…"
+                    : enviando
+                      ? "Confirmando…"
+                      : pago === "tarjeta"
+                        ? `Pagar y confirmar · ${formatBs(total)}`
+                        : `Confirmar pedido · ${formatBs(total)}`}
                 </button>
               </>
             )}

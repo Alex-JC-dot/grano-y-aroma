@@ -3,43 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import { formatBs } from "@/lib/utils";
 import { QrPago } from "@/components/cuenta/PagoPedido";
+import FormTarjeta, { TARJETA_VACIA, consultarBanco, validarTarjeta, type DatosTarjeta } from "@/components/ui/TarjetaSimulada";
 
 /**
  * Cobro por QR o con tarjeta en la Caja, SIMULADO (como en la tienda en línea): no hay banco ni
  * pasarela de verdad, pero el flujo es el mismo que vería el cajero en un local real.
  *
- *  · QR: se muestra el código con el monto; el cliente "paga" desde la app de su banco y el
- *    cajero confirma con "Simular pago recibido". Recién ahí se registra la venta.
- *  · Tarjeta: el cajero (o el cliente) escribe los datos de la tarjeta, se validan como lo haría
- *    una pasarela (número con el algoritmo de Luhn, vencimiento, CVV) y se "consulta al banco".
- *    Con la tarjeta de prueba terminada en 0002 el banco la rechaza, para mostrar ese caso.
- *
- * Los datos de la tarjeta NO se guardan en ningún lado: viven en el estado del diálogo y se
- * borran al cerrarlo. La venta solo registra el método ("tarjeta"), igual que antes.
+ *  · QR: se muestra el código con el monto; el cliente paga desde la app de su banco y el
+ *    cajero confirma con "Confirmar pago recibido". Recién ahí se registra la venta.
+ *  · Tarjeta: el formulario compartido con la tienda (TarjetaSimulada) valida los datos y
+ *    "consulta al banco"; con la tarjeta de prueba terminada en 0002 el banco la rechaza.
  */
 
 type Fase = "datos" | "procesando" | "aprobado" | "rechazado";
-
-const espera = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-
-/** Algoritmo de Luhn: el dígito verificador que traen todas las tarjetas reales. */
-function luhnValido(numero: string) {
-  let suma = 0;
-  let doble = false;
-  for (let i = numero.length - 1; i >= 0; i--) {
-    let d = Number(numero[i]);
-    if (doble) {
-      d *= 2;
-      if (d > 9) d -= 9;
-    }
-    suma += d;
-    doble = !doble;
-  }
-  return numero.length >= 13 && suma % 10 === 0;
-}
-
-const marcaDe = (n: string) => (/^4/.test(n) ? "Visa" : /^5[1-5]|^2[2-7]/.test(n) ? "Mastercard" : /^3[47]/.test(n) ? "American Express" : "");
-const agrupar = (n: string) => n.replace(/(\d{4})(?=\d)/g, "$1 ");
 
 export default function CobroSimulado({
   metodo,
@@ -56,10 +32,7 @@ export default function CobroSimulado({
   const dialogo = useRef<HTMLDialogElement>(null);
   const [fase, setFase] = useState<Fase>("datos");
   const [referencia] = useState(() => `CAJA-${new Date().toTimeString().slice(0, 8).replace(/:/g, "")}`);
-  const [numero, setNumero] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [vence, setVence] = useState("");
-  const [cvv, setCvv] = useState("");
+  const [tarjeta, setTarjeta] = useState<DatosTarjeta>(TARJETA_VACIA);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -69,42 +42,30 @@ export default function CobroSimulado({
   const ocupado = fase === "procesando";
   const cerrar = () => !ocupado && dialogo.current?.close();
 
-  /** Después de "aprobar" el pago, se registra la venta y se cierra. */
+  /** Con el pago aprobado se registra la venta y se cierra. */
   const aprobar = async () => {
     const ok = await alConfirmar();
     if (!ok) return dialogo.current?.close();
     setFase("aprobado");
-    await espera(1100);
+    await new Promise((r) => window.setTimeout(r, 1100));
     dialogo.current?.close();
   };
 
   const pagarQr = async () => {
     setFase("procesando");
-    await espera(1200); // "llega" la notificación del banco
+    await new Promise((r) => window.setTimeout(r, 900));
     await aprobar();
   };
 
   const pagarTarjeta = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    const [mm, aa] = vence.split("/").map(Number);
-    const hoy = new Date();
-    const finDeMes = new Date(2000 + (aa || 0), mm || 0, 1);
-    if (!luhnValido(numero)) return setError("El número de tarjeta no es válido. Revisa los 16 dígitos.");
-    if (!nombre.trim()) return setError("Escribe el nombre como figura en la tarjeta.");
-    if (!(mm >= 1 && mm <= 12) || !aa) return setError("El vencimiento va así: MM/AA.");
-    if (finDeMes <= hoy) return setError("La tarjeta está vencida.");
-    if (!/^\d{3,4}$/.test(cvv)) return setError("El CVV son los 3 dígitos del reverso.");
+    const problema = validarTarjeta(tarjeta);
+    setError(problema ?? "");
+    if (problema) return;
     setFase("procesando");
-    await espera(1600); // "consulta al banco"
-    if (numero.endsWith("0002")) {
-      setFase("rechazado");
-      return;
-    }
+    if (!(await consultarBanco(tarjeta))) return setFase("rechazado");
     await aprobar();
   };
-
-  const marca = marcaDe(numero);
 
   return (
     <dialog
@@ -136,7 +97,7 @@ export default function CobroSimulado({
           <p className="caja__sub">Muestra este código al cliente. Cuando su banco confirme el pago, regístralo.</p>
           <div className="entrega__acciones">
             <button type="button" className="btn btn--primary" onClick={pagarQr} disabled={ocupado}>
-              {ocupado ? "Esperando al banco…" : "Simular pago recibido"}
+              {ocupado ? "Registrando…" : "Confirmar pago recibido"}
             </button>
             <button type="button" className="btn btn--secondary" onClick={cerrar} disabled={ocupado}>Cancelar</button>
           </div>
@@ -149,75 +110,16 @@ export default function CobroSimulado({
             <span>El banco no autorizó el pago. Prueba con otra tarjeta u otro método.</span>
           </div>
           <div className="entrega__acciones">
-            <button type="button" className="btn btn--primary" onClick={() => { setFase("datos"); setNumero(""); setCvv(""); }}>Probar otra tarjeta</button>
+            <button type="button" className="btn btn--primary" onClick={() => { setFase("datos"); setTarjeta((t) => ({ ...t, numero: "", cvv: "" })); }}>
+              Probar otra tarjeta
+            </button>
             <button type="button" className="btn btn--secondary" onClick={cerrar}>Cancelar</button>
           </div>
         </div>
       ) : (
         <form className="cobro__cuerpo" onSubmit={pagarTarjeta} noValidate>
-          {/* Vista previa de la tarjeta mientras se escribe. */}
-          <div className="tarjeta-sim" aria-hidden="true">
-            <span className="tarjeta-sim__chip" />
-            <span className="tarjeta-sim__marca">{marca || "Tarjeta"}</span>
-            <span className="tarjeta-sim__numero">{agrupar(numero.padEnd(16, "•"))}</span>
-            <span className="tarjeta-sim__pie">
-              <span>{nombre.trim().toUpperCase() || "NOMBRE APELLIDO"}</span>
-              <span>{vence || "MM/AA"}</span>
-            </span>
-          </div>
-
-          <div className="carrito__campo">
-            <label htmlFor="t-numero">Número de tarjeta</label>
-            <input
-              id="t-numero"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="4242 4242 4242 4242"
-              value={agrupar(numero)}
-              onChange={(e) => setNumero(e.target.value.replace(/\D/g, "").slice(0, 16))}
-              disabled={ocupado}
-            />
-          </div>
-          <div className="carrito__campo">
-            <label htmlFor="t-nombre">Nombre en la tarjeta</label>
-            <input id="t-nombre" autoComplete="off" value={nombre} onChange={(e) => setNombre(e.target.value)} disabled={ocupado} />
-          </div>
-          <div className="cobro__fila">
-            <div className="carrito__campo">
-              <label htmlFor="t-vence">Vence</label>
-              <input
-                id="t-vence"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="MM/AA"
-                value={vence}
-                onChange={(e) => {
-                  const d = e.target.value.replace(/\D/g, "").slice(0, 4);
-                  setVence(d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d);
-                }}
-                disabled={ocupado}
-              />
-            </div>
-            <div className="carrito__campo">
-              <label htmlFor="t-cvv">CVV</label>
-              <input
-                id="t-cvv"
-                inputMode="numeric"
-                autoComplete="off"
-                type="password"
-                placeholder="123"
-                value={cvv}
-                onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                disabled={ocupado}
-              />
-            </div>
-          </div>
-
+          <FormTarjeta datos={tarjeta} alCambiar={setTarjeta} deshabilitado={ocupado} prefijo="caja-t" />
           {error && <p className="carrito__error" role="alert">{error}</p>}
-          <p className="cobro__aviso">
-            Simulación: no se cobra ni se guarda nada. Tarjeta de prueba <strong>4242 4242 4242 4242</strong> (aprobada) o{" "}
-            <strong>4000 0000 0000 0002</strong> (rechazada), con cualquier vencimiento futuro y CVV.
-          </p>
           <div className="entrega__acciones">
             <button type="submit" className="btn btn--primary" disabled={ocupado}>
               {ocupado ? "Consultando al banco…" : `Pagar ${formatBs(total)}`}

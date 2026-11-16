@@ -120,3 +120,34 @@
 /* Confirmación del pedido: descargar el comprobante y seguir comprando. */
 .carrito__acciones-listo { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
 .carrito__acciones-listo .btn { width: 100%; }
+
+
+/* ---------- Tarjeta simulada (Caja y carrito de la tienda) ---------- */
+.tarjeta-form { display: flex; flex-direction: column; gap: 14px; }
+.tarjeta-form__fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tarjeta-form__aviso { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--surface); font-size: 13px; line-height: 1.5; color: var(--muted); }
+.tarjeta-form__aviso strong { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* La tarjeta que se va llenando mientras se escriben los datos. */
+.tarjeta-sim {
+  position: relative;
+  aspect-ratio: 1.586;
+  max-width: 340px;
+  width: 100%;
+  margin: 0 auto 4px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  color: #f6eee4;
+  background: radial-gradient(120% 140% at 0% 0%, #7a4a2c 0%, #3b2418 55%, #1f140e 100%);
+  box-shadow: 0 14px 30px -14px rgba(20, 12, 8, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  font-variant-numeric: tabular-nums;
+}
+.tarjeta-sim__chip { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #e9c98a, #b48a45); }
+.tarjeta-sim__marca { position: absolute; top: 20px; right: 22px; font: 600 15px var(--f-text); letter-spacing: 0.02em; }
+.tarjeta-sim__numero { align-self: center; font: 500 clamp(17px, 4.6vw, 21px) / 1 var(--f-text); letter-spacing: 0.08em; white-space: nowrap; }
+.tarjeta-sim__pie { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.9; }
+.tarjeta-sim__pie span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.carrito__tarjeta { margin: 0; padding: 0; border: 0; min-width: 0; }
+.carrito__tarjeta legend { padding: 0; margin-bottom: 10px; font-size: 14px; font-weight: 500; }
+.carrito__tarjeta .tarjeta-sim { max-width: 300px; }

@@ -94,7 +94,11 @@ export default function PaginaCaja() {
   }, [cargar, cargarTurno]);
 
   const grupos = ["Todos", ...ORDEN_GRUPOS.filter((g) => items.some((i) => grupoDe(i) === g))];
-  const visibles = items.filter((i) => cat === "Todos" || grupoDe(i) === cat);
+  // En "Todos" va primero la barra (lo que más se vende en el local: espresso, americano,
+  // cappuccino…) y al final las bolsas y accesorios de la tienda, en el orden de las pestañas.
+  const visibles = items
+    .filter((i) => cat === "Todos" || grupoDe(i) === cat)
+    .sort((a, b) => ORDEN_GRUPOS.indexOf(grupoDe(a)) - ORDEN_GRUPOS.indexOf(grupoDe(b)));
   const total = orden.reduce((s, i) => s + i.precio * i.qty, 0);
   const unidades = orden.reduce((s, i) => s + i.qty, 0);
 
