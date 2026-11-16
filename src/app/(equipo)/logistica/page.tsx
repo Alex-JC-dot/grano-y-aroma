@@ -6,6 +6,7 @@ import { formatBs } from "@/lib/utils";
 import { TEXTO_PAGO, type PagoEstado } from "@/components/cuenta/PagoPedido";
 import DialogoEtapa from "@/components/equipo/DialogoEtapa";
 import VisorArchivo from "@/components/equipo/VisorArchivo";
+import PruebaEntrega from "@/components/cuenta/PruebaEntrega";
 
 /**
  * Logística (RF-29 a RF-31): pedidos de la tienda en línea y de subastas desde Supabase, por
@@ -108,15 +109,6 @@ function enlaceWhatsapp(p: Pedido): string | null {
                 : "Tu pedido fue cancelado.";
   return `https://wa.me/${numero}?text=${encodeURIComponent(`${hola} ${cuerpo}`)}`;
 }
-
-/** En qué calidad recibió el pedido (los valores los valida la base en la 010). */
-const CALIDAD: Record<string, string> = {
-  titular: "La persona que pidió",
-  familiar: "Un familiar",
-  portero: "Portería o recepción",
-  vecino: "Un vecino",
-  otro: "Otra persona",
-};
 
 const fechaHora = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("es-BO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }) : "—";
@@ -417,31 +409,28 @@ export default function PaginaLogistica() {
 
                 {elegido.estado === "entregado" ? (
                   /* Prueba de entrega: lo que permite responder un "a mí nunca me llegó". */
-                  <div className="prueba">
-                    <div className="prueba__datos">
-                      <p className="prueba__titulo"><strong>Entregado</strong> · {fechaHora(elegido.entregado_en)}</p>
-                      <dl className="panel__datos">
-                        <div><dt>Recibió</dt><dd>{elegido.entrega_recibido_por ?? "—"}{elegido.entrega_tipo ? <small>{CALIDAD[elegido.entrega_tipo] ?? elegido.entrega_tipo}</small> : null}</dd></div>
-                        {elegido.reparto?.nombre && (<div><dt>Lo llevó</dt><dd>{elegido.reparto.nombre}{elegido.reparto.vehiculo ? <small>{elegido.reparto.vehiculo}</small> : null}</dd></div>)}
-                        {elegido.entrego?.nombre && (<div><dt>Registró</dt><dd>{elegido.entrego.nombre}</dd></div>)}
-                        {elegido.entrega_nota && (<div><dt>Nota</dt><dd>{elegido.entrega_nota}</dd></div>)}
-                      </dl>
-                    </div>
-                    <div className="prueba__archivos">
-                      {elegido.entrega_foto ? (
-                        <button type="button" className="prueba__foto" onClick={() => verArchivo("entregas", elegido.entrega_foto, `Entrega del pedido ${elegido.codigo}`)}>
-                          Ver la foto
-                        </button>
-                      ) : (
-                        /* Pedidos cerrados antes de la 010: quedaron sin prueba y conviene decirlo. */
-                        <p className="caja__sub">Este pedido se cerró antes de que se pidiera foto de entrega.</p>
-                      )}
-                      {elegido.entrega_firma && (
-                        <button type="button" className="prueba__foto" onClick={() => verArchivo("entregas", elegido.entrega_firma, `Firma de ${elegido.entrega_recibido_por ?? "quien recibió"}`)}>
-                          Ver la firma
-                        </button>
-                      )}
-                    </div>
+                  <div>
+                    {/*
+                      Todo lo que llenó el repartidor (foto de la casa, a quién entregó, en qué
+                      calidad, nota y firma) se ve aquí mismo, sin abrir nada: el admin lo revisa
+                      antes de cerrar el pedido.
+                    */}
+                    {elegido.entrega_foto || elegido.entrega_recibido_por ? (
+                      <PruebaEntrega
+                        key={elegido.id}
+                        paraEquipo
+                        foto={elegido.entrega_foto}
+                        recibidoPor={elegido.entrega_recibido_por}
+                        tipo={elegido.entrega_tipo}
+                        nota={elegido.entrega_nota}
+                        firma={elegido.entrega_firma}
+                        cuando={elegido.entregado_en}
+                        repartidor={elegido.reparto?.nombre ?? elegido.entrego?.nombre ?? elegido.repartidor}
+                      />
+                    ) : (
+                      /* Pedidos cerrados antes de la 010: quedaron sin prueba y conviene decirlo. */
+                      <p className="caja__sub">Entregado el {fechaHora(elegido.entregado_en)}. Este pedido se cerró antes de que se pidiera foto de entrega.</p>
+                    )}
 
                     {/* Revisión del admin: la prueba la mandó el repartidor; aquí se acepta o se devuelve. */}
                     {porVerificar(elegido) ? (

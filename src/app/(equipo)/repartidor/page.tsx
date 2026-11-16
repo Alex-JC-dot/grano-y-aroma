@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -97,7 +96,7 @@ export default function MisEntregas() {
   return (
     <div className="equipo__pagina reparto">
       <div className="equipo__cabeza reparto__cabeza">
-        <img src="/images/equipo/repartidor.png" alt="" className="reparto__icono" width={92} height={65} />
+        <span className="reparto__icono" aria-hidden="true" />
         <div>
           <p className="eyebrow">Reparto</p>
           <h1>Mis entregas</h1>
@@ -114,7 +113,7 @@ export default function MisEntregas() {
         <p className="caja__vacia" aria-busy="true">Cargando tus entregas…</p>
       ) : ficha === null ? (
         <div className="caja__vacia reparto__vacio">
-          <img src="/images/equipo/repartidor.png" alt="" width={184} height={130} />
+          <span className="reparto__ilustracion" aria-hidden="true" />
           <p><strong>Tu cuenta todavía no está unida a un repartidor.</strong></p>
           <p>Pídele al administrador que te asigne el rol Repartidor en Usuarios.</p>
         </div>
@@ -139,7 +138,7 @@ export default function MisEntregas() {
           <h2 className="reparto__titulo">Por entregar</h2>
           {porEntregar.length === 0 ? (
             <div className="caja__vacia reparto__vacio">
-              <img src="/images/equipo/repartidor.png" alt="" width={184} height={130} />
+              <span className="reparto__ilustracion" aria-hidden="true" />
               <p>No tienes pedidos por entregar. Cuando te despachen uno, aparece aquí.</p>
             </div>
           ) : (
