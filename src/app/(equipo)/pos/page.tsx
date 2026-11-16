@@ -8,11 +8,15 @@ import HojaDocumento from "@/components/ui/HojaDocumento";
 import BotonesDocumento from "@/components/ui/BotonesDocumento";
 import { fechaISO, imprimirDocumento } from "@/lib/documento";
 import type { HojaExcel } from "@/lib/excel";
+import CobroSimulado from "@/components/equipo/CobroSimulado";
 
 /**
  * Caja de la cafetería (Punto de Venta, RF-17 a RF-21): la barra y los productos de la tienda
  * salen de Supabase; cada cobro pasa por confirmar_pedido() con canal "caja", que descuenta el
  * stock compartido con la tienda en línea. El cierre de caja suma las ventas del día por método.
+ *
+ * QR y tarjeta abren una pantalla de cobro SIMULADO (CobroSimulado): el QR con el monto o el
+ * formulario de la tarjeta. La venta se registra recién cuando ese cobro "se aprueba".
  *
  * La caja emite dos documentos: el comprobante de venta (RF-18) y el cierre de caja (RF-19),
  * en PDF y el cierre también en Excel. Solo uno puede estar marcado como imprimible a la vez:
@@ -54,6 +58,8 @@ export default function PaginaCaja() {
   const [impresion, setImpresion] = useState<{ tipo: "venta" | "cierre"; titulo: string; n: number } | null>(null);
   const [error, setError] = useState("");
   const [cobrando, setCobrando] = useState(false);
+  // Pantalla de cobro simulado abierta (QR o tarjeta).
+  const [cobro, setCobro] = useState<"qr" | "tarjeta" | null>(null);
   const cierreRef = useRef<HTMLDialogElement>(null);
 
   const cargar = useCallback(async () => {
@@ -117,7 +123,15 @@ export default function PaginaCaja() {
   const cambiar = (id: string, d: number) =>
     setOrden((o) => o.map((x) => (x.id === id ? { ...x, qty: Math.min(x.stock, x.qty + d) } : x)).filter((x) => x.qty > 0));
 
-  const cobrar = async () => {
+  /** Efectivo se registra directo; QR y tarjeta pasan antes por su pantalla de cobro simulado. */
+  const cobrar = () => {
+    setError("");
+    if (metodo === "efectivo") return void registrarVenta();
+    setCobro(metodo);
+  };
+
+  /** Registra la venta en la base. Devuelve false si no se pudo (sin stock, sin sesión…). */
+  const registrarVenta = async (): Promise<boolean> => {
     setCobrando(true);
     setError("");
     const { data, error } = await supabase.rpc("confirmar_pedido", {
@@ -126,7 +140,10 @@ export default function PaginaCaja() {
       p_metodo: metodo,
     });
     setCobrando(false);
-    if (error) return setError(mensajeDeError(error));
+    if (error) {
+      setError(mensajeDeError(error));
+      return false;
+    }
     // El detalle se copia de la orden antes de vaciarla; si no, el comprobante saldría vacío.
     setVenta({
       numero: data.codigo,
@@ -138,6 +155,7 @@ export default function PaginaCaja() {
     setOrden([]);
     cargar();
     cargarTurno();
+    return true;
   };
 
   const totalTurno = Object.values(turno).reduce((s, x) => s + x.monto, 0);
@@ -255,6 +273,10 @@ export default function PaginaCaja() {
           </button>
         </div>
       </aside>
+
+      {cobro && (
+        <CobroSimulado metodo={cobro} total={total} alConfirmar={registrarVenta} alCerrar={() => setCobro(null)} />
+      )}
 
       <dialog ref={cierreRef} className="dialogo" aria-labelledby="cierre-titulo">
         <div className="dialogo__cabeza">

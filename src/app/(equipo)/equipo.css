@@ -624,3 +624,41 @@
   .reparto-pedido__datos { grid-template-columns: 1fr; }
   .reparto-pedido__acciones .btn { flex: 1 1 0; padding-inline: 10px; }
 }
+
+/* ---------- Caja: cobro simulado con QR o tarjeta ---------- */
+.dialogo.cobro { width: min(100% - 32px, 480px); max-height: 94vh; display: flex; flex-direction: column; }
+.dialogo.cobro .dialogo__cabeza .caja__sub { margin: 6px 0 0; }
+.cobro__cuerpo { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.cobro__cuerpo .pago-qr { margin: 0 auto; }
+.cobro__fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cobro__aviso { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--surface); font-size: 13px; line-height: 1.5; color: var(--muted); }
+.cobro__aviso strong { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cobro__resultado { margin: 22px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.cobro__resultado strong { font: 400 26px/1.15 var(--f-display); }
+.cobro__resultado span:last-child { color: var(--muted); }
+.cobro__check { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; font-size: 30px; color: #fff; background: var(--exito); animation: cobro-pop 0.35s var(--ease) both; }
+.cobro__resultado--mal .cobro__check { background: var(--peligro); }
+@keyframes cobro-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cobro__check { animation: none; } }
+
+/* La tarjeta que se va llenando mientras se escriben los datos. */
+.tarjeta-sim {
+  position: relative;
+  aspect-ratio: 1.586;
+  max-width: 340px;
+  width: 100%;
+  margin: 0 auto 4px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  color: #f6eee4;
+  background: radial-gradient(120% 140% at 0% 0%, #7a4a2c 0%, #3b2418 55%, #1f140e 100%);
+  box-shadow: 0 14px 30px -14px rgba(20, 12, 8, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  font-variant-numeric: tabular-nums;
+}
+.tarjeta-sim__chip { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #e9c98a, #b48a45); }
+.tarjeta-sim__marca { position: absolute; top: 20px; right: 22px; font: 600 15px var(--f-text); letter-spacing: 0.02em; }
+.tarjeta-sim__numero { align-self: center; font: 500 clamp(17px, 4.6vw, 21px) / 1 var(--f-text); letter-spacing: 0.08em; white-space: nowrap; }
+.tarjeta-sim__pie { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.9; }
+.tarjeta-sim__pie span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

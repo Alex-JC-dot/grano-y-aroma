@@ -11,7 +11,8 @@ import { subirFoto } from "@/lib/archivos";
 
 /**
  * Productos del administrador (RF-01, RF-05, RF-21): agregar productos a la tienda o a la
- * barra, cambiar precio y stock, y ocultarlos sin borrarlos. La tienda los toma de aquí al
+ * barra, editarlos (el mismo formulario, con los datos actuales ya cargados), cambiar precio
+ * y stock desde la tabla, y ocultarlos sin borrarlos. La tienda los toma de aquí al
  * instante (Realtime). Solo el admin puede escribir en el catálogo (RLS).
  */
 
@@ -56,6 +57,27 @@ const vacio = () => ({
 });
 type Form = ReturnType<typeof vacio>;
 
+/** El formulario con los datos actuales del producto: solo se cambia lo que se quiera. */
+const desdeFila = (p: FilaProducto): Form => ({
+  nombre: p.nombre,
+  categoria: p.categoria,
+  descripcion: p.descripcion ?? "",
+  presentacion: p.presentacion ?? "",
+  precio: String(p.precio),
+  stock: String(p.stock),
+  origen: p.origen ?? "",
+  region: p.region ?? "",
+  altitud: p.altitud == null ? "" : String(p.altitud),
+  tueste: p.tueste ?? "Medio",
+  perfil: (p.perfil ?? []).join(", "),
+  codigo_lote: p.codigo_lote ?? "",
+  puntaje: p.puntaje == null ? "" : String(p.puntaje),
+  moliendas: p.moliendas?.length && !(p.moliendas.length === 1 && p.moliendas[0] === "Única") ? p.moliendas.join(", ") : MOLIENDAS_CAFE,
+  foto: p.foto?.src ?? "",
+  color: p.color ?? COLORES[0],
+  grupo: p.grupo ?? GRUPOS[0],
+});
+
 export default function PaginaProductos() {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -64,6 +86,9 @@ export default function PaginaProductos() {
   const [guardando, setGuardando] = useState<string | null>(null);
   const [f, setF] = useState<Form>(vacio);
   const [abierto, setAbierto] = useState(false);
+  // Producto que se está editando (null = el formulario crea uno nuevo).
+  const [editando, setEditando] = useState<Fila | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
   // "Cambiar foto" en la tabla: un solo selector de archivo para la fila elegida.
@@ -129,7 +154,30 @@ export default function PaginaProductos() {
     }
   };
 
-  const crear = async (e: React.FormEvent) => {
+  const abrirNuevo = () => {
+    setEditando(null);
+    setF(vacio());
+    setError("");
+    setAbierto(true);
+  };
+
+  const abrirEdicion = (p: Fila) => {
+    setEditando(p);
+    setF(desdeFila(p));
+    setError("");
+    setAbierto(true);
+    // El formulario está arriba de la tabla: se lleva la vista hasta él.
+    window.setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  };
+
+  const cerrarFormulario = () => {
+    setAbierto(false);
+    setEditando(null);
+    setF(vacio());
+    setError("");
+  };
+
+  const guardar = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     const precio = Number(f.precio.replace(",", "."));
@@ -155,19 +203,34 @@ export default function PaginaProductos() {
       perfil: cafe ? f.perfil.split(",").map((x) => x.trim()).filter(Boolean) : null,
       codigo_lote: cafe ? f.codigo_lote.trim() || null : null,
       puntaje: cafe ? n(f.puntaje) : null,
-      fecha_tueste: cafe ? new Date().toISOString().slice(0, 10) : null,
+      // Al editar se conserva la fecha de tueste (la actualiza el registro de tueste en Bodega).
+      fecha_tueste: cafe ? (editando?.fecha_tueste ?? new Date().toISOString().slice(0, 10)) : null,
       moliendas: cafe ? f.moliendas.split(",").map((x) => x.trim()).filter(Boolean) : ["Única"],
-      foto: f.categoria !== "bebida" && f.foto ? { src: f.foto } : null,
+      // Si la foto no cambió se guarda tal cual (con su texto alternativo y demás datos).
+      foto: f.categoria !== "bebida" && f.foto ? (editando?.foto?.src === f.foto ? editando.foto : { src: f.foto }) : null,
       color: cafe ? f.color : null,
       grupo: f.categoria === "bebida" ? f.grupo : null,
     };
     setGuardando("nuevo");
-    const { error } = await supabase.from("productos").insert(fila);
+    const { error } = editando
+      ? await supabase.from("productos").update(fila).eq("id", editando.id)
+      : await supabase.from("productos").insert(fila);
     setGuardando(null);
-    if (error) return setError(/row-level security/i.test(error.message) ? "Solo el administrador puede agregar productos." : mensajeDeError(error));
-    setAviso(`Agregaste ${fila.nombre}. ${f.categoria === "bebida" ? "Ya aparece en la caja." : "Ya aparece en la tienda."}`);
-    setF(vacio());
-    setAbierto(false);
+    if (error) {
+      return setError(/row-level security/i.test(error.message) ? "Solo el administrador puede cambiar productos." : mensajeDeError(error));
+    }
+    if (editando) {
+      setAviso(`Guardaste los cambios de ${fila.nombre}. Ya se ven en la ${f.categoria === "bebida" ? "caja" : "tienda"}.`);
+      // Si en la tabla había un precio o stock sin guardar de este producto, ya no vale.
+      setCambios((x) => {
+        const nx = { ...x };
+        delete nx[editando.id];
+        return nx;
+      });
+    } else {
+      setAviso(`Agregaste ${fila.nombre}. ${f.categoria === "bebida" ? "Ya aparece en la caja." : "Ya aparece en la tienda."}`);
+    }
+    cerrarFormulario();
     cargar();
   };
 
@@ -186,15 +249,16 @@ export default function PaginaProductos() {
         </div>
         <div className="equipo__fila">
           <Link href="/tienda" className="btn btn--secondary">Ver la tienda</Link>
-          <button type="button" className="btn btn--primary" aria-expanded={abierto} onClick={() => { setAbierto((a) => !a); setError(""); }}>
-            {abierto ? "Cerrar formulario" : "Agregar producto"}
+          <button type="button" className="btn btn--primary" aria-expanded={abierto && !editando} onClick={abierto && !editando ? cerrarFormulario : abrirNuevo}>
+            {abierto && !editando ? "Cerrar formulario" : "Agregar producto"}
           </button>
         </div>
       </div>
 
       {abierto && (
-        <form className="panel admin-sub" onSubmit={crear} noValidate style={{ marginBottom: 24 }}>
-          <h2>Nuevo producto</h2>
+        <form ref={formRef} className="panel admin-sub" onSubmit={guardar} noValidate style={{ marginBottom: 24, scrollMarginTop: 24 }}>
+          <h2>{editando ? `Editar: ${editando.nombre}` : "Nuevo producto"}</h2>
+          {editando && <p className="caja__sub">Los datos actuales ya están cargados. Cambia solo lo que quieras y pulsa Guardar cambios.</p>}
           <fieldset>
             <legend>Datos</legend>
             <div className="admin-sub__grid">
@@ -220,7 +284,7 @@ export default function PaginaProductos() {
               <Campo id="p-precio" etiqueta="Precio (Bs.) *">
                 <input id="p-precio" type="number" inputMode="decimal" value={f.precio} onChange={cambiar("precio")} />
               </Campo>
-              <Campo id="p-stock" etiqueta="Stock inicial">
+              <Campo id="p-stock" etiqueta={editando ? "Stock" : "Stock inicial"}>
                 <input id="p-stock" type="number" inputMode="numeric" value={f.stock} onChange={cambiar("stock")} placeholder="0" />
               </Campo>
               {f.categoria !== "bebida" && (
@@ -293,9 +357,14 @@ export default function PaginaProductos() {
           )}
 
           {error && <p className="carrito__error" role="alert">{error}</p>}
-          <button type="submit" className="btn btn--primary" disabled={guardando === "nuevo"}>
-            {guardando === "nuevo" ? "Guardando…" : "Agregar producto"}
-          </button>
+          <div className="equipo__fila">
+            <button type="submit" className="btn btn--primary" disabled={guardando === "nuevo"}>
+              {guardando === "nuevo" ? "Guardando…" : editando ? "Guardar cambios" : "Agregar producto"}
+            </button>
+            <button type="button" className="btn btn--secondary" onClick={cerrarFormulario}>
+              Cancelar
+            </button>
+          </div>
         </form>
       )}
 
@@ -368,6 +437,9 @@ export default function PaginaProductos() {
                             Guardar
                           </button>
                         )}
+                        <button type="button" className="link" disabled={guardando === p.id} onClick={() => abrirEdicion(p)}>
+                          Editar
+                        </button>
                         {p.categoria !== "bebida" && (
                           <button
                             type="button"
