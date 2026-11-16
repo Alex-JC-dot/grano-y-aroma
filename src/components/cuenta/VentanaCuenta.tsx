@@ -57,28 +57,51 @@ type PropsTarjeta = Props & {
  * tono de chocolate con leche que se oscurece hacia el panel (así el empalme no se nota), un
  * reflejo claro recorre la curva como en una barra templada y una sombra le da volumen sobre
  * la foto. Los trazos no se deforman al estirar el SVG (vector-effect: non-scaling-stroke).
+ *
+ * Además fluye: la curva pasa despacio por tres formas parecidas, como chocolate líquido que
+ * se derrama, y el brillo baja por el borde cada pocos segundos. Las tres formas tienen los
+ * mismos comandos (M + 4 C), que es lo que permite interpolarlas con <animate>. Con "reducir
+ * movimiento" queda quieta en la primera forma.
  */
 const OLAS = {
   grande: {
     vista: "0 0 100 100",
-    // Solo el borde curvo (para el brillo) y la forma completa (para el relleno).
-    borde: "M70 0C44 10 30 22 46 38C62 54 12 60 22 78C30 92 58 94 48 100",
+    // Solo el borde curvo (para el brillo); el relleno le suma el cierre.
+    bordes: [
+      "M70 0C44 10 30 22 46 38C62 54 12 60 22 78C30 92 58 94 48 100",
+      "M66 0C42 12 34 25 50 41C65 56 17 58 25 76C33 90 54 96 45 100",
+      "M73 0C48 8 27 20 42 35C57 51 9 62 19 80C27 94 61 92 51 100",
+    ],
     cierre: "H100V0Z",
     desde: 12,
     hasta: 100,
   },
   chica: {
     vista: "0 0 64 100",
-    borde: "M38 0C24 12 46 24 34 38C22 52 8 58 22 72C34 84 44 90 30 100",
+    bordes: [
+      "M38 0C24 12 46 24 34 38C22 52 8 58 22 72C34 84 44 90 30 100",
+      "M36 0C22 14 44 26 36 40C26 54 10 56 24 70C36 82 42 92 28 100",
+      "M40 0C26 10 48 22 32 36C20 50 6 60 20 74C32 86 46 88 32 100",
+    ],
     cierre: "H64V0Z",
     desde: 8,
     hasta: 64,
   },
 } as const;
 
+// Ida y vuelta por las tres formas con un ritmo suave (curva "ease-in-out" en cada tramo).
+const FLUJO = { dur: "9s", keyTimes: "0;0.33;0.66;1", keySplines: "0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1" };
+
 function OlaChocolate({ grande }: { grande: boolean }) {
   const id = useId().replace(/:/g, "");
+  const reducir = useSyncExternalStore(suscribirReducir, () => window.matchMedia(CONSULTA_REDUCIR).matches, () => false);
   const o = grande ? OLAS.grande : OLAS.chica;
+  const [b0, b1, b2] = o.bordes;
+  const ciclo = (extra = "") => [b0, b1, b2, b0].map((b) => b + extra).join(";");
+  const flujo = (extra = "") =>
+    reducir ? null : (
+      <animate attributeName="d" values={ciclo(extra)} dur={FLUJO.dur} keyTimes={FLUJO.keyTimes} keySplines={FLUJO.keySplines} calcMode="spline" repeatCount="indefinite" />
+    );
   return (
     <svg
       className={`tarjeta-cuenta__ola${grande ? " tarjeta-cuenta__ola--grande" : ""}`}
@@ -100,12 +123,16 @@ function OlaChocolate({ grande }: { grande: boolean }) {
           <stop offset="0.3" stopColor="#ffe3c8" stopOpacity="0.55" />
           <stop offset="0.62" stopColor="#ffe3c8" stopOpacity="0.35" />
           <stop offset="1" stopColor="#ffe3c8" stopOpacity="0" />
+          {/* El reflejo baja por la curva: entra por arriba, recorre el borde y sale por abajo. */}
+          {!reducir && (
+            <animateTransform attributeName="gradientTransform" type="translate" values="0 -0.75;0 0.75" dur="6s" repeatCount="indefinite" />
+          )}
         </linearGradient>
       </defs>
-      <path d={`${o.borde}${o.cierre}`} fill={`url(#${id}-relleno)`} />
+      <path d={`${b0}${o.cierre}`} fill={`url(#${id}-relleno)`}>{flujo(o.cierre)}</path>
       {/* Halo ancho y difuso + línea fina: así se ve el brillo de un chocolate templado. */}
-      <path d={o.borde} className="tarjeta-cuenta__ola-halo" stroke={`url(#${id}-brillo)`} />
-      <path d={o.borde} className="tarjeta-cuenta__ola-brillo" stroke={`url(#${id}-brillo)`} transform="translate(1.6 0)" />
+      <path d={b0} className="tarjeta-cuenta__ola-halo" stroke={`url(#${id}-brillo)`}>{flujo()}</path>
+      <path d={b0} className="tarjeta-cuenta__ola-brillo" stroke={`url(#${id}-brillo)`} transform="translate(1.6 0)">{flujo()}</path>
     </svg>
   );
 }
