@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/store/authStore";
-import { PANELES } from "@/lib/supabase";
+import { panelesDe } from "@/lib/supabase";
 import { useRuta } from "@/lib/ruta";
 
 /**
@@ -48,7 +48,7 @@ export default function MenuCuenta() {
     );
   }
   const nombre = perfil?.nombre || session.user.email?.split("@")[0] || "Mi cuenta";
-  const panel = perfil ? PANELES[perfil.rol][0] : undefined;
+  const panel = panelesDe(perfil?.rol)[0];
 
   return (
     <div className="menu-cuenta" ref={ref}>

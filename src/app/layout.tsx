@@ -43,7 +43,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: FIJAR_TEMA }} />
       </head>
-      <body className="antialiased">{children}</body>
+      {/*
+        suppressHydrationWarning también en <body>, no solo en <html>: el atributo solo vale
+        para el elemento que lo lleva, no se hereda.
+
+        Muchas extensiones del navegador (gestores de contraseñas, correctores, bloqueadores)
+        escriben atributos propios en <body> antes de que React hidrate, y React avisa de que
+        el HTML del servidor no coincide con el del navegador. El aviso es real pero ajeno al
+        proyecto: no hay forma de evitar que una extensión toque la página, y el usuario final
+        tendrá las suyas. Silenciarlo aquí es lo que recomienda la documentación de React.
+      */}
+      <body className="antialiased" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

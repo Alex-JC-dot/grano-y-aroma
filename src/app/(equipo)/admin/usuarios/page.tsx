@@ -16,6 +16,7 @@ const ROLES: { v: Rol; label: string; detalle: string }[] = [
   { v: "cliente", label: "Cliente", detalle: "Compra, se suscribe y puja" },
   { v: "cajero", label: "Cajero", detalle: "Caja de la cafetería" },
   { v: "tostador", label: "Tostador", detalle: "Bodega y tueste" },
+  { v: "repartidor", label: "Repartidor", detalle: "Lleva y entrega pedidos" },
   { v: "admin", label: "Administrador", detalle: "Todo" },
 ];
 
@@ -46,7 +47,11 @@ export default function PaginaUsuarios() {
     setGuardando(null);
     if (error) return setAviso(mensajeDeError(error));
     setUsuarios((xs) => xs.map((x) => (x.id === u.id ? { ...x, rol } : x)));
-    setAviso(`${u.nombre || u.email} ahora es ${ROLES.find((r) => r.v === rol)!.label.toLowerCase()}.`);
+    setAviso(
+      `${u.nombre || u.email} ahora es ${ROLES.find((r) => r.v === rol)!.label.toLowerCase()}.` +
+        // La base une la cuenta a su ficha de repartidor (o crea una) al darle el rol.
+        (rol === "repartidor" ? " Ya aparece en la lista para despachar pedidos." : ""),
+    );
   };
 
   const q = busqueda.trim().toLowerCase();
@@ -61,7 +66,7 @@ export default function PaginaUsuarios() {
         </div>
       </div>
 
-      <div className="tarjetas-dato tarjetas-dato--4">
+      <div className="tarjetas-dato tarjetas-dato--5">
         {ROLES.map((r) => (
           <div key={r.v} className="dato">
             <span className="dato__label">{r.label}</span>

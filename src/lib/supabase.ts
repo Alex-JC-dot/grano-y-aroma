@@ -71,7 +71,7 @@ export const supabase = createClient(url ?? "http://localhost", clave ?? "falta-
   },
 });
 
-export type Rol = "cliente" | "cajero" | "tostador" | "admin";
+export type Rol = "cliente" | "cajero" | "tostador" | "repartidor" | "admin";
 
 export type Perfil = {
   id: string;
@@ -86,9 +86,17 @@ export type Perfil = {
 export const PANELES: Record<Rol, string[]> = {
   cliente: [],
   cajero: ["/pos"],
-  tostador: ["/erp"],
-  admin: ["/admin", "/admin/productos", "/admin/subastas", "/admin/usuarios", "/pos", "/erp", "/logistica"],
+  tostador: ["/erp", "/admin/proveedores"],
+  // Solo su pantalla: confirma las entregas que le asignaron (migración 012).
+  repartidor: ["/repartidor"],
+  admin: ["/admin", "/admin/productos", "/admin/subastas", "/admin/usuarios", "/admin/proveedores", "/pos", "/erp", "/logistica"],
 };
+
+/**
+ * Paneles de un rol, sin romper nunca: si la base tiene un rol que esta versión de la web
+ * todavía no conoce (por ejemplo, un rol nuevo antes de publicar su pantalla), devuelve [].
+ */
+export const panelesDe = (rol?: string | null): string[] => (rol ? PANELES[rol as Rol] : undefined) ?? [];
 
 /** Traduce los errores de Supabase Auth a mensajes claros en español. */
 export function mensajeDeError(e: unknown): string {

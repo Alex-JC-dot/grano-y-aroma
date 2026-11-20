@@ -154,6 +154,12 @@
 .tarjeta-cuenta__marca strong { display: block; margin-bottom: 6px; font: 400 32px/1.05 var(--font-fraunces), Georgia, serif; letter-spacing: -0.01em; }
 .tarjeta-cuenta__marca span { font-size: 15px; color: var(--tc-suave); }
 .tarjeta-cuenta__ola { position: absolute; top: 0; right: -1px; width: 68px; height: 100%; z-index: 2; fill: var(--tc-panel); }
+/* Chocolate satinado: sombra que le da volumen sobre la foto y reflejo a lo largo del borde. */
+.tarjeta-cuenta__ola { overflow: visible; filter: drop-shadow(-10px 0 18px rgba(12, 7, 4, 0.55)); }
+.tarjeta-cuenta__ola-halo,
+.tarjeta-cuenta__ola-brillo { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.tarjeta-cuenta__ola-halo { stroke-width: 9px; opacity: 0.16; }
+.tarjeta-cuenta__ola-brillo { stroke-width: 1.6px; opacity: 0.9; }
 .tarjeta-cuenta__panel { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 56px 56px 48px 44px; }
 
 /* Formulario sobre el panel espresso */
@@ -323,3 +329,125 @@
   .tarjeta-cuenta--pantalla .tarjeta-cuenta__panel { padding: 28px 22px 40px; align-items: stretch; }
   .tarjeta-cuenta--pantalla .tarjeta-cuenta__contenido { max-width: none; }
 }
+
+/* =====================================================================
+   Pago por QR y comprobante (carrito y Mi cuenta)
+   ===================================================================== */
+.inicio .pago-qr { display: flex; align-items: center; gap: 16px; margin: 16px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.inicio .pago-qr__codigo { flex: none; width: 132px; height: 132px; padding: 6px; border-radius: 8px; background: #fff; }
+.inicio .pago-qr__codigo svg { display: block; width: 100%; height: 100%; }
+.inicio .pago-qr figcaption { font-size: 15px; line-height: 1.5; color: var(--ink); }
+.inicio .pago-qr figcaption small { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); }
+.inicio .pago-subir { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 8px 0 4px; }
+.inicio .pago-subir__ayuda { font-size: 13px; color: var(--muted); }
+.inicio .pago-aviso { margin: 8px 0; padding: 12px 14px; border-radius: 10px; font-size: 15px; line-height: 1.5; }
+.inicio .pago-aviso--revision { background: var(--info-bg); color: var(--info); }
+.inicio .pago-aviso--rechazo { background: var(--peligro-bg); color: var(--peligro); }
+.inicio .pago-aviso--ok { background: var(--exito-bg); color: var(--exito); }
+@media (max-width: 420px) { .inicio .pago-qr { flex-direction: column; align-items: flex-start; } }
+
+/* ---------- Mis pedidos ---------- */
+.inicio .mis-pedidos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.inicio .mi-pedido { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.inicio .mi-pedido__cabeza {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(150px, auto) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 22px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.inicio .mi-pedido__cabeza:hover { background: var(--ink-roce); }
+.inicio .mi-pedido__cabeza:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.inicio .mi-pedido__codigo { display: flex; flex-direction: column; gap: 2px; }
+.inicio .mi-pedido__codigo small { font-size: 13px; color: var(--muted); }
+.inicio .mi-pedido__productos { color: var(--muted); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inicio .mi-pedido__estados { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.inicio .mi-pedido__total { font: 400 20px/1 var(--f-display); white-space: nowrap; }
+.inicio .mi-pedido__detalle { padding: 4px 22px 22px; border-top: 1px solid var(--line); }
+.inicio .mi-pedido__pago { margin: 18px 0; }
+.inicio .mi-pedido__pago h3 { margin: 0 0 4px; font: 500 17px var(--f-text); }
+.inicio .mi-pedido__cancelar { margin-top: 12px; border: 0; background: none; padding: 0; font: 500 15px var(--f-text); color: var(--peligro); cursor: pointer; }
+@media (max-width: 760px) {
+  .inicio .mi-pedido__cabeza { grid-template-columns: 1fr auto; gap: 8px 12px; padding: 16px; }
+  .inicio .mi-pedido__productos { grid-column: 1 / -1; grid-row: 2; white-space: normal; }
+  .inicio .mi-pedido__estados { grid-column: 1 / -1; justify-content: flex-start; }
+  .inicio .mi-pedido__detalle { padding: 4px 16px 18px; }
+}
+
+/* Línea de tiempo del pedido */
+.inicio .linea-tiempo { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.inicio .linea-tiempo li { position: relative; display: flex; flex-direction: column; gap: 10px; color: var(--muted); }
+.inicio .linea-tiempo li::before { content: ""; position: absolute; top: 7px; left: 16px; right: -12px; height: 2px; background: var(--line-media); }
+.inicio .linea-tiempo li:last-child::before { display: none; }
+.inicio .linea-tiempo li.is-on { color: var(--ink); }
+.inicio .linea-tiempo li.is-on::before { background: var(--accent); }
+.inicio .linea-tiempo__punto { position: relative; z-index: 1; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-maxima); background: var(--surface); }
+.inicio .linea-tiempo li.is-on .linea-tiempo__punto { border-color: var(--accent); background: var(--accent); }
+.inicio .linea-tiempo strong { display: block; font-size: 15px; font-weight: 500; }
+.inicio .linea-tiempo small { display: block; font-size: 13px; color: var(--muted); }
+@media (max-width: 640px) {
+  .inicio .linea-tiempo { grid-template-columns: 1fr; gap: 14px; }
+  .inicio .linea-tiempo li { flex-direction: row; align-items: flex-start; }
+  .inicio .linea-tiempo li::before { top: 18px; bottom: -14px; left: 7px; right: auto; width: 2px; height: auto; }
+}
+.inicio .mi-pedido .estado { text-transform: none; white-space: nowrap; }
+.inicio .estado--recibido { background: var(--info-bg); color: var(--info); }
+.inicio .estado--camino { background: var(--accent-velo); color: var(--accent); }
+
+/* ---------- Constancia de entrega (Mi cuenta) ---------- */
+.inicio .prueba-entrega {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.inicio .prueba-entrega h3 { margin: 0 0 14px; font: 400 20px/1.2 var(--f-display); }
+.inicio .prueba-entrega__foto { margin: 0 0 16px; }
+.inicio .prueba-entrega__foto img {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.inicio .prueba-entrega__foto figcaption { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.inicio .prueba-entrega__cargando {
+  display: grid;
+  place-items: center;
+  height: 160px;
+  border-radius: 10px;
+  background: var(--surface-hundida);
+  font-size: 14px;
+  color: var(--muted);
+}
+.inicio .prueba-entrega__datos { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px 24px; }
+.inicio .prueba-entrega__datos dt { font-size: 13px; color: var(--muted); }
+.inicio .prueba-entrega__datos dd { margin: 2px 0 0; font-weight: 500; }
+.inicio .prueba-entrega__datos dd small { display: block; margin-top: 2px; font-weight: 400; font-size: 13px; color: var(--muted); }
+.inicio .prueba-entrega__pie { margin: 16px 0 0; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 520px) {
+  .inicio .prueba-entrega { padding: 14px; }
+  .inicio .prueba-entrega__datos { grid-template-columns: 1fr; }
+}
+
+/* Firma de quien recibió, en la constancia del cliente. */
+.inicio .prueba-entrega__firma { margin: 16px 0 0; }
+.inicio .prueba-entrega__firma img {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.inicio .prueba-entrega__firma figcaption { margin-top: 6px; font-size: 13px; color: var(--muted); }
