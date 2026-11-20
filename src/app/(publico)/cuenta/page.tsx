@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/store/authStore";
 import MisPedidos from "@/components/cuenta/MisPedidos";
+import Puntos from "@/components/cuenta/Puntos";
 
 /** Mi cuenta (RF-04): datos, puntos de fidelidad y pedidos con su seguimiento y pago. */
 export default function PaginaCuenta() {
@@ -35,11 +36,7 @@ export default function PaginaCuenta() {
                 <p>{session.user.email}</p>
                 <button type="button" className="link equipo__salir" onClick={() => salir()}>Salir de la cuenta</button>
               </div>
-              <div className="cuenta__bloque">
-                <h2>Tus puntos</h2>
-                <p className="cuenta__puntos">{perfil?.puntos ?? 0}</p>
-                <p>Ganas 1 punto por cada Bs. 10 de compra.</p>
-              </div>
+              <Puntos saldo={perfil?.puntos ?? 0} />
               <div className="cuenta__bloque">
                 <h2>Tu suscripción</h2>
                 <p>Revisa, pausa o cambia tu suscripción del Club.</p>

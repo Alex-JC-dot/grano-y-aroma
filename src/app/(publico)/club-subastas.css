@@ -363,3 +363,15 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
 }
 .inicio .toast--ok { background: var(--exito-solido); }
 @media (prefers-reduced-motion: reduce) { .inicio .lote__monto--nuevo { animation: none; } }
+
+/* Cobro del Club (RF-07): QR, comprobante y estado de la verificación. */
+.inicio .estado--pendiente,
+.inicio .estado--por_verificar { background: var(--aviso-bg); color: var(--aviso); text-transform: none; }
+.inicio .estado--rechazado { background: var(--peligro-bg); color: var(--peligro); text-transform: none; }
+
+.inicio .club__cobro {
+  margin: 0 0 24px; padding: 20px; border: 1px solid var(--line); border-radius: var(--r-card);
+  display: flex; flex-direction: column; gap: 12px; align-items: flex-start;
+}
+.inicio .club__cobro h3 { margin: 0; font: 400 20px/1.2 var(--f-display); }
+.inicio .club__cobro .pago-qr { margin: 0; }

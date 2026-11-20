@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import BotonesDocumento from "@/components/ui/BotonesDocumento";
 import HojaDocumento from "@/components/ui/HojaDocumento";
+import CobrosClub from "@/components/equipo/CobrosClub";
 import type { HojaExcel } from "@/lib/excel";
 
 /**
@@ -306,6 +307,15 @@ export default function PaginaPanel() {
               ))}
             </ul>
           )}
+        </section>
+
+        {/*
+          Cobros del Club: el equipo mira el comprobante y aprueba, igual que con los pedidos
+          pagados por QR. Hasta que no se aprueba, el envío no se programa (migración 014).
+        */}
+        <section className="panel" aria-labelledby="cobros-club-titulo">
+          <h2 id="cobros-club-titulo">Cobros del Club</h2>
+          <CobrosClub />
         </section>
       </div>
 
