@@ -220,6 +220,7 @@ Las migraciones están en [`supabase/migrations`](supabase/migrations) y se ejec
 | `010` | Prueba de entrega: foto y nombre de quien recibió |
 | `011` | Proveedores, órdenes de compra y constancia por etapa |
 | `012` | Rol repartidor con cuenta propia y verificación de la entrega |
+| `013` | Canje de puntos por descuento, con historial de movimientos |
 
 Todas se pueden ejecutar más de una vez sin duplicar ni romper nada. El orden importa: de la `009` en adelante, cada una agrega reglas a funciones que define la anterior.
 
@@ -283,7 +284,7 @@ Dónde se demuestra cada módulo del documento. Lo que no está hecho también f
 | Proveedores y órdenes de compra | ✅ | `/admin/proveedores` |
 | Logística y entregas con constancia | ✅ | `/logistica`, `/repartidor` |
 | Administración, roles y reportes | ✅ | `/admin` · reportes en Excel y PDF |
-| Cartera virtual y fidelización | ⏳ | Los puntos se acumulan con cada compra; falta poder gastarlos |
+| Cartera virtual y fidelización | ✅ | 1 punto por cada Bs. 10; se canjean en el checkout, con tope del 50 % e historial |
 
 **Mejoras sobre el alcance**, que el documento no pedía: modo claro y oscuro, exportación de reportes a Excel, comprobantes en PDF, firma del cliente en la entrega y subastas con cierre automático.
 
