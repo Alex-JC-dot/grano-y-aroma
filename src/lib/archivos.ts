@@ -52,16 +52,24 @@ export async function subirFoto(archivo: File, carpeta: "productos" | "subastas"
 }
 
 /** Sube el comprobante del pedido y lo deja "por verificar". */
-export async function enviarComprobante(archivo: File, pedidoId: number): Promise<void> {
+export async function enviarComprobante(
+  archivo: File,
+  id: number,
+  /** Un pedido de la tienda o un cobro del Club: el recorrido es el mismo, cambia la función. */
+  destino: "pedido" | "club" = "pedido",
+): Promise<void> {
   const error = revisarArchivo(archivo, true);
   if (error) throw new Error(error);
   const { data } = await supabase.auth.getUser();
   if (!data.user) throw new Error("Tu sesión se cerró. Entra de nuevo para enviar el comprobante.");
   const blob = archivo.type === "application/pdf" ? archivo : await achicar(archivo);
-  const ruta = `${data.user.id}/${pedidoId}-${Date.now()}.${extension(blob)}`;
+  const ruta = `${data.user.id}/${destino === "club" ? "club-" : ""}${id}-${Date.now()}.${extension(blob)}`;
   const { error: e } = await supabase.storage.from("comprobantes").upload(ruta, blob, { contentType: blob.type });
   if (e) throw new Error(/bucket not found/i.test(e.message) ? 'Falta la carpeta "comprobantes" en Supabase: corre la migración 009.' : e.message);
-  const { error: r } = await supabase.rpc("enviar_comprobante", { p_pedido: pedidoId, p_ruta: ruta });
+  const { error: r } =
+    destino === "club"
+      ? await supabase.rpc("enviar_comprobante_club", { p_cobro: id, p_ruta: ruta })
+      : await supabase.rpc("enviar_comprobante", { p_pedido: id, p_ruta: ruta });
   if (r) throw new Error(r.message);
 }
 

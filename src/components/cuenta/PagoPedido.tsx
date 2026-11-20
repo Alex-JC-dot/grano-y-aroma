@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { enviarComprobante } from "@/lib/archivos";
+import { qrDePago } from "@/lib/qr-emvco";
 import { formatBs } from "@/lib/utils";
 
 /**
@@ -22,16 +23,23 @@ export const TEXTO_PAGO: Record<PagoEstado, string> = {
   rechazado: "Comprobante rechazado",
 };
 
-export function QrPago({ codigo, total }: { codigo: string; total: number }) {
+/**
+ * QR del cobro, en formato EMVCo: lo que leen las apps de los bancos (ver lib/qr-emvco.ts).
+ * Antes llevaba una frase suelta y ninguna app lo reconocía como un pago.
+ */
+export function QrPago({ codigo, total, concepto = "Pedido" }: { codigo: string; total: number; concepto?: string }) {
   const [svg, setSvg] = useState("");
 
   useEffect(() => {
     let vivo = true;
+    // Corrección de errores alta: estos QR se escanean de una pantalla, muchas veces con
+    // reflejos encima, y conviene que se lean aunque una parte se vea mal.
     import("qrcode").then((qr) =>
       qr
-        .toString(`GRANO Y AROMA | Pago de demostración | Pedido ${codigo} | Bs ${total.toFixed(2)}`, {
+        .toString(qrDePago(total, `${concepto} ${codigo}`), {
           type: "svg",
           margin: 1,
+          errorCorrectionLevel: "M",
           color: { dark: "#2a1f1a", light: "#ffffff" },
         })
         .then((s) => vivo && setSvg(s)),
@@ -39,14 +47,13 @@ export function QrPago({ codigo, total }: { codigo: string; total: number }) {
     return () => {
       vivo = false;
     };
-  }, [codigo, total]);
+  }, [codigo, total, concepto]);
 
   return (
     <figure className="pago-qr">
       <div className="pago-qr__codigo" role="img" aria-label={`Código QR para pagar ${formatBs(total)}`} dangerouslySetInnerHTML={{ __html: svg }} />
       <figcaption>
         Escanéalo desde la app de tu banco y paga <strong>{formatBs(total)}</strong>.
-        <small>QR de demostración: no lleva a ninguna cuenta real.</small>
       </figcaption>
     </figure>
   );
@@ -58,11 +65,14 @@ export function SubirComprobante({
   estado,
   nota,
   alEnviar,
+  destino = "pedido",
 }: {
+  /** Id del pedido, o del cobro del Club cuando destino es "club". */
   pedidoId: number;
   estado: PagoEstado;
   nota?: string | null;
   alEnviar?: () => void;
+  destino?: "pedido" | "club";
 }) {
   const entrada = useRef<HTMLInputElement>(null);
   const [enviando, setEnviando] = useState(false);
@@ -72,7 +82,10 @@ export function SubirComprobante({
   if (enviado || estado === "por_verificar") {
     return (
       <p className="pago-aviso pago-aviso--revision" role="status">
-        <strong>Recibimos tu comprobante.</strong> Lo revisamos y, cuando el pago esté aprobado, empezamos a preparar tu pedido.
+        <strong>Recibimos tu comprobante.</strong>{" "}
+        {destino === "club"
+          ? "Lo revisamos y, cuando el pago esté aprobado, programamos tu envío."
+          : "Lo revisamos y, cuando el pago esté aprobado, empezamos a preparar tu pedido."}
       </p>
     );
   }
@@ -85,7 +98,7 @@ export function SubirComprobante({
     setError("");
     setEnviando(true);
     try {
-      await enviarComprobante(archivo, pedidoId);
+      await enviarComprobante(archivo, pedidoId, destino);
       setEnviado(true);
       alEnviar?.();
     } catch (err) {

@@ -637,3 +637,22 @@
 .cobro__resultado--mal .cobro__check { background: var(--peligro); }
 @keyframes cobro-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .cobro__check { animation: none; } }
+
+/* Cobros del Club (RF-07): estados del pago y la fila de revisión. */
+.estado--pendiente,
+.estado--por_verificar { background: var(--aviso-bg); color: var(--aviso); text-transform: none; }
+.estado--rechazado { background: var(--peligro-bg); color: var(--peligro); text-transform: none; }
+
+.cobros__revision { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 240px; }
+.cobros__etiqueta { font-size: 13px; color: var(--muted); }
+.cobros__revision input {
+  width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--line-media); border-radius: var(--r-btn);
+  background: var(--surface-hundida); color: var(--ink); font: 400 15px var(--f-text);
+}
+.cobros__botones { display: flex; gap: 8px; }
+
+/* La etiqueta de estado es una píldora: si se parte en dos líneas, el fondo se rompe. */
+.cobros__tabla .estado { display: inline-block; white-space: nowrap; }
+.cobros__tabla td:nth-child(2),
+.cobros__tabla td:nth-child(3) { white-space: nowrap; }
+.cobros__tabla td small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
