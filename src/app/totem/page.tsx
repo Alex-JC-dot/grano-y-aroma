@@ -195,7 +195,7 @@ function Autoservicio() {
     if (e) {
       setPago("insertar");
       setPin("");
-      return setError(/totem|enum|canal/i.test(e.message) ? "Falta la migración 014 en Supabase." : mensajeDeError(e));
+      return setError(/invalid input value for enum|es_totem/i.test(e.message) ? "Falta la migración 014 en Supabase." : mensajeDeError(e));
     }
     setTicket({
       turno: data.turno ?? data.id,

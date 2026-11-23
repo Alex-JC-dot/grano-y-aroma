@@ -27,56 +27,10 @@ create or replace function public.es_totem()
 returns boolean language sql stable security definer set search_path = public
 as $$ select coalesce(public.mi_rol()::text = 'totem', false) $$;
 
--- ---------- 2. Crear pedidos (misma función de la 002, con el canal tótem) ----------
-create or replace function public.confirmar_pedido(
-  items jsonb, p_canal public.canal default 'web', p_metodo text default 'qr',
-  p_nombre text default null, p_telefono text default null, p_direccion text default null, p_referencia text default null
-) returns public.pedidos
-language plpgsql security definer set search_path = public
-as $$
-declare
-  it jsonb; prod public.productos; nuevo public.pedidos; suma numeric := 0; n integer;
-  local boolean := p_canal::text in ('caja', 'totem');   -- ventas en el local: sin cliente con cuenta
-begin
-  if auth.uid() is null then raise exception 'Necesitas iniciar sesión'; end if;
-  if p_canal::text = 'caja' and not public.es_equipo() then raise exception 'Solo el equipo registra ventas de caja'; end if;
-  if p_canal::text = 'totem' and not (public.es_totem() or public.es_equipo()) then
-    raise exception 'Solo el tótem registra pedidos de autoservicio';
-  end if;
-  -- La cuenta del tótem no compra por la web: solo crea pedidos del tótem.
-  if public.es_totem() and p_canal::text <> 'totem' then raise exception 'El tótem solo crea pedidos de autoservicio'; end if;
-
-  insert into pedidos (cliente_id, canal, metodo_pago, nombre, telefono, direccion, referencia)
-  values (case when local then null else auth.uid() end, p_canal, p_metodo, p_nombre, p_telefono, p_direccion, p_referencia)
-  returning * into nuevo;
-
-  for it in select * from jsonb_array_elements(items) loop
-    select * into prod from productos where id = it ->> 'producto_id' and activo for update;   -- bloquea el stock
-    if not found then raise exception 'Producto % no disponible', it ->> 'producto_id'; end if;
-    if prod.stock < (it ->> 'cantidad')::int then
-      raise exception 'Solo quedan % de %', prod.stock, prod.nombre;
-    end if;
-    update productos set stock = stock - (it ->> 'cantidad')::int where id = prod.id;
-    insert into pedido_items values (nuevo.id, prod.id, (it ->> 'cantidad')::int, coalesce(it ->> 'molienda', 'Única'), prod.precio);
-    suma := suma + prod.precio * (it ->> 'cantidad')::int;
-  end loop;
-
-  -- Turno del día para el ticket del tótem: 1, 2, 3… y vuelve a empezar cada día.
-  if p_canal::text = 'totem' then
-    select coalesce(max(turno), 0) + 1 into n from pedidos
-     where canal::text = 'totem' and id <> nuevo.id
-       and (creado_en at time zone 'America/La_Paz')::date = (now() at time zone 'America/La_Paz')::date;
-    update pedidos set turno = n where id = nuevo.id;
-  end if;
-
-  update pedidos set total = suma where id = nuevo.id returning * into nuevo;
-  -- 1 punto por cada Bs. 10 (RF-32)
-  if nuevo.cliente_id is not null then
-    update perfiles set puntos = puntos + floor(suma / 10)::int where id = nuevo.cliente_id;
-  end if;
-  return nuevo;
-end;
-$$;
+-- ---------- 2. Crear pedidos ----------
+-- confirmar_pedido() con el canal tótem y el turno está en la 015, unida con el canje de
+-- puntos (013_canje_de_puntos). Aquí ya no se redefine: hacerlo creaba una segunda versión
+-- de la función y la base no sabía cuál llamar.
 
 -- ---------- 3. Pago: la tarjeta del tótem se aprueba al instante ----------
 create or replace function public.pedido_pago_inicial()
