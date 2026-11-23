@@ -9,7 +9,7 @@ import { mensajeDeError, supabase } from "@/lib/supabase";
 import BolsaVisual from "@/components/tienda/BolsaVisual";
 import HojaDocumento from "@/components/ui/HojaDocumento";
 import { imprimirDocumento, numeroDocumento } from "@/lib/documento";
-import { QrPago, SubirComprobante } from "@/components/cuenta/PagoPedido";
+import { ConfirmarPagoQr, QrPago } from "@/components/cuenta/PagoPedido";
 import FormTarjeta, { TARJETA_VACIA, consultarBanco, validarTarjeta, type DatosTarjeta } from "@/components/ui/TarjetaSimulada";
 
 /**
@@ -31,7 +31,7 @@ const VACIO: Datos = { nombre: "", telefono: "", direccion: "", referencia: "" }
 /** Lo que queda registrado al confirmar: el carrito se vacía enseguida. */
 type Comprobante = {
   id: number;
-  /** Pago por QR: hay que pagar con el código y subir el comprobante. */
+  /** Pago por QR: hay que pagar con el código; el banco (simulado) lo confirma solo. */
   porQr: boolean;
   numero: string;
   fecha: string;
@@ -207,10 +207,10 @@ export default function CartDrawer() {
               <p className="carrito__numero">{pedido.numero}</p>
               {pedido.porQr ? (
                 <>
-                  <p>Tu pedido está reservado. Paga con este QR y sube el comprobante para que lo preparemos.</p>
+                  <p>Tu pedido está reservado. Paga con este QR desde la app de tu banco y toca “Ya pagué”.</p>
                   <QrPago codigo={pedido.numero} total={pedido.total} />
-                  <SubirComprobante pedidoId={pedido.id} estado="pendiente" />
-                  <p className="carrito__nota">Si ahora no puedes, súbelo después desde Mi cuenta.</p>
+                  <ConfirmarPagoQr pedidoId={pedido.id} estado="pendiente" />
+                  <p className="carrito__nota">Si ahora no puedes, págalo después desde Mi cuenta.</p>
                 </>
               ) : (
                 <p>Recibimos tu pedido y tu pago. Te avisaremos por WhatsApp cuando salga a entrega.</p>
@@ -281,7 +281,7 @@ export default function CartDrawer() {
               <fieldset className="carrito__pagos">
                 <legend>Método de pago</legend>
                 {[
-                  { v: "qr" as const, t: "QR Bolivia", d: "Al confirmar te mostramos el QR; pagas desde la app de tu banco y subes el comprobante." },
+                  { v: "qr" as const, t: "QR Bolivia", d: "Al confirmar te mostramos el QR; pagas desde la app de tu banco y el pago se confirma solo." },
                   { v: "tarjeta" as const, t: "Tarjeta de débito o crédito", d: "Visa o Mastercard. Escribe los datos aquí abajo." },
                 ].map((m) => (
                   <label key={m.v} className={`carrito__pago${pago === m.v ? " is-on" : ""}`}>

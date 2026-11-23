@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { enviarComprobante } from "@/lib/archivos";
+import { useEffect, useState } from "react";
+import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 
 /**
- * Pago por QR de un pedido: el código para pagar y el envío del comprobante.
+ * Pago por QR de un pedido: el código para pagar y la confirmación AUTOMÁTICA del pago.
  * Se usa al confirmar la compra (carrito) y después desde Mi cuenta, mientras el pago esté
- * pendiente o haya sido rechazado.
+ * pendiente.
+ *
+ * Antes el cliente subía un comprobante y el admin lo aprobaba a mano. Ahora nadie del equipo
+ * interviene: en un sistema real el banco avisa al instante cuando entra el pago (un
+ * "webhook") y el pedido queda pagado solo. Aquí eso se simula: el cliente paga, toca "Ya
+ * pagué" y el "banco" lo confirma (función pagar_qr de la migración 013).
  *
  * El QR es de demostración: codifica el pedido y el monto, no una cuenta bancaria real.
  */
@@ -16,10 +21,10 @@ export type PagoEstado = "no_aplica" | "pendiente" | "por_verificar" | "aprobado
 
 export const TEXTO_PAGO: Record<PagoEstado, string> = {
   no_aplica: "",
-  pendiente: "Falta el comprobante",
-  por_verificar: "Comprobante en revisión",
+  pendiente: "Esperando el pago",
+  por_verificar: "Verificando el pago",
   aprobado: "Pago aprobado",
-  rechazado: "Comprobante rechazado",
+  rechazado: "Pago rechazado",
 };
 
 export function QrPago({ codigo, total }: { codigo: string; total: number }) {
@@ -52,61 +57,50 @@ export function QrPago({ codigo, total }: { codigo: string; total: number }) {
   );
 }
 
-/** Botón para elegir y enviar el comprobante (foto o PDF). */
-export function SubirComprobante({
+/**
+ * "Ya pagué": el banco (simulado) confirma el pago y el pedido queda pagado al instante, sin
+ * que nadie del equipo tenga que revisar nada.
+ */
+export function ConfirmarPagoQr({
   pedidoId,
   estado,
-  nota,
-  alEnviar,
+  alPagar,
 }: {
   pedidoId: number;
   estado: PagoEstado;
-  nota?: string | null;
-  alEnviar?: () => void;
+  alPagar?: () => void;
 }) {
-  const entrada = useRef<HTMLInputElement>(null);
-  const [enviando, setEnviando] = useState(false);
+  const [fase, setFase] = useState<"listo" | "verificando" | "pagado">("listo");
   const [error, setError] = useState("");
-  const [enviado, setEnviado] = useState(false);
 
-  if (enviado || estado === "por_verificar") {
+  if (fase === "pagado" || estado === "aprobado") {
     return (
-      <p className="pago-aviso pago-aviso--revision" role="status">
-        <strong>Recibimos tu comprobante.</strong> Lo revisamos y, cuando el pago esté aprobado, empezamos a preparar tu pedido.
+      <p className="pago-aviso pago-aviso--ok" role="status">
+        <strong>Pago confirmado por el banco.</strong> Tu pedido ya pasó a preparación.
       </p>
     );
   }
-  if (estado !== "pendiente" && estado !== "rechazado") return null;
+  if (estado !== "pendiente" && estado !== "por_verificar" && estado !== "rechazado") return null;
 
-  const elegir = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const archivo = e.target.files?.[0];
-    e.target.value = "";
-    if (!archivo) return;
+  const pagar = async () => {
     setError("");
-    setEnviando(true);
-    try {
-      await enviarComprobante(archivo, pedidoId);
-      setEnviado(true);
-      alEnviar?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo enviar el comprobante.");
-    } finally {
-      setEnviando(false);
+    setFase("verificando");
+    await new Promise((r) => window.setTimeout(r, 1500)); // el banco "avisa"
+    const { error: e } = await supabase.rpc("pagar_qr", { p_pedido: pedidoId });
+    if (e) {
+      setFase("listo");
+      return setError(/pagar_qr|schema cache/i.test(e.message) ? "Falta la migración 013 en Supabase." : mensajeDeError(e));
     }
+    setFase("pagado");
+    alPagar?.();
   };
 
   return (
     <div className="pago-subir">
-      {estado === "rechazado" && (
-        <p className="pago-aviso pago-aviso--rechazo" role="alert">
-          <strong>Rechazamos el comprobante anterior.</strong> {nota ? `Motivo: ${nota}. ` : ""}Envía uno nuevo.
-        </p>
-      )}
-      <input ref={entrada} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" hidden onChange={elegir} />
-      <button type="button" className="btn btn--primary" disabled={enviando} onClick={() => entrada.current?.click()}>
-        {enviando ? "Enviando…" : estado === "rechazado" ? "Enviar otro comprobante" : "Subir comprobante de pago"}
+      <button type="button" className="btn btn--primary" disabled={fase === "verificando"} onClick={pagar}>
+        {fase === "verificando" ? "Verificando con el banco…" : "Ya pagué"}
       </button>
-      <small className="pago-subir__ayuda">Captura de pantalla o PDF del pago, de hasta 5 MB.</small>
+      <small className="pago-subir__ayuda">Cuando pagues desde tu banco, toca “Ya pagué”: el pago se confirma automáticamente (simulado).</small>
       {error && <p className="carrito__error" role="alert">{error}</p>}
     </div>
   );
