@@ -85,7 +85,8 @@ export type Perfil = {
 /** Paneles que puede abrir cada rol (el admin, todos). */
 export const PANELES: Record<Rol, string[]> = {
   cliente: [],
-  cajero: ["/pos"],
+  // El cajero también opera Logística (preparar y despachar): el admin solo supervisa.
+  cajero: ["/pos", "/logistica"],
   tostador: ["/erp", "/admin/proveedores"],
   // Solo su pantalla: confirma las entregas que le asignaron (migración 012).
   repartidor: ["/repartidor"],

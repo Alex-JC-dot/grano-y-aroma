@@ -5,7 +5,7 @@ import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { TEXTO_PAGO, type PagoEstado } from "@/components/cuenta/PagoPedido";
 import DialogoEtapa from "@/components/equipo/DialogoEtapa";
-import VisorArchivo from "@/components/equipo/VisorArchivo";
+import { useAuth } from "@/store/authStore";
 import PruebaEntrega from "@/components/cuenta/PruebaEntrega";
 
 /**
@@ -95,9 +95,9 @@ function enlaceWhatsapp(p: Pedido): string | null {
   const hola = `Hola${p.nombre ? ` ${p.nombre.split(" ")[0]}` : ""}, te escribimos de Grano y Aroma sobre tu pedido ${p.codigo}.`;
   const cuerpo =
     p.pago_estado === "rechazado"
-      ? `No pudimos validar tu comprobante${p.pago_nota ? ` (${p.pago_nota})` : ""}. ¿Nos envías otro desde Mi cuenta?`
-      : p.pago_estado === "pendiente"
-        ? "Todavía no recibimos tu comprobante de pago. Puedes subirlo desde Mi cuenta."
+      ? "Tu banco no confirmó el pago. Puedes volver a pagar con el QR desde Mi cuenta."
+      : p.pago_estado === "pendiente" || p.pago_estado === "por_verificar"
+        ? "Todavía no nos llega tu pago. Paga con el QR desde Mi cuenta y toca “Ya pagué”."
         : p.estado === "recibido"
           ? "Ya lo recibimos y pronto empezamos a prepararlo."
           : p.estado === "preparacion"
@@ -125,12 +125,11 @@ export default function PaginaLogistica() {
   const [filtro, setFiltro] = useState<Estado | "todos">("todos");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
-  const [nota, setNota] = useState("");
-  const [rechazando, setRechazando] = useState(false);
   const [etapa, setEtapa] = useState<"preparacion" | "despacho" | null>(null);
   const [devolviendo, setDevolviendo] = useState(false);
   const [motivo, setMotivo] = useState("");
-  const [viendo, setViendo] = useState<{ bucket: "comprobantes" | "entregas"; ruta: string; titulo: string } | null>(null);
+  // Revisar y finalizar entregas es una auditoría del admin; el cajero opera el resto.
+  const esAdmin = useAuth((s) => s.perfil?.rol === "admin");
 
   const cargar = useCallback(async () => {
     const { data } = await supabase
@@ -216,26 +215,6 @@ export default function PaginaLogistica() {
     cargar();
   };
 
-  // El comprobante y la foto de entrega se ven dentro de la página, junto a los datos del
-  // pedido: revisar un pago comparando el monto de memoria en otra pestaña es cómo se cuelan
-  // los errores.
-  const verArchivo = (bucket: "comprobantes" | "entregas", ruta: string | null, titulo: string) => {
-    if (!ruta) return;
-    setViendo({ bucket, ruta, titulo });
-  };
-
-  const revisarPago = async (p: Pedido, aprobado: boolean) => {
-    if (!aprobado && !nota.trim()) return setError("Escribe por qué rechazas el comprobante: el cliente lo verá.");
-    setGuardando(true);
-    setError("");
-    const { error } = await supabase.rpc("verificar_pago", { p_pedido: p.id, p_aprobado: aprobado, p_nota: aprobado ? null : nota.trim() });
-    setGuardando(false);
-    if (error) return setError(mensajeDeError(error));
-    setNota("");
-    setRechazando(false);
-    cargar();
-  };
-
   return (
     <div className="equipo__pagina">
       <div className="equipo__cabeza">
@@ -268,17 +247,17 @@ export default function PaginaLogistica() {
             {lista.length === 0 && <li className="caja__vacia">No hay pedidos {filtro === "todos" ? "todavía" : "en este estado"}.</li>}
             {lista.map((p) => (
               <li key={p.id}>
-                <button type="button" className={`pedido${p.id === elegido?.id ? " is-on" : ""}`} onClick={() => { setElegidoId(p.id); setError(""); setNota(""); setRechazando(false); setMotivo(""); setDevolviendo(false); }}>
+                <button type="button" className={`pedido${p.id === elegido?.id ? " is-on" : ""}`} onClick={() => { setElegidoId(p.id); setError(""); setMotivo(""); setDevolviendo(false); }}>
                   <span className="pedido__fila">
                     <strong>{p.codigo}</strong>
                     <span className={`estado ${CLASE[p.estado]}`}>{NOMBRE[p.estado]}</span>
                   </span>
                   {p.estado === "recibido" && !pagoListo(p) && (
                     <span className={`estado ${p.pago_estado === "por_verificar" ? "estado--camino" : "estado--pausada"} pedido__pago`}>
-                      {p.pago_estado === "por_verificar" ? "Revisar comprobante" : TEXTO_PAGO[p.pago_estado]}
+                      {TEXTO_PAGO[p.pago_estado]}
                     </span>
                   )}
-                  {porVerificar(p) && <span className="estado estado--camino pedido__pago">Revisar entrega</span>}
+                  {porVerificar(p) && esAdmin && <span className="estado estado--camino pedido__pago">Revisar entrega</span>}
                   {p.estado === "en_camino" && p.entrega_observacion && <span className="estado estado--pausada pedido__pago">Entrega devuelta</span>}
                   <span className="pedido__cliente">{p.canal === "subasta" ? "Subasta ganada" : p.nombre ?? "Cliente"}</span>
                   <span className="pedido__fila pedido__meta">
@@ -375,33 +354,17 @@ export default function PaginaLogistica() {
                   )}
                 </dl>
 
-                {/* Revisión del comprobante de pago por QR */}
+                {/*
+                  Pago por QR todavía sin confirmar. Ya no hay nada que aprobar aquí: el banco
+                  (simulado) confirma el pago automáticamente cuando el cliente paga, y el pedido
+                  se habilita solo. Mientras tanto solo se puede esperar o recordarle por WhatsApp.
+                */}
                 {elegido.estado !== "cancelado" && elegido.metodo_pago === "qr" && !pagoListo(elegido) && (
                   <div className="revision-pago">
-                    {elegido.pago_estado === "por_verificar" ? (
-                      <>
-                        <p><strong>El cliente envió su comprobante.</strong> Revísalo y confirma que el monto sea {formatBs(elegido.total)}.</p>
-                        <div className="equipo__fila">
-                          <button type="button" className="btn btn--secondary" onClick={() => verArchivo("comprobantes", elegido.comprobante, `Comprobante del pedido ${elegido.codigo}`)}>Ver comprobante</button>
-                          <button type="button" className="btn btn--primary" disabled={guardando} onClick={() => revisarPago(elegido, true)}>Aprobar pago</button>
-                          <button type="button" className="link" disabled={guardando} onClick={() => setRechazando((x) => !x)}>Rechazar</button>
-                        </div>
-                        {rechazando && (
-                          <div className="carrito__campo revision-pago__nota">
-                            <label htmlFor="nota-rechazo">Motivo (el cliente lo verá)</label>
-                            <input id="nota-rechazo" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="El monto no coincide, la imagen no se lee…" />
-                            <button type="button" className="btn btn--secondary" disabled={guardando} onClick={() => revisarPago(elegido, false)}>Rechazar comprobante</button>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <p>
-                        <strong>{TEXTO_PAGO[elegido.pago_estado]}.</strong>{" "}
-                        {elegido.pago_estado === "rechazado"
-                          ? `Motivo: ${elegido.pago_nota ?? "—"}. Esperando que el cliente envíe otro.`
-                          : "El cliente todavía no envió su comprobante. Puedes recordárselo por WhatsApp."}
-                      </p>
-                    )}
+                    <p>
+                      <strong>Esperando el pago del cliente.</strong> Cuando pague con el QR, el banco lo confirma
+                      automáticamente y el pedido se habilita para preparar. Puedes recordárselo por WhatsApp.
+                    </p>
                   </div>
                 )}
 
@@ -432,12 +395,16 @@ export default function PaginaLogistica() {
                       <p className="caja__sub">Entregado el {fechaHora(elegido.entregado_en)}. Este pedido se cerró antes de que se pidiera foto de entrega.</p>
                     )}
 
-                    {/* Revisión del admin: la prueba la mandó el repartidor; aquí se acepta o se devuelve. */}
-                    {porVerificar(elegido) ? (
+                    {/*
+                      La entrega ya quedó cerrada cuando el repartidor la confirmó (el cliente ve
+                      "Entregado" al instante). Esta revisión es una AUDITORÍA opcional del admin:
+                      no frena nada. Solo si algo no cuadra, la devuelve al repartidor.
+                    */}
+                    {porVerificar(elegido) && esAdmin ? (
                       <div className="revision-pago revision-entrega">
-                        <p><strong>{elegido.reparto?.nombre ?? "El repartidor"} confirmó la entrega.</strong> Mira la foto y la firma y finalízala, o devuélvela si algo no cuadra.</p>
+                        <p><strong>{elegido.reparto?.nombre ?? "El repartidor"} confirmó la entrega.</strong> Revisión opcional: si la foto y la firma están bien, márcala como revisada; si algo no cuadra, devuélvela.</p>
                         <div className="equipo__fila">
-                          <button type="button" className="btn btn--primary" disabled={guardando} onClick={() => finalizar(elegido)}>Finalizar entrega</button>
+                          <button type="button" className="btn btn--primary" disabled={guardando} onClick={() => finalizar(elegido)}>Marcar como revisada</button>
                           <button type="button" className="link" disabled={guardando} onClick={() => setDevolviendo((x) => !x)}>Hay un problema</button>
                         </div>
                         {devolviendo && (
@@ -450,7 +417,7 @@ export default function PaginaLogistica() {
                       </div>
                     ) : elegido.entrega_verificada_en ? (
                       <p className="pago-aviso pago-aviso--ok">
-                        Entrega finalizada por {elegido.verifico?.nombre ?? "el administrador"} · {fechaHora(elegido.entrega_verificada_en)}
+                        Entrega revisada por {elegido.verifico?.nombre ?? "el administrador"} · {fechaHora(elegido.entrega_verificada_en)}
                       </p>
                     ) : null}
                   </div>
@@ -478,7 +445,7 @@ export default function PaginaLogistica() {
                           type="button"
                           className="btn btn--primary detalle__boton"
                           disabled={guardando || faltaPago}
-                          title={faltaPago ? "Primero aprueba el pago" : undefined}
+                          title={faltaPago ? "Esperando que el cliente pague (se confirma solo)" : undefined}
                           onClick={() => { setError(""); setEtapa(paso); }}
                         >
                           {TEXTO_ETAPA[paso]}
@@ -515,8 +482,6 @@ export default function PaginaLogistica() {
           alCerrar={() => setEtapa(null)}
         />
       )}
-
-      {viendo && <VisorArchivo bucket={viendo.bucket} ruta={viendo.ruta} titulo={viendo.titulo} alCerrar={() => setViendo(null)} />}
     </div>
   );
 }

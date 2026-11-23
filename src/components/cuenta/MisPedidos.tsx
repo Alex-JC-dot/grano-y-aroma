@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
-import { QrPago, SubirComprobante, TEXTO_PAGO, type PagoEstado } from "./PagoPedido";
+import { ConfirmarPagoQr, QrPago, TEXTO_PAGO, type PagoEstado } from "./PagoPedido";
 import PruebaEntrega from "./PruebaEntrega";
 
 /**
  * Mis pedidos (Mi cuenta): cada pedido con su línea de tiempo, el estado del pago y, si
- * corresponde, el QR y el botón para subir el comprobante. Mientras esté "Recibido" el cliente
+ * corresponde, el QR y el botón “Ya pagué” (el pago se confirma automáticamente). Mientras esté "Recibido" el cliente
  * puede cancelarlo (el stock vuelve a la tienda). Los cambios llegan en vivo (Realtime).
  *
  * Cuando el pedido se entrega, el cliente ve la prueba: la foto que tomó el repartidor, quién
@@ -119,7 +119,7 @@ export default function MisPedidos({ uid }: { uid: string }) {
       {pedidos.map((p) => {
         const ver = abierto === p.id;
         const actual = PASOS.findIndex((x) => x.e === p.estado);
-        const esperaPago = p.pago_estado === "pendiente" || p.pago_estado === "rechazado";
+        const esperaPago = p.pago_estado === "pendiente" || p.pago_estado === "por_verificar" || p.pago_estado === "rechazado";
         return (
           <li key={p.id} className={`mi-pedido${ver ? " is-abierto" : ""}`}>
             <button type="button" className="mi-pedido__cabeza" aria-expanded={ver} onClick={() => setAbierto(ver ? null : p.id)}>
@@ -177,8 +177,7 @@ export default function MisPedidos({ uid }: { uid: string }) {
                   <div className="mi-pedido__pago">
                     <h3>Pago por QR · {TEXTO_PAGO[p.pago_estado]}</h3>
                     {esperaPago && <QrPago codigo={p.codigo} total={p.total} />}
-                    <SubirComprobante pedidoId={p.id} estado={p.pago_estado} nota={p.pago_nota} alEnviar={cargar} />
-                    {p.pago_estado === "aprobado" && <p className="pago-aviso pago-aviso--ok">Tu pago está confirmado.</p>}
+                    <ConfirmarPagoQr pedidoId={p.id} estado={p.pago_estado} alPagar={cargar} />
                   </div>
                 )}
 
