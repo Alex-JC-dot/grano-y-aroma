@@ -585,8 +585,9 @@
 
 /* ---------- Usuarios: cinco roles ---------- */
 .tarjetas-dato--5 { grid-template-columns: repeat(5, 1fr); }
+.tarjetas-dato--6 { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 1100px) { .tarjetas-dato--5 { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 860px) { .tarjetas-dato--5 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+@media (max-width: 860px) { .tarjetas-dato--5, .tarjetas-dato--6 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 
 /* ---------- Logística: revisión de la entrega ---------- */
 .revision-entrega { margin-top: 16px; }
@@ -637,3 +638,25 @@
 .cobro__resultado--mal .cobro__check { background: var(--peligro); }
 @keyframes cobro-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .cobro__check { animation: none; } }
+
+/* ---------- Barra: pedidos del tótem (Nuevos → Preparando → Listos) ---------- */
+.barra .equipo__cabeza { align-items: flex-start; }
+.barra__resumen { min-width: 200px; }
+.barra__columnas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.barra__col { padding: 16px; border-radius: var(--r-card); background: var(--surface); min-height: 320px; }
+.barra__col h2 { display: flex; justify-content: space-between; align-items: center; margin: 0 0 14px; font: 400 24px / 1.1 var(--f-display); }
+.barra__col h2 span { min-width: 34px; height: 34px; display: grid; place-items: center; padding: 0 10px; border-radius: 999px; background: var(--bg); font: 600 16px var(--f-text); }
+.barra__col--nuevos h2 span { background: var(--aviso-bg); }
+.barra__col--listos h2 span { background: var(--exito-bg); }
+.barra__col > ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.barra-pedido { padding: 16px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; animation: barra-entra 0.35s var(--ease) both; }
+.barra-pedido.is-tarde { border-color: var(--aviso-fuerte); box-shadow: inset 4px 0 0 var(--aviso-fuerte); }
+.barra-pedido__cabeza { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.barra-pedido__cabeza strong { font: 400 34px / 1 var(--f-display); }
+.barra-pedido__cabeza span { font-size: 14px; color: var(--muted); }
+.barra-pedido__items { list-style: none; margin: 0; padding: 0; font-size: 17px; line-height: 1.5; }
+.barra-pedido__boton { width: 100%; min-height: 52px; font-size: 18px; }
+.barra__col--listos .barra-pedido__boton { background: var(--exito-solido); }
+@keyframes barra-entra { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .barra-pedido { animation: none; } }
+@media (max-width: 1000px) { .barra__columnas { grid-template-columns: minmax(0, 1fr); } }
