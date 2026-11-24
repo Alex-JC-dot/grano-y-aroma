@@ -9,10 +9,12 @@ import { categoriaDe, esCafe } from "@/lib/catalogo";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
 import PagoQr, { type PagoEstado } from "@/components/cuenta/PagoPedido";
 import { useAuth } from "@/store/authStore";
+import PlanesClub, { PersonajeClub, PLANES, type PlanClub } from "./PlanesClub";
 
 /**
  * Club Grano y Aroma (Suscripciones, RF-06 a RF-09).
  *
+ * - Tres tarjetas de plan (PlanesClub) llenan el formulario de un toque.
  * - Se arma en 4 pasos (frecuencia, cantidad, café, molienda) con el precio por envío, el
  *   ahorro frente a la tienda y las próximas fechas de envío y cobro calculadas al momento.
  * - La suscripción se guarda en Supabase, ligada a la cuenta del cliente (tabla suscripciones):
@@ -204,6 +206,7 @@ export default function Club() {
   const [verPausa, setVerPausa] = useState(false);
   const cancelarRef = useRef<HTMLDialogElement>(null);
   const formRef = useRef<HTMLElement>(null);
+  const resumenRef = useRef<HTMLSpanElement>(null);
 
   const p = precios(cafe, gramos, frecuencia);
   const vigente = sub && sub.estado !== "cancelada" ? sub : null;
@@ -232,6 +235,41 @@ export default function Club() {
       const destino = document.getElementById("cobro-del-club") ?? document.getElementById("mi-suscripcion");
       destino?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
+  };
+
+  const plan = PLANES.find((x) => x.gramos === gramos && x.frecuencia === frecuencia) ?? null;
+
+  /** Elegir una tarjeta: llena el formulario, y el personaje vuela hasta "Tu envío". */
+  const elegirPlan = (x: PlanClub, personaje: Element | null) => {
+    setFrecuencia(x.frecuencia);
+    setGramos(x.gramos);
+    setMensaje("");
+    const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("configurar")?.scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "start" });
+    const img = personaje?.querySelector("img");
+    if (!img || quieto) return;
+    const a = img.getBoundingClientRect();
+    const copia = img.cloneNode() as HTMLImageElement;
+    Object.assign(copia.style, { position: "fixed", left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px`, margin: "0", zIndex: "60", pointerEvents: "none" });
+    document.querySelector(".inicio")?.appendChild(copia);
+    resumenRef.current?.style.setProperty("visibility", "hidden");
+    // La página se está desplazando: se sigue al destino cuadro a cuadro.
+    const inicio = performance.now();
+    const paso = (ahora: number) => {
+      const t = Math.min(1, (ahora - inicio) / 950);
+      const k = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const b = resumenRef.current?.getBoundingClientRect();
+      if (b && b.width) {
+        const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+        const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+        const escala = 1 + (b.height / a.height - 1) * k;
+        copia.style.transform = `translate(${dx * k}px, ${dy * k - Math.sin(Math.PI * t) * 60}px) scale(${escala}) rotate(${Math.sin(Math.PI * t) * -10}deg)`;
+      }
+      if (t < 1) return requestAnimationFrame(paso);
+      copia.remove();
+      resumenRef.current?.style.removeProperty("visibility");
+    };
+    requestAnimationFrame(paso);
   };
 
   const editar = () => {
@@ -420,11 +458,24 @@ export default function Club() {
         </section>
       )}
 
-      {/* 2. Configurador */}
+      {/* 2. Planes */}
+      <section className="section" aria-labelledby="planes-titulo">
+        <div className="wrap">
+          <div className="head" data-revelar>
+            <h2 id="planes-titulo">Elige tu plan</h2>
+            <div>
+              <p>Tres formas de empezar. Después puedes cambiar el café, la cantidad o la molienda.</p>
+            </div>
+          </div>
+          <PlanesClub cafe={nombreCafe(cafe)} elegido={plan?.id ?? null} precio={(x) => precios(cafe, x.gramos, x.frecuencia)} alElegir={elegirPlan} />
+        </div>
+      </section>
+
+      {/* 3. Configurador */}
       <section ref={formRef} className="section" id="configurar" aria-labelledby="config-titulo">
         <div className="wrap">
           <div className="head" data-revelar>
-            <h2 id="config-titulo">{vigente ? "Cambia tu suscripción" : "Arma tu suscripción"}</h2>
+            <h2 id="config-titulo">{vigente ? "Cambia tu suscripción" : "Personaliza tu plan"}</h2>
             <div>
               <p>Cuatro elecciones y listo. El precio y las fechas se calculan al momento.</p>
             </div>
@@ -485,7 +536,11 @@ export default function Club() {
             </div>
 
             <aside className="club__resumen desde-der" data-revelar aria-live="polite">
-              <h3>Tu envío</h3>
+              {/* El personaje del plan; con una combinación propia se queda el de la casa. */}
+              <span ref={resumenRef} className="club__personaje">
+                <PersonajeClub key={plan?.id ?? "propio"} plan={plan ?? PLANES[0]} />
+              </span>
+              <h3>{plan ? `Plan ${plan.nombre}` : "Tu envío"}</h3>
               <p className="club__linea">{nombreCafe(cafe)} · {nombreCantidad(gramos)} · {molienda}</p>
               <dl className="club__cuentas">
                 <dt>En la tienda</dt><dd><s>{formatBs(p.tienda)}</s></dd>

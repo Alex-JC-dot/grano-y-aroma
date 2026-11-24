@@ -105,6 +105,80 @@
   .inicio .panel__acciones .btn--peligro { margin-left: 0; }
 }
 
+/* Tarjetas de plan: el personaje sobresale, flota y parpadea; los granos giran alrededor. */
+.inicio .cplanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; list-style: none; margin: 0; padding: 96px 0 28px; perspective: 1400px; }
+.inicio .cplan {
+  --c1: #f1cf9c; --c2: #cf9257; --c3: #b5743c; --boton: #b06a35; --boton-tinta: #fff8ee;
+  position: relative; height: 100%; display: flex; flex-direction: column; border-radius: 28px; background: var(--surface);
+  border: 3px solid var(--c3); text-align: center;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style: preserve-3d;
+  transition: transform 0.25s var(--ease), box-shadow 0.3s var(--ease);
+}
+.inicio .cplan--casa { --c1: #e3a06a; --c2: #b8653a; --c3: #94492a; --boton: #94492a; }
+.inicio .cplan--barista { --c1: #7a4a35; --c2: #46241a; --c3: #2d1510; --boton: #3b1d14; }
+[data-theme="dark"] .inicio .cplan--barista, .inicio[data-theme="dark"] .cplan--barista { --c3: #8a4f35; --boton: #7a4430; }
+.inicio .cplan:hover { box-shadow: 0 26px 50px -22px rgba(43, 21, 12, 0.55); }
+.inicio .cplan.is-on { box-shadow: 0 0 0 4px var(--bg), 0 0 0 7px var(--c3); }
+
+.inicio .cplan__escena { position: relative; height: 218px; border-radius: 24px 24px 0 0; overflow: hidden; background: radial-gradient(120% 90% at 22% 8%, var(--c1), var(--c2) 58%, var(--c3)); }
+.inicio .cplan__num { position: absolute; right: 18px; top: -8px; font: 400 190px / 1 var(--f-display); color: rgba(255, 255, 255, 0.13); }
+.inicio .cplan__sol { position: absolute; left: 26px; top: 24px; width: 54px; height: 54px; border-radius: 50%; background: rgba(255, 240, 214, 0.5); box-shadow: 0 0 0 16px rgba(255, 240, 214, 0.14), 0 0 0 34px rgba(255, 240, 214, 0.08); }
+.inicio .cplan__orbita { position: absolute; left: 50%; top: 46%; width: 296px; height: 296px; margin: -148px; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, 0.26); animation: cplan-gira 26s linear infinite; }
+.inicio .cplan__grano { position: absolute; width: 26px; height: 26px; fill: #5a3220; stroke: #f0cfa2; stroke-width: 1.4; stroke-linecap: round; }
+.inicio .cplan__grano path { fill: none; }
+.inicio .cplan__grano--1 { left: 50%; top: -13px; }
+.inicio .cplan__grano--2 { left: 2%; top: 72%; width: 20px; height: 20px; }
+.inicio .cplan__grano--3 { right: 2%; top: 72%; width: 32px; height: 32px; }
+.inicio .cplan__onda { position: absolute; left: -1px; right: -1px; bottom: -1px; width: calc(100% + 2px); height: 54px; fill: var(--surface); }
+
+.inicio .personaje { position: relative; display: inline-block; line-height: 0; }
+.inicio .personaje img { display: block; width: 100%; height: auto; }
+.inicio .personaje i { position: absolute; aspect-ratio: 1; border-radius: 50%; border-bottom: 2px solid #5a3220; transform: translate(-50%, -50%); opacity: 0; animation: cplan-parpadea 4.6s linear infinite; }
+.inicio .cplan__personaje { position: absolute; left: 50%; bottom: calc(100% - 206px); height: 272px; transform: translateX(-50%) translateZ(46px); filter: drop-shadow(0 18px 16px rgba(35, 16, 8, 0.4)); animation: cplan-flota 4.4s ease-in-out infinite; }
+.inicio .cplan__personaje img { width: auto; height: 100%; max-width: none; }
+.inicio .cplan--descubre .cplan__personaje { height: 222px; bottom: calc(100% - 200px); }
+.inicio li:nth-child(2) > .cplan .cplan__personaje { animation-delay: -1.5s; }
+.inicio li:nth-child(3) > .cplan .cplan__personaje { animation-delay: -3s; }
+.inicio li:nth-child(2) > .cplan .personaje i { animation-delay: -1.7s; }
+.inicio li:nth-child(3) > .cplan .personaje i { animation-delay: -3.1s; }
+.inicio .cplan:hover .cplan__personaje img { animation: cplan-salta 0.7s var(--ease); }
+@keyframes cplan-flota { 50% { translate: 0 -11px; rotate: 1.4deg; } }
+@keyframes cplan-gira { to { transform: rotate(360deg); } }
+@keyframes cplan-parpadea { 0%, 94.9% { opacity: 0; } 95%, 98.5% { opacity: 1; } 98.6%, 100% { opacity: 0; } }
+@keyframes cplan-salta { 35% { transform: translateY(-12px) rotate(-4deg); } 70% { transform: translateY(0) rotate(3deg); } }
+
+.inicio .cplan__sello { position: absolute; z-index: 2; left: 50%; top: -116px; transform: translateX(-50%); padding: 7px 16px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: 600 13px / 1 var(--f-text); white-space: nowrap; }
+.inicio .cplan__cuerpo { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 14px 26px 56px; }
+.inicio .cplan h3 { margin: 0; font: 400 36px / 1.1 var(--f-display); letter-spacing: -0.01em; }
+.inicio .cplan__lema { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+.inicio .cplan__zigzag { width: 92px; height: 8px; margin: 18px 0; fill: none; stroke: var(--line-maxima); stroke-width: 1.4; }
+.inicio .cplan__lista { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; gap: 12px; text-align: left; font-size: 16px; }
+.inicio .cplan__lista li { position: relative; padding-left: 34px; }
+.inicio .cplan__lista li::before { content: ""; position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--accent); box-sizing: border-box; }
+.inicio .cplan__lista li::after { content: ""; position: absolute; left: 8px; top: 6px; width: 5px; height: 9px; border: solid var(--accent); border-width: 0 2px 2px 0; transform: rotate(42deg); }
+.inicio .cplan__precio { margin: auto 0 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.inicio .cplan__precio s { color: var(--soft); font-size: 15px; }
+.inicio .cplan__precio strong { font: 400 40px / 1 var(--f-display); font-variant-numeric: tabular-nums; }
+.inicio .cplan__precio small { font-size: 14px; color: var(--muted); }
+.inicio .cplan__boton { position: absolute; left: 50%; bottom: -27px; transform: translateX(-50%) translateZ(30px); min-width: 200px; min-height: 54px; padding: 0 28px; border: 0; border-radius: 999px; background: var(--boton); color: var(--boton-tinta); font: 600 17px / 1 var(--f-text); white-space: nowrap; cursor: pointer; box-shadow: 0 10px 22px -10px rgba(43, 21, 12, 0.7); transition: filter 0.2s var(--ease); }
+.inicio .cplan__boton:hover { filter: brightness(1.14); }
+.inicio .cplan__boton:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.inicio .club__personaje { float: right; width: 92px; margin: -52px -6px 0 10px; text-align: center; filter: drop-shadow(0 8px 8px rgba(35, 16, 8, 0.35)); }
+.inicio .club__personaje .personaje { animation: pago-entra 0.4s var(--ease) both; }
+
+@media (max-width: 1023px) {
+  .inicio .cplanes { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: min(78vw, 340px); gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin-inline: calc(var(--gut) * -1); padding: 132px var(--gut) 44px; perspective: none; }
+  .inicio .cplanes > li { scroll-snap-align: center; }
+}
+@media (max-width: 480px) {
+  .inicio .cplan__cuerpo { padding-inline: 18px; }
+  .inicio .cplan__sello { top: -118px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inicio .cplan, .inicio .cplan__personaje, .inicio .cplan__orbita, .inicio .personaje i, .inicio .cplan:hover .cplan__personaje img { animation: none; transition: none; }
+}
+
 /* ---------- Subastas ---------- */
 .inicio .en-vivo {
   width: 9px;
