@@ -5,11 +5,12 @@ import { create } from "zustand";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
-import { categoriaDe, esCafe } from "@/lib/catalogo";
+import { categoriaDe, colorDe, esCafe } from "@/lib/catalogo";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
 import PagoQr, { type PagoEstado } from "@/components/cuenta/PagoPedido";
 import { useAuth } from "@/store/authStore";
-import PlanesClub, { PersonajeClub, PLANES, type PlanClub } from "./PlanesClub";
+import PlanesClub, { Onda, PersonajeClub, PLANES, type PlanClub } from "./PlanesClub";
+import { OpcionCafe, OpcionCantidad, OpcionFrecuencia, OpcionMolienda, OpcionSorpresa } from "./OpcionesClub";
 
 /**
  * Club Grano y Aroma (Suscripciones, RF-06 a RF-09).
@@ -238,6 +239,8 @@ export default function Club() {
   };
 
   const plan = PLANES.find((x) => x.gramos === gramos && x.frecuencia === frecuencia) ?? null;
+  // El personaje del resumen: el del plan o, en una combinación propia, el de esa cantidad.
+  const mascota = plan ?? PLANES.find((x) => x.gramos === gramos)!;
 
   /** Elegir una tarjeta: llena el formulario, y el personaje vuela hasta "Tu envío". */
   const elegirPlan = (x: PlanClub, personaje: Element | null) => {
@@ -258,7 +261,7 @@ export default function Club() {
     const paso = (ahora: number) => {
       const t = Math.min(1, (ahora - inicio) / 950);
       const k = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-      const b = resumenRef.current?.getBoundingClientRect();
+      const b = resumenRef.current?.querySelector("img")?.getBoundingClientRect();
       if (b && b.width) {
         const dx = b.left + b.width / 2 - (a.left + a.width / 2);
         const dy = b.top + b.height / 2 - (a.top + a.height / 2);
@@ -483,85 +486,74 @@ export default function Club() {
 
           <div className="club__config">
             <div className="club__pasos">
-              <fieldset className="club__paso desde-izq" data-revelar>
+              <fieldset className="club__paso" data-revelar>
                 <legend><span>1</span> Cada cuánto</legend>
-                <div className="planes planes--club">
-                  {([30, 15] as Frecuencia[]).map((f, i) => (
-                    <label key={f} className={`plan ${i ? "desde-der" : "desde-izq"}${frecuencia === f ? " is-on" : ""}`} data-revelar style={{ "--i": i + 1 } as React.CSSProperties}>
-                      <input type="radio" name="frecuencia" checked={frecuencia === f} onChange={() => setFrecuencia(f)} />
-                      <span className="plan__nombre">Cada {f} días</span>
-                      <span className="plan__ahorro">{Math.round(DESCUENTO[f] * 100)} % menos que en la tienda</span>
-                    </label>
+                <div className="copcs copcs--2">
+                  {([30, 15] as Frecuencia[]).map((f) => (
+                    <OpcionFrecuencia key={f} dias={f} descuento={Math.round(DESCUENTO[f] * 100)} activa={frecuencia === f} alElegir={() => setFrecuencia(f)} />
                   ))}
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso desde-izq" data-revelar>
+              <fieldset className="club__paso" data-revelar>
                 <legend><span>2</span> Cuánto café por envío</legend>
-                <div className="filtros__opciones">
+                <div className="copcs copcs--3 copcs--alto">
                   {CANTIDADES.map((c) => (
-                    <button key={c.g} type="button" className={`chip${gramos === c.g ? " is-on" : ""}`} aria-pressed={gramos === c.g} onClick={() => setGramos(c.g)}>
-                      {c.label}
-                    </button>
+                    <OpcionCantidad key={c.g} gramos={c.g} etiqueta={c.label} activa={gramos === c.g} alElegir={() => setGramos(c.g)} />
                   ))}
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso desde-izq" data-revelar>
+              <fieldset className="club__paso" data-revelar>
                 <legend><span>3</span> Qué café</legend>
-                <div className="club__cafes">
-                  <button type="button" data-revelar className={`club__cafe club__cafe--sorpresa desde-izq${cafe === "sorpresa" ? " is-on" : ""}`} aria-pressed={cafe === "sorpresa"} onClick={() => setCafe("sorpresa")}>
-                    <strong>Sorpresa del tostador</strong>
-                    <span>Un café distinto en cada envío, elegido de los lotes recién tostados · {formatBs(PRECIO_SORPRESA)} los 250 g</span>
-                  </button>
-                  {CAFES.map((c, i) => (
-                    <button key={c.id} type="button" data-revelar style={{ "--i": Math.floor(i / 2) + 1 } as React.CSSProperties} className={`club__cafe ${i % 2 ? "desde-der" : "desde-izq"}${cafe === c.id ? " is-on" : ""}`} aria-pressed={cafe === c.id} onClick={() => setCafe(c.id)}>
-                      <strong>{c.name}</strong>
-                      <span>{c.region} · {formatBs(c.price)} los 250 g</span>
-                    </button>
+                <OpcionSorpresa precio={PRECIO_SORPRESA} colores={CAFES.map(colorDe)} activa={cafe === "sorpresa"} alElegir={() => setCafe("sorpresa")} />
+                <div className="copcs copcs--3 copcs--alto">
+                  {CAFES.map((c) => (
+                    <OpcionCafe key={c.id} cafe={c} activa={cafe === c.id} alElegir={() => setCafe(c.id)} />
                   ))}
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso desde-izq" data-revelar>
+              <fieldset className="club__paso" data-revelar>
                 <legend><span>4</span> Molienda</legend>
-                <div className="filtros__opciones">
+                <div className="copcs copcs--5">
                   {MOLIENDAS.map((m) => (
-                    <button key={m} type="button" className={`chip${molienda === m ? " is-on" : ""}`} aria-pressed={molienda === m} onClick={() => setMolienda(m)}>
-                      {m}
-                    </button>
+                    <OpcionMolienda key={m} nombre={m} activa={molienda === m} alElegir={() => setMolienda(m)} />
                   ))}
                 </div>
               </fieldset>
             </div>
 
-            <aside className="club__resumen desde-der" data-revelar aria-live="polite">
-              {/* El personaje del plan; con una combinación propia se queda el de la casa. */}
+            <aside className={`cplan club__resumen cplan--${mascota.id}`} data-revelar aria-live="polite">
+              <div className="cplan__escena" aria-hidden="true">
+                <span className="cplan__sol" />
+                <Onda />
+              </div>
               <span ref={resumenRef} className="club__personaje">
-                <PersonajeClub key={plan?.id ?? "propio"} plan={plan ?? PLANES[0]} />
+                <PersonajeClub key={mascota.id} plan={mascota} className="cplan__personaje" />
               </span>
-              <h3>{plan ? `Plan ${plan.nombre}` : "Tu envío"}</h3>
-              <p className="club__linea">{nombreCafe(cafe)} · {nombreCantidad(gramos)} · {molienda}</p>
-              <dl className="club__cuentas">
-                <dt>En la tienda</dt><dd><s>{formatBs(p.tienda)}</s></dd>
-                <dt>Con el Club</dt><dd className="club__total">{formatBs(p.club)}</dd>
-                <dt>Ahorras</dt><dd className="club__ahorra">{formatBs(p.ahorro)} por envío</dd>
-                <dt>Envío en Sucre</dt><dd>Sin costo</dd>
-              </dl>
-              {!vigente && (
-                <div className="club__primeros">
-                  <span>Primeros envíos</span>
-                  <ol>
-                    {fechasNuevas.map((f, i) => <li key={i}>{enNavegador ? fechaLarga(f) : "…"}</li>)}
-                  </ol>
-                </div>
-              )}
-              <button type="button" className="btn btn--primary club__boton" onClick={suscribir}>
-                {vigente ? "Guardar cambios" : `Suscribirme · ${formatBs(p.club)} por envío`}
+              <div className="club__resumen-cuerpo">
+                <h3>{plan ? `Plan ${plan.nombre}` : "Plan a tu medida"}</h3>
+                <p className="club__linea">{nombreCafe(cafe)} · {nombreCantidad(gramos)} · {molienda} · cada {frecuencia} días</p>
+                <dl className="club__cuentas">
+                  <dt>En la tienda</dt><dd><s>{formatBs(p.tienda)}</s></dd>
+                  <dt>Con el Club</dt><dd className="club__total">{formatBs(p.club)}</dd>
+                  <dt>Ahorras</dt><dd className="club__ahorra">{formatBs(p.ahorro)} por envío</dd>
+                  <dt>Envío en Sucre</dt><dd>Sin costo</dd>
+                </dl>
+                {!vigente && (
+                  <div className="club__primeros">
+                    <span>Primeros envíos</span>
+                    <ol>
+                      {fechasNuevas.map((f, i) => <li key={i}>{enNavegador ? fechaLarga(f) : "…"}</li>)}
+                    </ol>
+                  </div>
+                )}
+                <p className="club__fecha-nota">Pago de demostración: no se cobra nada real.</p>
+              </div>
+              <button type="button" className="cplan__boton" onClick={suscribir}>
+                {vigente ? "Guardar cambios" : `Suscribirme · ${formatBs(p.club)}`}
               </button>
-              <p className="club__fecha-nota">
-                Pago de demostración: no se realiza ningún cobro real. El pago se confirma solo, igual que en la tienda.
-              </p>
             </aside>
           </div>
         </div>

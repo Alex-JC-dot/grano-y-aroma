@@ -33,6 +33,13 @@ export const PLANES: PlanClub[] = [
 
 const CANTIDAD = { 250: "250 g", 500: "500 g", 1000: "1 kg" } as const;
 
+/** Borde ondulado de las escenas, como chocolate que chorrea. */
+export const Onda = () => (
+  <svg className="cplan__onda" viewBox="0 0 320 60" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 22c14 0 18 16 34 16 18 0 18-24 38-24 22 0 18 34 44 38 22 4 66 4 88 0 26-4 22-38 44-38 20 0 20 24 38 24 16 0 20-16 34-16v40H0Z" />
+  </svg>
+);
+
 const Grano = ({ n }: { n: number }) => (
   <svg className={`cplan__grano cplan__grano--${n}`} viewBox="0 0 24 24" aria-hidden="true">
     <ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(28 12 12)" />
@@ -90,9 +97,7 @@ export default function PlanesClub({
                 <span className="cplan__num">{i + 1}</span>
                 <span className="cplan__sol" />
                 <span className="cplan__orbita"><Grano n={1} /><Grano n={2} /><Grano n={3} /></span>
-                <svg className="cplan__onda" viewBox="0 0 320 60" preserveAspectRatio="none">
-                  <path d="M0 22c14 0 18 16 34 16 18 0 18-24 38-24 22 0 18 34 44 38 22 4 66 4 88 0 26-4 22-38 44-38 20 0 20 24 38 24 16 0 20-16 34-16v40H0Z" />
-                </svg>
+                <Onda />
               </div>
               <PersonajeClub plan={p} className="cplan__personaje" />
 

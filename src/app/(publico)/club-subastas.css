@@ -164,8 +164,6 @@
 .inicio .cplan__boton:hover { filter: brightness(1.14); }
 .inicio .cplan__boton:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
-.inicio .club__personaje { float: right; width: 92px; margin: -52px -6px 0 10px; text-align: center; filter: drop-shadow(0 8px 8px rgba(35, 16, 8, 0.35)); }
-.inicio .club__personaje .personaje { animation: pago-entra 0.4s var(--ease) both; }
 
 @media (max-width: 1023px) {
   .inicio .cplanes { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: min(78vw, 340px); gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin-inline: calc(var(--gut) * -1); padding: 132px var(--gut) 44px; perspective: none; }
@@ -281,21 +279,7 @@
 .inicio .club__paso { border: 0; margin: 0; padding: 0; min-width: 0; }
 .inicio .club__paso legend { display: flex; align-items: center; gap: 10px; padding: 0; margin-bottom: 14px; font: 400 22px/1.2 var(--f-display); }
 .inicio .club__paso legend span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: var(--bg); font: 500 13px/1 var(--f-text); }
-.inicio .planes--club { margin: 0; }
-.inicio .planes--club .plan__nombre { font-size: 24px; }
-.inicio .club__cafes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.inicio .club__cafe {
-  display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; text-align: left;
-  border: 1px solid var(--line-media); border-radius: var(--r-btn); background: transparent; color: var(--ink);
-  font: inherit; cursor: pointer; transition: border-color 0.18s var(--ease), background-color 0.18s var(--ease);
-}
-.inicio .club__cafe strong { font: 400 18px/1.2 var(--f-display); }
-.inicio .club__cafe span { font-size: 14px; color: var(--muted); }
-.inicio .club__cafe:hover { border-color: var(--ink); }
-.inicio .club__cafe.is-on { border: 2px solid var(--accent); padding: 13px 15px; background: var(--accent-tenue); }
-.inicio .club__cafe--sorpresa { grid-column: 1 / -1; }
 
-.inicio .club__resumen { position: sticky; top: calc(var(--nav) + 24px); padding: 28px; border-radius: var(--r-card); background: var(--surface); }
 .inicio .club__resumen h3 { margin: 0 0 6px; font: 400 26px/1.15 var(--f-display); }
 .inicio .club__linea { margin: 0 0 18px; color: var(--muted); }
 .inicio .club__cuentas { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; margin: 0 0 20px; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
@@ -306,7 +290,6 @@
 .inicio .club__primeros { margin-bottom: 20px; font-size: 14px; }
 .inicio .club__primeros span { color: var(--muted); }
 .inicio .club__primeros ol { margin: 6px 0 0; padding-left: 18px; }
-.inicio .club__boton { width: 100%; }
 .inicio .club__fecha-nota { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
 
 .inicio .club__aviso { margin: -8px 0 20px; padding: 12px 16px; border-radius: var(--r-btn); background: var(--exito-bg); color: var(--exito); font-weight: 500; }
@@ -343,8 +326,7 @@
   .inicio .club__resumen { position: static; }
 }
 @media (max-width: 599px) {
-  .inicio .club__cafes { grid-template-columns: 1fr; }
-  .inicio .faq__item summary { font-size: 19px; }
+    .inicio .faq__item summary { font-size: 19px; }
 }
 
 /* ---------- Subastas: pestañas, próximas, aviso ---------- */
@@ -447,3 +429,129 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
 }
 .inicio .club__cobro h3 { margin: 0; font: 400 20px/1.2 var(--f-display); }
 .inicio .club__cobro .pago-qr { margin: 0; }
+
+/* Personaliza tu plan: las mismas escenas con borde ondulado que las tarjetas. */
+.inicio .club__pasos { gap: 52px; }
+.inicio .club__paso legend { font-size: 26px; margin-bottom: 18px; }
+.inicio .club__paso legend span { width: 34px; height: 34px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 15px; }
+.inicio .copcs { display: grid; gap: 18px; }
+.inicio .copcs--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.inicio .copcs--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.inicio .copcs--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.inicio .copcs--alto { row-gap: 62px; padding-top: 44px; }
+.inicio .copc {
+  --cc: #b5743c;
+  position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; border: 3px solid color-mix(in srgb, var(--cc) 45%, var(--surface)); border-radius: 22px; background: var(--surface); color: var(--ink); font: inherit; text-align: center; cursor: pointer;
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.inicio .copc:hover { transform: translateY(-4px); border-color: var(--cc); }
+.inicio .copc.is-on { border-color: var(--cc); box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--cc); }
+.inicio .copc.is-on::after { content: "✓"; position: absolute; z-index: 3; right: -10px; top: -12px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--cc); color: #fff; font: 600 17px / 1 var(--f-text); border: 3px solid var(--bg); box-sizing: border-box; animation: pago-entra 0.25s var(--ease) both; }
+.inicio .copc:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
+.inicio .copc__escena { position: relative; display: block; height: 112px; border-radius: 18px 18px 0 0; overflow: hidden; background: radial-gradient(130% 110% at 20% 0%, color-mix(in srgb, var(--cc) 62%, #ffe9c8), var(--cc) 62%, color-mix(in srgb, var(--cc) 78%, #1c0d06)); }
+.inicio .copc__escena .cplan__onda { height: 34px; }
+.inicio .copc__texto { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 14px 20px; }
+.inicio .copc__texto strong { font: 400 21px / 1.2 var(--f-display); }
+.inicio .copc__texto small { font-size: 14px; color: var(--muted); }
+.inicio .copc__texto em { margin-top: 4px; font: 500 15px / 1.3 var(--f-text); color: var(--exito); }
+.inicio .copc__texto em i { font-style: normal; font-weight: 400; font-size: 13px; color: var(--muted); }
+
+.inicio .copc--frec .copc__escena { height: 138px; }
+.inicio .copc--d15 { --cc: #94492a; }
+.inicio .copc--frec .copc__texto strong { font-size: 27px; }
+.inicio .copc__num { position: absolute; right: 14px; top: -6px; font: 400 124px / 1 var(--f-display); color: rgba(255, 255, 255, 0.16); }
+.inicio .copc__mes { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); display: grid; grid-template-columns: repeat(7, 20px); gap: 4px 9px; }
+.inicio .copc__mes i { width: 8px; height: 8px; margin: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.45); }
+.inicio .copc__mes svg { width: 30px; height: 30px; margin: -5px; fill: #4a2716; stroke: #ffe2b8; stroke-width: 1.6; stroke-linecap: round; animation: cplan-late 2.2s ease-in-out infinite; }
+.inicio .copc__mes svg path { fill: none; }
+@keyframes cplan-late { 50% { transform: scale(1.22) rotate(10deg); } }
+
+.inicio .copc .foto-totem { display: block; width: auto; filter: drop-shadow(0 9px 8px rgba(35, 16, 8, 0.45)); }
+.inicio .copc__bolsa { position: absolute; left: 50%; top: -42px; height: 136px; transform: translateX(-50%); transition: transform 0.35s var(--ease); }
+.inicio .copc__bolsa .foto-totem { height: 136px; }
+.inicio .copc--cafe:hover .copc__bolsa, .inicio .copc--cafe.is-on .copc__bolsa { transform: translateX(-50%) translateY(-7px) rotate(-3deg); }
+.inicio .copc--cant { --cc: #b5743c; }
+.inicio .copcs > .copc--cant:nth-child(2) { --cc: #94492a; }
+.inicio .copcs > .copc--cant:nth-child(3) { --cc: #7a4430; }
+.inicio .copc__bolsas { position: absolute; left: 0; right: 0; top: -34px; height: 126px; display: flex; justify-content: center; align-items: flex-end; }
+.inicio .copc__bolsas .foto-totem { height: 104px; transition: transform 0.35s var(--ease); }
+.inicio .copc__bolsas[data-n="1"] .foto-totem { height: 112px; }
+.inicio .copc__bolsas[data-n="2"] .foto-totem + .foto-totem { margin-left: -14px; }
+.inicio .copc__bolsas[data-n="4"] .foto-totem { height: 98px; }
+.inicio .copc__bolsas[data-n="4"] .foto-totem + .foto-totem { margin-left: -24px; }
+.inicio .copc--cant:hover .foto-totem:nth-child(odd) { transform: translateY(-6px) rotate(-4deg); }
+.inicio .copc--cant:hover .foto-totem:nth-child(even) { transform: translateY(-6px) rotate(4deg); }
+.inicio .copc--cant .copc__texto strong { font-size: 27px; }
+
+.inicio .copc--sorpresa { --cc: #a8612f; width: 100%; min-height: 148px; margin: 26px 0 18px; flex-direction: row; align-items: center; justify-content: space-between; text-align: left; color: #fff6e8; background: radial-gradient(90% 160% at 12% 0%, #c98a50, #94492a 58%, #54281a); }
+.inicio .copc--sorpresa .copc__texto { align-items: flex-start; max-width: 54%; padding: 20px 26px; }
+.inicio .copc--sorpresa .copc__texto strong { font-size: 28px; }
+.inicio .copc--sorpresa .copc__texto small { font-size: 15px; color: rgba(255, 246, 232, 0.86); }
+.inicio .copc--sorpresa .copc__texto em { color: #ffe0ae; font-size: 17px; }
+.inicio .copc--sorpresa .copc__texto em i { color: rgba(255, 246, 232, 0.8); }
+.inicio .copc__abanico { position: relative; flex: none; width: 250px; height: 150px; margin: -34px 24px 0 0; }
+.inicio .copc__abanico .foto-totem { position: absolute; left: 50%; bottom: 0; height: 158px; margin-left: -52px; transform-origin: 50% 100%; transition: transform 0.4s var(--ease); }
+.inicio .copc__abanico .foto-totem:nth-child(1) { transform: translateX(-58px) rotate(-11deg); }
+.inicio .copc__abanico .foto-totem:nth-child(2) { transform: translateX(58px) rotate(11deg); }
+.inicio .copc--sorpresa:hover .foto-totem:nth-child(1), .inicio .copc--sorpresa.is-on .foto-totem:nth-child(1) { transform: translateX(-70px) translateY(-4px) rotate(-16deg); }
+.inicio .copc--sorpresa:hover .foto-totem:nth-child(2), .inicio .copc--sorpresa.is-on .foto-totem:nth-child(2) { transform: translateX(70px) translateY(-4px) rotate(16deg); }
+.inicio .copc--sorpresa:hover .foto-totem:nth-child(3), .inicio .copc--sorpresa.is-on .foto-totem:nth-child(3) { transform: translateY(-10px); }
+
+.inicio .copc--mol { align-items: center; justify-content: center; gap: 10px; min-height: 124px; padding: 16px 8px; font: 500 15px / 1.2 var(--f-text); }
+.inicio .copc--mol svg { width: 46px; height: 46px; fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s var(--ease); }
+.inicio .copc--mol:hover svg { transform: rotate(-6deg) scale(1.1); }
+.inicio .copc--mol.is-on { background: radial-gradient(130% 110% at 20% 0%, #cf9257, #94492a); color: #fff6e8; }
+.inicio .copc--mol.is-on svg { stroke: #fff0d8; }
+
+/* El resumen es otra tarjeta de plan, con su personaje. */
+.inicio .club__config { grid-template-columns: minmax(0, 1fr) 372px; gap: 44px; padding-top: 70px; }
+.inicio .cplan.club__resumen { position: sticky; top: calc(var(--nav) + 84px); height: auto; padding: 0; transform: none; }
+.inicio .club__resumen .cplan__escena { height: 168px; }
+.inicio .club__personaje { position: absolute; inset: 0 0 auto; height: 0; }
+.inicio .club__personaje .cplan__personaje { bottom: auto; top: -72px; height: 226px; }
+.inicio .cplan--descubre .club__personaje .cplan__personaje { bottom: auto; top: -44px; height: 186px; }
+.inicio .club__resumen-cuerpo { padding: 4px 26px 48px; text-align: left; }
+.inicio .club__resumen-cuerpo h3 { text-align: center; font-size: 32px; }
+.inicio .club__resumen-cuerpo .club__linea { text-align: center; margin: 6px 0 16px; }
+.inicio .club__resumen .cplan__boton { min-width: 270px; }
+.inicio .club__resumen .club__fecha-nota { text-align: center; margin: 14px 0 0; }
+
+@media (max-width: 1180px) and (min-width: 1024px) { .inicio .club__config { grid-template-columns: minmax(0, 1fr) 330px; gap: 30px; } }
+@media (max-width: 1023px) {
+  .inicio .club__config { grid-template-columns: minmax(0, 1fr); gap: 120px; padding-top: 0; }
+  .inicio .cplan.club__resumen { position: relative; top: auto; width: 100%; max-width: 460px; margin: 0 auto 30px; }
+}
+@media (max-width: 679px) {
+  .inicio .copcs--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; }
+  .inicio .copcs--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .inicio .copcs--3:has(.copc--cant) { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 9px; }
+  .inicio .copc--cant .copc__texto { padding-inline: 4px; }
+  .inicio .copc--cant .copc__texto strong { font-size: 22px; }
+  .inicio .copc__bolsas[data-n="1"] .foto-totem, .inicio .copc__bolsas[data-n="2"] .foto-totem { height: 88px; }
+  .inicio .copc__bolsas[data-n="4"] .foto-totem { height: 66px; }
+  .inicio .copc--frec .copc__texto strong { font-size: 22px; }
+  .inicio .copc__mes { grid-template-columns: repeat(7, 14px); gap: 4px 5px; }
+  .inicio .copc__mes i { width: 6px; height: 6px; margin: 4px; }
+  .inicio .copc__mes svg { width: 24px; height: 24px; margin: -5px; }
+  .inicio .copc--sorpresa { flex-direction: column-reverse; padding-top: 8px; margin-top: 44px; }
+  .inicio .copc--sorpresa .copc__texto { max-width: none; align-items: center; text-align: center; padding: 14px 20px 22px; }
+  .inicio .copc__abanico { margin: -44px 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inicio .copc, .inicio .copc:hover, .inicio .copc__mes svg { animation: none; transition: none; transform: none; }
+}
+/* En laptops de pantalla baja el resumen se compacta: el botón tiene que verse siempre. */
+@media (min-width: 1024px) and (max-height: 900px) {
+  .inicio .cplan.club__resumen { top: calc(var(--nav) + 72px); }
+  .inicio .club__resumen .cplan__escena { height: 118px; }
+  .inicio .club__personaje .cplan__personaje { top: -50px; height: 160px; }
+  .inicio .cplan--descubre .club__personaje .cplan__personaje { top: -36px; height: 138px; }
+  .inicio .club__resumen-cuerpo { padding: 0 24px 42px; }
+  .inicio .club__resumen-cuerpo h3 { font-size: 27px; }
+  .inicio .club__resumen-cuerpo .club__linea { margin: 2px 0 10px; font-size: 14px; }
+  .inicio .club__resumen .club__cuentas, .inicio .club__resumen .club__primeros { margin-block: 0; padding-block: 10px; }
+  .inicio .club__resumen .club__fecha-nota { display: none; }
+}
+@media (min-width: 1024px) and (max-height: 700px) {
+  .inicio .club__resumen .club__primeros { display: none; }
+}

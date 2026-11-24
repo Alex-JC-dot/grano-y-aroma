@@ -2,7 +2,7 @@
 import { dibujoDe, esRecorte, fotoDe, rutaFoto, type Dibujo, type ItemTotem } from "@/lib/totem";
 
 /** La bolsa kraft de la tienda: la foto tiene la franja calada y detrás va el color del café. */
-function BolsaTotem({ color, nombre }: { color: string; nombre?: string }) {
+export function BolsaTotem({ color, nombre }: { color: string; nombre?: string }) {
   return (
     <svg className="foto-totem" viewBox="0 0 600 906" aria-hidden="true">
       <rect x="2" y="465" width="594" height="202" fill={color} />
