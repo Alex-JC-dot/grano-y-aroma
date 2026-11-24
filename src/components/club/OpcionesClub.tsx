@@ -1,6 +1,6 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 
-import { BolsaTotem } from "@/components/totem/FotoTotem";
 import { Onda } from "./PlanesClub";
 import { colorDe } from "@/lib/catalogo";
 import { formatBs } from "@/lib/utils";
@@ -8,9 +8,25 @@ import type { Product } from "@/lib/types";
 
 /**
  * Las opciones de "Personaliza tu plan", con el mismo diseño que las tarjetas de plan: una escena
- * de color con borde ondulado y algo que sobresale (la bolsa de cada café, del color de su
- * etiqueta). Son botones: lo elegido lo guarda Club.tsx.
+ * de color con borde ondulado y algo que sobresale (la bolsita de cada café, con la franja de su
+ * color). Son botones: lo elegido lo guarda Club.tsx.
  */
+
+/**
+ * La bolsita del Club. La imagen tiene la franja calada (solo quedan sus luces y sombras) y detrás
+ * va el color del café con la forma exacta de la franja: una imagen sirve para cualquier café.
+ */
+function Bolsita({ color, texto }: { color: string; texto?: string }) {
+  return (
+    <span className="bolsita" style={{ "--franja": color } as React.CSSProperties}>
+      <span className="bolsita__franja" />
+      <img src="/club/bolsita.webp" alt="" draggable={false} />
+      <i style={{ left: "26.7%", top: "31.1%" }} />
+      <i style={{ left: "64.3%", top: "31.9%" }} />
+      {texto && <b className={texto.length === 1 ? "is-signo" : ""}>{texto}</b>}
+    </span>
+  );
+}
 
 type Opcion = { activa: boolean; alElegir: () => void };
 
@@ -36,7 +52,7 @@ export function OpcionCantidad({ gramos, etiqueta, activa, alElegir }: { gramos:
     <button type="button" className={`copc copc--cant${activa ? " is-on" : ""}`} aria-pressed={activa} onClick={alElegir}>
       <span className="copc__escena" aria-hidden="true"><Onda /></span>
       <span className="copc__bolsas" data-n={bolsas} aria-hidden="true">
-        {Array.from({ length: bolsas }, (_, k) => <BolsaTotem key={k} color={["#94492a", "#b06a35", "#5d6b35", "#3b1d14"][k]} />)}
+        {Array.from({ length: bolsas }, (_, k) => <Bolsita key={k} color={["#94492a", "#b06a35", "#5d6b35", "#3b1d14"][k]} />)}
       </span>
       <span className="copc__texto">
         <strong>{etiqueta}</strong>
@@ -50,7 +66,7 @@ export function OpcionCafe({ cafe, activa, alElegir }: { cafe: Product } & Opcio
   return (
     <button type="button" className={`copc copc--cafe${activa ? " is-on" : ""}`} aria-pressed={activa} onClick={alElegir} style={{ "--cc": colorDe(cafe) } as React.CSSProperties}>
       <span className="copc__escena" aria-hidden="true"><Onda /></span>
-      <span className="copc__bolsa" aria-hidden="true"><BolsaTotem color={colorDe(cafe)} nombre={cafe.name} /></span>
+      <span className="copc__bolsa" aria-hidden="true"><Bolsita color={colorDe(cafe)} texto={cafe.name} /></span>
       <span className="copc__texto">
         <strong>{cafe.name}</strong>
         <small>{cafe.region}</small>
@@ -69,7 +85,7 @@ export function OpcionSorpresa({ precio, colores, activa, alElegir }: { precio: 
         <em>{formatBs(precio)} <i>los 250 g</i></em>
       </span>
       <span className="copc__abanico" aria-hidden="true">
-        {colores.slice(0, 3).map((c, k) => <BolsaTotem key={k} color={c} nombre="?" />)}
+        {colores.slice(0, 3).map((c, k) => <Bolsita key={k} color={c} texto="?" />)}
       </span>
     </button>
   );

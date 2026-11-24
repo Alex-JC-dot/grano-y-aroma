@@ -454,7 +454,7 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
 .inicio .copc__texto strong { font: 400 21px / 1.2 var(--f-display); }
 .inicio .copc__texto small { font-size: 14px; color: var(--muted); }
 .inicio .copc__texto em { margin-top: 4px; font: 500 15px / 1.3 var(--f-text); color: var(--exito); }
-.inicio .copc__texto em i { font-style: normal; font-weight: 400; font-size: 13px; color: var(--muted); }
+.inicio .copc__texto em i { display: inline-block; white-space: nowrap; font-style: normal; font-weight: 400; font-size: 13px; color: var(--muted); }
 
 .inicio .copc--frec .copc__escena { height: 138px; }
 .inicio .copc--d15 { --cc: #94492a; }
@@ -462,21 +462,32 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
 .inicio .copc__num { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); font: 400 112px / 1 var(--f-display); letter-spacing: -0.02em; color: rgba(255, 244, 226, 0.92); transition: transform 0.35s var(--ease); }
 .inicio .copc--frec:hover .copc__num { transform: translateX(-50%) scale(1.07); }
 
-.inicio .copc .foto-totem { display: block; width: auto; filter: drop-shadow(0 9px 8px rgba(35, 16, 8, 0.45)); }
-.inicio .copc__bolsa { position: absolute; left: 50%; top: -42px; height: 136px; transform: translateX(-50%); transition: transform 0.35s var(--ease); }
-.inicio .copc__bolsa .foto-totem { height: 136px; }
+.inicio .bolsita { position: relative; display: block; flex: none; aspect-ratio: 0.6763; container-type: size; filter: drop-shadow(0 9px 8px rgba(35, 16, 8, 0.45)); }
+.inicio .bolsita img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.inicio .bolsita__franja { position: absolute; inset: 0; background: var(--franja); -webkit-mask: url("/club/bolsita-franja.webp") center / 100% 100% no-repeat; mask: url("/club/bolsita-franja.webp") center / 100% 100% no-repeat; }
+.inicio .bolsita i { position: absolute; width: 9.6%; aspect-ratio: 1; border-radius: 50%; background: #d3bd9b; border-bottom: max(1px, 1.6cqw) solid #5a3220; box-sizing: border-box; transform: translate(-50%, -50%); opacity: 0; animation: cplan-parpadea 5.2s linear infinite; }
+.inicio .bolsita b { position: absolute; left: 7%; right: 7%; top: 59%; bottom: 5%; display: grid; place-items: center; text-align: center; text-wrap: balance; font: 500 13.5cqw / 1.08 var(--f-display); color: #fff6e8; text-shadow: 0 1px 2px rgba(30, 12, 4, 0.45); }
+.inicio .bolsita b.is-signo { font-size: 42cqw; }
+.inicio .copcs > :nth-child(2) .bolsita i { animation-delay: -1.3s; }
+.inicio .copcs > :nth-child(3) .bolsita i { animation-delay: -2.9s; }
+.inicio .copcs > :nth-child(4) .bolsita i { animation-delay: -4.1s; }
+.inicio .copcs > :nth-child(5) .bolsita i { animation-delay: -2.1s; }
+.inicio .copcs > :nth-child(6) .bolsita i { animation-delay: -3.6s; }
+.inicio .copc--cafe:hover .bolsita { animation: cplan-salta 0.7s var(--ease); }
+.inicio .copc__bolsa { position: absolute; left: 50%; top: -46px; height: 146px; transform: translateX(-50%); transition: transform 0.35s var(--ease); }
+.inicio .copc__bolsa .bolsita { height: 146px; }
 .inicio .copc--cafe:hover .copc__bolsa, .inicio .copc--cafe.is-on .copc__bolsa { transform: translateX(-50%) translateY(-7px) rotate(-3deg); }
 .inicio .copc--cant { --cc: #b5743c; }
 .inicio .copcs > .copc--cant:nth-child(2) { --cc: #94492a; }
 .inicio .copcs > .copc--cant:nth-child(3) { --cc: #7a4430; }
 .inicio .copc__bolsas { position: absolute; left: 0; right: 0; top: -34px; height: 126px; display: flex; justify-content: center; align-items: flex-end; }
-.inicio .copc__bolsas .foto-totem { height: 104px; transition: transform 0.35s var(--ease); }
-.inicio .copc__bolsas[data-n="1"] .foto-totem { height: 112px; }
-.inicio .copc__bolsas[data-n="2"] .foto-totem + .foto-totem { margin-left: -14px; }
-.inicio .copc__bolsas[data-n="4"] .foto-totem { height: 98px; }
-.inicio .copc__bolsas[data-n="4"] .foto-totem + .foto-totem { margin-left: -24px; }
-.inicio .copc--cant:hover .foto-totem:nth-child(odd) { transform: translateY(-6px) rotate(-4deg); }
-.inicio .copc--cant:hover .foto-totem:nth-child(even) { transform: translateY(-6px) rotate(4deg); }
+.inicio .copc__bolsas .bolsita { height: 104px; transition: transform 0.35s var(--ease); }
+.inicio .copc__bolsas[data-n="1"] .bolsita { height: 112px; }
+.inicio .copc__bolsas[data-n="2"] .bolsita + .bolsita { margin-left: -6px; }
+.inicio .copc__bolsas[data-n="4"] .bolsita { height: 98px; }
+.inicio .copc__bolsas[data-n="4"] .bolsita + .bolsita { margin-left: -24px; }
+.inicio .copc--cant:hover .bolsita:nth-child(odd) { transform: translateY(-6px) rotate(-4deg); }
+.inicio .copc--cant:hover .bolsita:nth-child(even) { transform: translateY(-6px) rotate(4deg); }
 .inicio .copc--cant .copc__texto strong { font-size: 27px; }
 
 .inicio .copc--sorpresa { --cc: #a8612f; width: 100%; min-height: 148px; margin: 26px 0 18px; flex-direction: row; align-items: center; justify-content: space-between; text-align: left; color: #fff6e8; background: radial-gradient(90% 160% at 12% 0%, #c98a50, #94492a 58%, #54281a); }
@@ -486,12 +497,12 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
 .inicio .copc--sorpresa .copc__texto em { color: #ffe0ae; font-size: 17px; }
 .inicio .copc--sorpresa .copc__texto em i { color: rgba(255, 246, 232, 0.8); }
 .inicio .copc__abanico { position: relative; flex: none; width: 250px; height: 150px; margin: -34px 24px 0 0; }
-.inicio .copc__abanico .foto-totem { position: absolute; left: 50%; bottom: 0; height: 158px; margin-left: -52px; transform-origin: 50% 100%; transition: transform 0.4s var(--ease); }
-.inicio .copc__abanico .foto-totem:nth-child(1) { transform: translateX(-58px) rotate(-11deg); }
-.inicio .copc__abanico .foto-totem:nth-child(2) { transform: translateX(58px) rotate(11deg); }
-.inicio .copc--sorpresa:hover .foto-totem:nth-child(1), .inicio .copc--sorpresa.is-on .foto-totem:nth-child(1) { transform: translateX(-70px) translateY(-4px) rotate(-16deg); }
-.inicio .copc--sorpresa:hover .foto-totem:nth-child(2), .inicio .copc--sorpresa.is-on .foto-totem:nth-child(2) { transform: translateX(70px) translateY(-4px) rotate(16deg); }
-.inicio .copc--sorpresa:hover .foto-totem:nth-child(3), .inicio .copc--sorpresa.is-on .foto-totem:nth-child(3) { transform: translateY(-10px); }
+.inicio .copc__abanico .bolsita { position: absolute; left: 50%; bottom: 0; height: 162px; margin-left: -55px; transform-origin: 50% 100%; transition: transform 0.4s var(--ease); }
+.inicio .copc__abanico .bolsita:nth-child(1) { transform: translateX(-58px) rotate(-11deg); }
+.inicio .copc__abanico .bolsita:nth-child(2) { transform: translateX(58px) rotate(11deg); }
+.inicio .copc--sorpresa:hover .bolsita:nth-child(1), .inicio .copc--sorpresa.is-on .bolsita:nth-child(1) { transform: translateX(-70px) translateY(-4px) rotate(-16deg); }
+.inicio .copc--sorpresa:hover .bolsita:nth-child(2), .inicio .copc--sorpresa.is-on .bolsita:nth-child(2) { transform: translateX(70px) translateY(-4px) rotate(16deg); }
+.inicio .copc--sorpresa:hover .bolsita:nth-child(3), .inicio .copc--sorpresa.is-on .bolsita:nth-child(3) { transform: translateY(-10px); }
 
 .inicio .copc--mol { align-items: center; justify-content: center; gap: 10px; min-height: 124px; padding: 16px 8px; font: 500 15px / 1.2 var(--f-text); }
 .inicio .copc--mol svg { width: 46px; height: 46px; fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s var(--ease); }
@@ -523,15 +534,17 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
   .inicio .copcs--3:has(.copc--cant) { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 9px; }
   .inicio .copc--cant .copc__texto { padding-inline: 4px; }
   .inicio .copc--cant .copc__texto strong { font-size: 22px; }
-  .inicio .copc__bolsas[data-n="1"] .foto-totem, .inicio .copc__bolsas[data-n="2"] .foto-totem { height: 88px; }
-  .inicio .copc__bolsas[data-n="4"] .foto-totem { height: 66px; }
+  .inicio .copc__bolsas[data-n="1"] .bolsita { height: 92px; }
+  .inicio .copc__bolsas[data-n="2"] .bolsita { height: 74px; }
+  .inicio .copc__bolsas[data-n="4"] .bolsita + .bolsita { margin-left: -20px; }
+  .inicio .copc__bolsas[data-n="4"] .bolsita { height: 60px; }
   .inicio .copc--frec .copc__texto strong { font-size: 22px; }
   .inicio .copc--sorpresa { flex-direction: column-reverse; padding-top: 8px; margin-top: 44px; }
   .inicio .copc--sorpresa .copc__texto { max-width: none; align-items: center; text-align: center; padding: 14px 20px 22px; }
   .inicio .copc__abanico { margin: -44px 0 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .inicio .copc, .inicio .copc:hover { animation: none; transition: none; transform: none; }
+  .inicio .copc, .inicio .copc:hover, .inicio .bolsita i, .inicio .copc--cafe:hover .bolsita { animation: none; transition: none; transform: none; }
 }
 
 /* En laptops de pantalla baja el resumen se compacta: el botón tiene que verse siempre. */
