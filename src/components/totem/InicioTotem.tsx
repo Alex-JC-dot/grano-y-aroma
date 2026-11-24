@@ -16,7 +16,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 type Escena = { hasta: number; titulo: string; texto: string };
 const ESCENAS: Escena[] = [
-  { hasta: 4, titulo: "Nace en los Yungas", texto: "Café boliviano de altura" },
+  { hasta: 4, titulo: "Nace en Bolivia", texto: "Café de altura" },
   { hasta: 8.5, titulo: "Solo cerezas maduras", texto: "El mejor grano, en su punto" },
   { hasta: 13, titulo: "Tostado en Sucre", texto: "Lotes pequeños, siempre fresco" },
   { hasta: 17.2, titulo: "Preparado al momento", texto: "Espresso recién extraído" },
