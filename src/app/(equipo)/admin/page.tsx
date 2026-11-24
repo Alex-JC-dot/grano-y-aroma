@@ -26,6 +26,7 @@ const PERIODOS: { v: Periodo; label: string; dias: number }[] = [
 const CANALES: { v: string; label: string }[] = [
   { v: "web", label: "Tienda en línea" },
   { v: "caja", label: "Caja de la cafetería" },
+  { v: "totem", label: "Tótem de autoservicio" },
   { v: "club", label: "Club (suscripciones)" },
   { v: "subasta", label: "Subastas" },
 ];
@@ -75,6 +76,17 @@ export default function PaginaPanel() {
     }, 0);
     return () => window.clearTimeout(t);
   }, [cargar]);
+
+  // Cada venta (tienda, caja, tótem…) actualiza el panel sola, sin recargar.
+  useEffect(() => {
+    const canal = supabase
+      .channel("panel-ventas")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, () => cargar(periodo))
+      .subscribe();
+    return () => {
+      supabase.removeChannel(canal);
+    };
+  }, [cargar, periodo]);
 
   const elegir = (p: Periodo) => {
     setPeriodo(p);
