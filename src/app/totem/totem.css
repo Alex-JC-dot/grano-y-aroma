@@ -349,8 +349,7 @@
 .tpedido { flex: 1; min-height: 0; width: 100%; max-width: calc(var(--u) * 92); display: flex; flex-direction: column; animation: tprod-entra 0.5s cubic-bezier(0.22, 0.8, 0.2, 1) 0.22s both; }
 .tpedido h1 { margin: calc(var(--u) * 3) 0 calc(var(--u) * 3); font: 500 calc(var(--u) * 8) / 1 var(--f-display); letter-spacing: -0.015em; }
 .tpedido__modos { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1); padding: calc(var(--u) * 1); border-radius: calc(var(--u) * 3.6); background: rgba(255, 250, 243, 0.1); }
-.tpedido__modos button { display: flex; align-items: center; justify-content: center; gap: calc(var(--u) * 1.8); min-height: max(54px, calc(var(--u) * 8.4)); border: 0; border-radius: calc(var(--u) * 2.8); background: none; color: inherit; font: 600 max(17px, calc(var(--u) * 3)) / 1 var(--f-text); cursor: pointer; transition: background 0.25s ease, color 0.25s ease; }
-.tpedido__modos img { width: max(34px, calc(var(--u) * 7)); height: max(34px, calc(var(--u) * 7)); object-fit: contain; }
+.tpedido__modos button { min-height: max(54px, calc(var(--u) * 8.4)); border: 0; border-radius: calc(var(--u) * 2.8); background: none; color: inherit; font: 600 max(17px, calc(var(--u) * 3)) / 1 var(--f-text); cursor: pointer; transition: background 0.25s ease, color 0.25s ease; }
 .tpedido__modos button.is-on { background: #f8ecdb; color: var(--ink); }
 .tpedido__lista { flex: 1; min-height: 0; margin: calc(var(--u) * 3) 0 0; padding: 0; list-style: none; overflow-y: auto; scrollbar-width: none; }
 .tpedido__lista li { display: flex; align-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 2) 0; border-bottom: 1px solid rgba(248, 236, 219, 0.14); }

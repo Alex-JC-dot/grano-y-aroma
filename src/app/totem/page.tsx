@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, panelesDe, supabase } from "@/lib/supabase";
@@ -335,7 +334,6 @@ function Autoservicio() {
               <div className="tpedido__modos" role="radiogroup" aria-label="¿Para aquí o para llevar?">
                 {MODOS.map((m) => (
                   <button key={m} type="button" role="radio" aria-checked={modo === m} className={modo === m ? "is-on" : ""} onClick={() => setModo(m)}>
-                    <img src={rutaFoto(m === "Para llevar" ? "vaso-llevar" : "cappuccino")} alt="" draggable={false} />
                     {m}
                   </button>
                 ))}
