@@ -19,11 +19,12 @@ type Pedido = {
   turno: number | null;
   estado: "recibido" | "preparacion" | "entregado" | "cancelado" | "en_camino";
   total: number;
+  referencia: string | null; // "Para aquí" o "Para llevar"
   creado_en: string;
   preparacion_en: string | null;
   listo_en: string | null;
   entregado_en: string | null;
-  pedido_items: { cantidad: number; productos: { nombre: string } | null }[];
+  pedido_items: { cantidad: number; molienda: string | null; productos: { nombre: string } | null }[];
 };
 
 const numero = (p: Pedido) => `#${String(p.turno ?? p.id).padStart(3, "0")}`;
@@ -60,7 +61,7 @@ export default function PaginaBarra() {
     desde.setHours(0, 0, 0, 0);
     const { data, error: e } = await supabase
       .from("pedidos")
-      .select("id, codigo, turno, estado, total, creado_en, preparacion_en, listo_en, entregado_en, pedido_items(cantidad, productos(nombre))")
+      .select("id, codigo, turno, estado, total, creado_en, preparacion_en, listo_en, entregado_en, referencia, pedido_items(cantidad, molienda, productos(nombre))")
       .eq("canal", "totem")
       .gte("creado_en", desde.toISOString())
       .order("creado_en", { ascending: true });
@@ -122,9 +123,13 @@ export default function PaginaBarra() {
                   <strong>{numero(p)}</strong>
                   <span>{hora(p.creado_en)} · hace {min} min</span>
                 </div>
+                {p.referencia && <span className={`barra-pedido__modo${p.referencia === "Para llevar" ? " is-llevar" : ""}`}>{p.referencia}</span>}
                 <ul className="barra-pedido__items">
                   {p.pedido_items.map((i, k) => (
-                    <li key={k}><b>{i.cantidad}×</b> {i.productos?.nombre ?? "Producto"}</li>
+                    <li key={k}>
+                      <b>{i.cantidad}×</b> {i.productos?.nombre ?? "Producto"}
+                      {i.molienda && i.molienda !== "Única" && <small>{i.molienda}</small>}
+                    </li>
                   ))}
                 </ul>
                 <button type="button" className="btn btn--primary barra-pedido__boton" disabled={ocupado === p.id} onClick={() => avanzar(p)}>

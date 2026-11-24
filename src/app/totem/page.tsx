@@ -4,16 +4,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, panelesDe, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { imprimirDocumento } from "@/lib/documento";
+import type { ItemTotem, LineaTotem } from "@/lib/totem";
 import { useAuth } from "@/store/authStore";
 import { TarjetaCuenta } from "@/components/cuenta/VentanaCuenta";
 import InicioTotem from "@/components/totem/InicioTotem";
+import MenuTotem from "@/components/totem/MenuTotem";
+import CirculoTotem, { type ManejoCirculo } from "@/components/totem/CirculoTotem";
+import PagoTotem, { type EstadoPago } from "@/components/totem/PagoTotem";
+import { Flecha } from "@/components/totem/DetalleTotem";
+import FotoTotem from "@/components/totem/FotoTotem";
 import { TicketImpresion, TicketVista, turnoTexto, type DatosTicket } from "@/components/totem/TicketTotem";
 
 /**
- * Tótem de autoservicio (EXPOSOFT, migración 014). El cliente, sin cuenta y sin ayuda:
+ * Tótem de autoservicio (EXPOSOFT, migraciones 014 y 016). El cliente, sin cuenta y sin ayuda:
  *
- *   Bienvenida → elige productos → paga con tarjeta de débito (inserta + PIN) → ticket con
- *   su número → "retira en la barra" → vuelve solo al inicio.
+ *   Publicidad → menú con fotos → "Mi pedido" (círculo) → paga con tarjeta de débito (inserta
+ *   + PIN) → ticket con su número → "retira en la barra" → vuelve solo al inicio.
  *
  * El pedido entra a la misma base que la tienda y la caja (mismo stock, mismas ventas) con el
  * canal "totem", y aparece al instante en la pantalla de Barra. El pago con tarjeta se
@@ -28,13 +34,8 @@ import { TicketImpresion, TicketVista, turnoTexto, type DatosTicket } from "@/co
  * vuelve al inicio (el siguiente cliente no debe ver el pedido del anterior).
  */
 
-type Item = { id: string; nombre: string; categoria: string; precio: number; stock: number; grupo: string | null; color: string | null; descripcion: string };
-type Linea = Item & { qty: number };
-type Fase = "inicio" | "menu" | "pago" | "listo";
-type Pago = "insertar" | "leyendo" | "pin" | "procesando" | "rechazado";
-
-const SECCIONES = ["Bebidas calientes", "Métodos", "Bebidas frías", "Pastelería", "Café para llevar", "Otros"];
-const seccionDe = (i: Item) => (i.categoria === "bebida" ? i.grupo ?? "Otros" : "Café para llevar");
+type Fase = "inicio" | "menu" | "pedido" | "pago" | "listo";
+const MODOS = ["Para aquí", "Para llevar"] as const;
 
 const INACTIVIDAD = 60_000; // vuelve al inicio sin actividad
 const AVISO = 12_000; // antes, pregunta "¿Sigues ahí?"
@@ -67,27 +68,38 @@ export default function Totem() {
   return <Autoservicio />;
 }
 
+/** El stock se comparte entre variantes: dos lattes con distinta leche son dos lattes. */
+const cuantos = (o: LineaTotem[], id: string) => o.filter((l) => l.item.id === id).reduce((s, l) => s + l.qty, 0);
+
 function Autoservicio() {
   const [fase, setFase] = useState<Fase>("inicio");
-  const [items, setItems] = useState<Item[]>([]);
-  const [seccion, setSeccion] = useState(SECCIONES[0]);
-  const [orden, setOrden] = useState<Linea[]>([]);
-  const [pago, setPago] = useState<Pago>("insertar");
+  const [items, setItems] = useState<ItemTotem[]>([]);
+  const [populares, setPopulares] = useState<string[]>([]);
+  const [orden, setOrden] = useState<LineaTotem[]>([]);
+  const [modo, setModo] = useState<(typeof MODOS)[number]>("Para aquí");
+  const [origen, setOrigen] = useState({ x: 0, y: 0 });
+  const [pago, setPago] = useState<EstadoPago>("insertar");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [ticket, setTicket] = useState<DatosTicket | null>(null);
   const [preguntar, setPreguntar] = useState(false);
   const [cuenta, setCuenta] = useState(VUELTA_TICKET);
+  const [vez, setVez] = useState(0); // cambia con cada cliente: el menú vuelve a empezar de cero
   const ultimoToque = useRef(0);
+  const circulo = useRef<ManejoCirculo>(null);
 
   const cargar = useCallback(async () => {
-    const { data } = await supabase
-      .from("productos")
-      .select("id, nombre, categoria, precio, stock, grupo, color, descripcion")
-      .eq("activo", true)
-      .in("categoria", ["bebida", "grano"])
-      .order("orden");
-    setItems(((data as Item[]) ?? []).map((i) => ({ ...i, precio: Number(i.precio) })));
+    const [prods, pops] = await Promise.all([
+      supabase
+        .from("productos")
+        .select("id, nombre, categoria, precio, stock, grupo, color, descripcion, presentacion, moliendas, foto")
+        .eq("activo", true)
+        .in("categoria", ["bebida", "grano"])
+        .order("orden"),
+      supabase.rpc("populares_totem"),
+    ]);
+    setItems(((prods.data as ItemTotem[]) ?? []).map((i) => ({ ...i, precio: Number(i.precio) })));
+    setPopulares(((pops.data as { producto_id: string }[] | null) ?? []).map((p) => p.producto_id));
   }, []);
 
   useEffect(() => {
@@ -98,12 +110,13 @@ function Autoservicio() {
   const reiniciar = useCallback(() => {
     setFase("inicio");
     setOrden([]);
+    setModo("Para aquí");
     setPago("insertar");
     setPin("");
     setError("");
     setTicket(null);
     setPreguntar(false);
-    setSeccion(SECCIONES[0]);
+    setVez((v) => v + 1);
     cargar();
   }, [cargar]);
 
@@ -148,19 +161,30 @@ function Autoservicio() {
     setFase("menu");
   };
 
-  const agregar = (it: Item) =>
+  const agregar = (item: ItemTotem, qty: number, opciones: string) =>
     setOrden((o) => {
-      const ya = o.find((x) => x.id === it.id)?.qty ?? 0;
-      if (ya >= it.stock) return o;
-      return ya ? o.map((x) => (x.id === it.id ? { ...x, qty: x.qty + 1 } : x)) : [...o, { ...it, qty: 1 }];
+      const entra = Math.min(qty, item.stock - cuantos(o, item.id));
+      if (entra <= 0) return o;
+      const clave = `${item.id}|${opciones}`;
+      return o.some((l) => l.clave === clave)
+        ? o.map((l) => (l.clave === clave ? { ...l, qty: l.qty + entra } : l))
+        : [...o, { clave, item, opciones, qty: entra }];
     });
-  const cambiar = (id: string, d: number) =>
-    setOrden((o) => o.map((x) => (x.id === id ? { ...x, qty: Math.min(x.stock, x.qty + d) } : x)).filter((x) => x.qty > 0));
+  const cambiar = (clave: string, d: number) =>
+    setOrden((o) => {
+      const linea = o.find((l) => l.clave === clave);
+      if (!linea || (d > 0 && cuantos(o, linea.item.id) >= linea.item.stock)) return o;
+      return o.map((l) => (l.clave === clave ? { ...l, qty: l.qty + d } : l)).filter((l) => l.qty > 0);
+    });
 
-  const total = orden.reduce((s, l) => s + l.precio * l.qty, 0);
-  const unidades = orden.reduce((s, l) => s + l.qty, 0);
-  const visibles = items.filter((i) => seccionDe(i) === seccion);
-  const secciones = SECCIONES.filter((s) => items.some((i) => seccionDe(i) === s));
+  const total = orden.reduce((s, l) => s + l.item.precio * l.qty, 0);
+
+  const verPedido = (desde: { x: number; y: number }) => {
+    setOrigen(desde);
+    setError("");
+    setFase("pedido");
+  };
+  const volverAlMenu = () => circulo.current?.cerrar(() => setFase("menu"));
 
   const irAPagar = () => {
     setError("");
@@ -189,9 +213,10 @@ function Autoservicio() {
     }
     // Pago aprobado: recién ahora se crea el pedido y se descuenta el stock.
     const { data, error: e } = await supabase.rpc("confirmar_pedido", {
-      items: orden.map((l) => ({ producto_id: l.id, cantidad: l.qty, molienda: l.categoria === "grano" ? "Grano Entero" : "Única" })),
+      items: orden.map((l) => ({ producto_id: l.item.id, cantidad: l.qty, molienda: l.opciones || "Única" })),
       p_canal: "totem",
       p_metodo: "tarjeta",
+      p_referencia: modo,
     });
     if (e) {
       setPago("insertar");
@@ -202,10 +227,12 @@ function Autoservicio() {
       turno: data.turno ?? data.id,
       codigo: data.codigo,
       fecha: new Date(),
-      lineas: orden.map((l) => ({ nombre: l.nombre, cantidad: l.qty, precio: l.precio })),
+      lineas: orden.map((l) => ({ nombre: l.item.nombre, detalle: l.opciones, cantidad: l.qty, precio: l.item.precio })),
+      modo,
       total: Number(data.total),
       pago: "Tarjeta de débito",
     });
+    setPago("insertar");
     setCuenta(VUELTA_TICKET);
     setFase("listo");
   };
@@ -218,9 +245,7 @@ function Autoservicio() {
   }, [fase, ticket]);
 
   // ---------- Pantallas ----------
-  if (fase === "inicio") {
-    return <InicioTotem alEmpezar={empezar} />;
-  }
+  if (fase === "inicio") return <InicioTotem alEmpezar={empezar} />;
 
   if (fase === "listo" && ticket) {
     return (
@@ -232,10 +257,10 @@ function Autoservicio() {
           <p className="totem__turno">{turnoTexto(ticket.turno)}</p>
           <p className="totem__lema">Retira tu ticket y espera que llamen tu número en la <strong>barra</strong>.</p>
           <div className="totem__acciones">
-            <button type="button" className="btn btn--secondary totem__btn" onClick={() => imprimirDocumento(`Ticket ${turnoTexto(ticket.turno)} - Grano y Aroma`)}>
+            <button type="button" className="tprincipal tprincipal--suave" onClick={() => imprimirDocumento(`Ticket ${turnoTexto(ticket.turno)} - Grano y Aroma`)}>
               Imprimir de nuevo
             </button>
-            <button type="button" className="btn btn--primary totem__btn" onClick={reiniciar}>
+            <button type="button" className="tprincipal" onClick={reiniciar}>
               Terminar ({cuenta})
             </button>
           </div>
@@ -246,176 +271,90 @@ function Autoservicio() {
     );
   }
 
+  const ocupado = pago === "procesando" || pago === "leyendo";
   return (
-    <div className="totem totem--menu">
-      <header className="totem__cabeza">
-        <span className="totem__marca">Grano y Aroma</span>
-        <button type="button" className="totem__cancelar" onClick={reiniciar}>Cancelar pedido</button>
-      </header>
+    <>
+      <MenuTotem
+        key={vez}
+        items={items}
+        populares={populares}
+        orden={orden}
+        total={total}
+        alAgregar={agregar}
+        alCambiar={cambiar}
+        alVerPedido={verPedido}
+        alCancelar={reiniciar}
+      />
 
-      {fase === "menu" ? (
-        <>
-          <nav className="totem__secciones" aria-label="Secciones">
-            {secciones.map((s) => (
-              <button key={s} type="button" className={seccion === s ? "is-on" : ""} aria-pressed={seccion === s} onClick={() => setSeccion(s)}>
-                {s}
-              </button>
-            ))}
-          </nav>
-          <div className="totem__productos">
-            {visibles.map((it) => {
-              const en = orden.find((x) => x.id === it.id)?.qty ?? 0;
-              const agotado = it.stock <= 0;
-              return (
-                <button key={it.id} type="button" className={`totem-prod${en ? " is-en" : ""}`} disabled={agotado} onClick={() => agregar(it)}>
-                  <span className="totem-prod__icono" style={it.color ? { background: it.color } : undefined} aria-hidden="true">
-                    {it.categoria === "grano" ? "☕︎" : "♨︎"}
-                  </span>
-                  <span className="totem-prod__nombre">{it.nombre}</span>
-                  {it.categoria === "grano" && <span className="totem-prod__detalle">Bolsa de 250 g · grano entero</span>}
-                  <span className="totem-prod__precio">{agotado ? "Agotado" : formatBs(it.precio)}</span>
-                  {en > 0 && <span className="totem-prod__cuantos">{en}</span>}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      ) : (
-        <PantallaPago
-          pago={pago}
-          pin={pin}
-          total={total}
-          error={error}
-          alInsertar={insertarTarjeta}
-          alTeclear={teclear}
-          alBorrar={() => setPin((p) => p.slice(0, -1))}
-          alConfirmar={confirmarPin}
-          alReintentar={() => { setPago("insertar"); setPin(""); }}
-        />
+      {(fase === "pedido" || fase === "pago") && (
+        <CirculoTotem ref={circulo} origen={origen}>
+          <button
+            type="button"
+            className="tvolver tcirculo__volver"
+            disabled={fase === "pago" && ocupado}
+            onClick={fase === "pago" ? () => setFase("pedido") : volverAlMenu}
+          >
+            <Flecha /> Volver
+          </button>
+
+          {fase === "pedido" ? (
+            <div className="tpedido">
+              <h1>Mi pedido</h1>
+              <div className="tpedido__modos" role="radiogroup" aria-label="¿Para aquí o para llevar?">
+                {MODOS.map((m) => (
+                  <button key={m} type="button" role="radio" aria-checked={modo === m} className={modo === m ? "is-on" : ""} onClick={() => setModo(m)}>
+                    {m}
+                  </button>
+                ))}
+              </div>
+              <ul className="tpedido__lista">
+                {orden.map((l) => (
+                  <li key={l.clave}>
+                    <span className="tpedido__foto"><FotoTotem item={l.item} /></span>
+                    <span className="tpedido__nombre">
+                      <strong>{l.item.nombre}</strong>
+                      {l.opciones && <small>{l.opciones}</small>}
+                      <span>{formatBs(l.item.precio * l.qty)}</span>
+                    </span>
+                    <span className="tcantidad">
+                      <button type="button" aria-label={`Quitar uno de ${l.item.nombre}`} onClick={() => cambiar(l.clave, -1)}>−</button>
+                      <output>{l.qty}</output>
+                      <button type="button" aria-label={`Agregar uno de ${l.item.nombre}`} disabled={cuantos(orden, l.item.id) >= l.item.stock} onClick={() => cambiar(l.clave, 1)}>+</button>
+                    </span>
+                  </li>
+                ))}
+                {orden.length === 0 && <li className="tpedido__vacio">Tu pedido quedó vacío. Vuelve al menú y elige algo rico.</li>}
+              </ul>
+              <div className="tpedido__pie">
+                <span>Total<strong>{formatBs(total)}</strong></span>
+                <button type="button" className="tprincipal" disabled={!orden.length} onClick={irAPagar}>Pagar con tarjeta</button>
+              </div>
+            </div>
+          ) : (
+            <PagoTotem
+              pago={pago}
+              pin={pin}
+              total={total}
+              error={error}
+              alInsertar={insertarTarjeta}
+              alTeclear={teclear}
+              alBorrar={() => setPin((p) => p.slice(0, -1))}
+              alConfirmar={confirmarPin}
+              alReintentar={() => { setPago("insertar"); setPin(""); }}
+            />
+          )}
+        </CirculoTotem>
       )}
-
-      <aside className="totem__orden" aria-label="Tu pedido">
-        <h2>Tu pedido</h2>
-        {orden.length === 0 ? (
-          <p className="totem__vacio">Toca un producto para agregarlo.</p>
-        ) : (
-          <ul>
-            {orden.map((l) => (
-              <li key={l.id}>
-                <span className="totem__lnombre">{l.nombre}<small>{formatBs(l.precio * l.qty)}</small></span>
-                {fase === "menu" ? (
-                  <span className="totem__cantidad">
-                    <button type="button" aria-label={`Quitar uno de ${l.nombre}`} onClick={() => cambiar(l.id, -1)}>−</button>
-                    <output>{l.qty}</output>
-                    <button type="button" aria-label={`Agregar uno de ${l.nombre}`} onClick={() => cambiar(l.id, 1)}>+</button>
-                  </span>
-                ) : (
-                  <span className="totem__qty">× {l.qty}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="totem__total">
-          <span>Total{unidades ? ` · ${unidades} ${unidades === 1 ? "producto" : "productos"}` : ""}</span>
-          <strong>{formatBs(total)}</strong>
-        </div>
-        {fase === "menu" ? (
-          <button type="button" className="btn btn--primary totem__btn totem__pagar" disabled={!orden.length} onClick={irAPagar}>
-            Pagar con tarjeta
-          </button>
-        ) : (
-          <button type="button" className="btn btn--secondary totem__btn" disabled={pago === "procesando" || pago === "leyendo"} onClick={() => setFase("menu")}>
-            Volver al menú
-          </button>
-        )}
-      </aside>
 
       {preguntar && (
         <div className="totem__sigues" role="alertdialog" aria-label="¿Sigues ahí?">
           <div>
             <h2>¿Sigues ahí?</h2>
             <p>Si no tocas la pantalla, el pedido se cancela en unos segundos.</p>
-            <button type="button" className="btn btn--primary totem__btn" onClick={() => setPreguntar(false)}>Sí, sigo aquí</button>
+            <button type="button" className="tprincipal" onClick={() => setPreguntar(false)}>Sí, sigo aquí</button>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function PantallaPago({
-  pago,
-  pin,
-  total,
-  error,
-  alInsertar,
-  alTeclear,
-  alBorrar,
-  alConfirmar,
-  alReintentar,
-}: {
-  pago: Pago;
-  pin: string;
-  total: number;
-  error: string;
-  alInsertar: () => void;
-  alTeclear: (d: string) => void;
-  alBorrar: () => void;
-  alConfirmar: () => void;
-  alReintentar: () => void;
-}) {
-  return (
-    <section className="totem__pago" aria-live="polite">
-      <p className="totem__pago-total">Total a pagar <strong>{formatBs(total)}</strong></p>
-
-      {pago === "insertar" || pago === "leyendo" ? (
-        <>
-          <h1>{pago === "leyendo" ? "Leyendo tarjeta…" : "Inserta o acerca tu tarjeta de débito"}</h1>
-          {/* El lector simulado: tocar la tarjeta equivale a insertarla en el lector real. */}
-          <button type="button" className={`lector${pago === "leyendo" ? " is-leyendo" : ""}`} onClick={alInsertar} disabled={pago === "leyendo"} aria-label="Insertar tarjeta">
-            <span className="lector__ranura" aria-hidden="true" />
-            <span className="lector__tarjeta" aria-hidden="true">
-              <span className="tarjeta-sim__chip" />
-              <span>DÉBITO</span>
-            </span>
-            <span className="lector__ondas" aria-hidden="true" />
-          </button>
-          <p className="totem__ayuda">Toca la tarjeta para simular el lector</p>
-          {error && <p className="carrito__error" role="alert">{error}</p>}
-        </>
-      ) : pago === "pin" ? (
-        <>
-          <h1>Ingresa tu PIN</h1>
-          <p className="totem__pin" aria-label={`${pin.length} de 4 dígitos`}>
-            {[0, 1, 2, 3].map((i) => (
-              <span key={i} className={i < pin.length ? "is-on" : ""} />
-            ))}
-          </p>
-          <div className="teclado">
-            {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
-              <button key={d} type="button" onClick={() => alTeclear(d)}>{d}</button>
-            ))}
-            <button type="button" className="teclado__borrar" onClick={alBorrar} aria-label="Borrar">⌫</button>
-            <button type="button" onClick={() => alTeclear("0")}>0</button>
-            <button type="button" className="teclado__ok" onClick={alConfirmar} disabled={pin.length < 4}>OK</button>
-          </div>
-          <p className="totem__ayuda">Simulación: cualquier PIN de 4 dígitos se aprueba; 0000 se rechaza.</p>
-        </>
-      ) : pago === "procesando" ? (
-        <div className="totem__procesando">
-          <span className="totem__spinner" aria-hidden="true" />
-          <h1>Procesando con el banco…</h1>
-          <p className="totem__ayuda">No retires la tarjeta</p>
-        </div>
-      ) : (
-        <div className="cobro__resultado cobro__resultado--mal" role="alert">
-          <span className="cobro__check" aria-hidden="true">✕</span>
-          <strong>Pago rechazado</strong>
-          <span>El banco no autorizó el pago (PIN incorrecto). Intenta de nuevo.</span>
-          <button type="button" className="btn btn--primary totem__btn" onClick={alReintentar}>Intentar de nuevo</button>
-        </div>
-      )}
-    </section>
+    </>
   );
 }

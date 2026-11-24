@@ -18,7 +18,9 @@ export type DatosTicket = {
   turno: number;
   codigo: string;
   fecha: Date;
-  lineas: { nombre: string; cantidad: number; precio: number }[];
+  lineas: { nombre: string; detalle?: string; cantidad: number; precio: number }[];
+  /** "Para aquí" o "Para llevar". */
+  modo: string;
   total: number;
   pago: string;
 };
@@ -50,13 +52,14 @@ function Contenido({ d }: { d: DatosTicket }) {
       <hr />
       <p className="ticket__turno-et">TU NÚMERO DE PEDIDO</p>
       <p className="ticket__turno">{turnoTexto(d.turno)}</p>
+      <p className="ticket__modo">{d.modo.toUpperCase()}</p>
       <p className="ticket__sub">{fecha} · {hora} · {d.codigo}</p>
       <hr />
       <table className="ticket__lineas">
         <tbody>
-          {d.lineas.map((l) => (
-            <tr key={l.nombre}>
-              <td>{l.cantidad} × {l.nombre}</td>
+          {d.lineas.map((l, k) => (
+            <tr key={k}>
+              <td>{l.cantidad} × {l.nombre}{l.detalle && <small>{l.detalle}</small>}</td>
               <td>{formatBs(l.precio * l.cantidad)}</td>
             </tr>
           ))}
