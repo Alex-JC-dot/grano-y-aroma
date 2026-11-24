@@ -197,6 +197,10 @@
 .foto-totem--cuadro { width: auto; height: auto; border-radius: calc(var(--u) * 2.4); }
 .foto-totem--dibujo { width: 82%; height: 82%; }
 
+/* ---------- El botón se convierte en el menú ---------- */
+.tapertura.is-abriendo { position: fixed; inset: 0; z-index: 40; background: #f6ebdc; will-change: clip-path; }
+.tapertura__texto { position: fixed; display: grid; place-items: center; color: #2a1a12; font-family: var(--f-text); font-weight: 600; line-height: 1; white-space: nowrap; pointer-events: none; }
+
 /* ---------- Menú ---------- */
 .tmenu { display: grid; grid-template-columns: minmax(0, 1fr) calc(var(--u) * 25); height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); }
 .tmenu__contenido { overflow-y: auto; overscroll-behavior: contain; padding: calc(var(--u) * 4) calc(var(--u) * 4) calc(var(--u) * 8); scrollbar-width: none; }

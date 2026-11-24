@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import type { OrigenApertura } from "./AperturaTotem";
 
 /**
  * Pantalla de inicio del tótem: la publicidad que corre sola mientras nadie lo usa.
@@ -39,7 +40,7 @@ const suscribir = (f: () => void) => {
   return () => mq.removeEventListener("change", f);
 };
 
-export default function InicioTotem({ alEmpezar }: { alEmpezar: () => void }) {
+export default function InicioTotem({ alEmpezar }: { alEmpezar: (origen: OrigenApertura) => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const [escena, setEscena] = useState(0);
   const reducir = useSyncExternalStore(suscribir, () => window.matchMedia(CONSULTA).matches, () => false);
@@ -57,8 +58,15 @@ export default function InicioTotem({ alEmpezar }: { alEmpezar: () => void }) {
 
   const cierre = escena === CIERRE;
 
+  // El botón crece desde donde está: se mide aunque hayan tocado otra parte de la pantalla.
+  const empezar = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const p = e.currentTarget.querySelector(".tinicio__pastilla")!;
+    video.current?.pause();
+    alEmpezar({ rect: p.getBoundingClientRect(), letra: getComputedStyle(p).fontSize });
+  };
+
   return (
-    <button type="button" className={`totem tinicio${cierre ? " is-cierre" : ""}`} onClick={alEmpezar} aria-label="Toca para pedir">
+    <button type="button" className={`totem tinicio${cierre ? " is-cierre" : ""}`} onClick={empezar} aria-label="Toca para pedir">
       <span className="tinicio__marco">
         {reducir ? (
           <img className="tinicio__video" src="/totem/inicio.webp" alt="" />

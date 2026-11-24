@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, panelesDe, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { imprimirDocumento } from "@/lib/documento";
-import type { ItemTotem, LineaTotem } from "@/lib/totem";
+import { fotoDe, type ItemTotem, type LineaTotem } from "@/lib/totem";
 import { useAuth } from "@/store/authStore";
 import { TarjetaCuenta } from "@/components/cuenta/VentanaCuenta";
 import InicioTotem from "@/components/totem/InicioTotem";
+import AperturaTotem, { type OrigenApertura } from "@/components/totem/AperturaTotem";
 import MenuTotem from "@/components/totem/MenuTotem";
 import CirculoTotem, { type ManejoCirculo } from "@/components/totem/CirculoTotem";
 import PagoTotem, { type EstadoPago } from "@/components/totem/PagoTotem";
@@ -85,6 +86,7 @@ function Autoservicio() {
   const [preguntar, setPreguntar] = useState(false);
   const [cuenta, setCuenta] = useState(VUELTA_TICKET);
   const [vez, setVez] = useState(0); // cambia con cada cliente: el menú vuelve a empezar de cero
+  const [apertura, setApertura] = useState<OrigenApertura | null>(null); // el botón mientras crece
   const ultimoToque = useRef(0);
   const circulo = useRef<ManejoCirculo>(null);
 
@@ -125,6 +127,7 @@ function Autoservicio() {
     setError("");
     setTicket(null);
     setPreguntar(false);
+    setApertura(null);
     setVez((v) => v + 1);
     cargar();
   }, [cargar]);
@@ -164,11 +167,26 @@ function Autoservicio() {
     }
   }, [fase, cuenta, reiniciar]);
 
-  const empezar = () => {
-    // Pantalla completa en el primer toque (los navegadores solo la permiten tras un gesto).
-    document.documentElement.requestFullscreen?.().catch(() => {});
+  // Las fotos se descargan durante la publicidad: al abrir el menú ya están listas.
+  useEffect(() => {
+    if (fase !== "inicio" || !items.length) return;
+    const t = window.setTimeout(() => {
+      for (const src of new Set(items.map(fotoDe))) if (src) new Image().src = src;
+    }, 1200);
+    return () => window.clearTimeout(t);
+  }, [fase, items]);
+
+  const empezar = (origen: OrigenApertura) => {
+    if (fase !== "inicio") return; // segundo toque mientras se abre
+    setApertura(origen);
     setFase("menu");
   };
+  const terminarApertura = useCallback(() => {
+    setApertura(null);
+    // Pantalla completa al terminar: si cambia de tamaño a mitad de la animación, salta. El
+    // permiso del toque dura unos segundos, así que todavía vale.
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  }, []);
 
   const agregar = (item: ItemTotem, qty: number, opciones: string) =>
     setOrden((o) => {
@@ -254,8 +272,6 @@ function Autoservicio() {
   }, [fase, ticket]);
 
   // ---------- Pantallas ----------
-  if (fase === "inicio") return <InicioTotem alEmpezar={empezar} />;
-
   if (fase === "listo" && ticket) {
     return (
       <div className="totem totem--listo">
@@ -283,17 +299,23 @@ function Autoservicio() {
   const ocupado = pago === "procesando" || pago === "leyendo";
   return (
     <>
-      <MenuTotem
-        key={vez}
-        items={items}
-        populares={populares}
-        orden={orden}
-        total={total}
-        alAgregar={agregar}
-        alCambiar={cambiar}
-        alVerPedido={verPedido}
-        alCancelar={reiniciar}
-      />
+      {/* La publicidad sigue detrás mientras el botón crece. */}
+      {(fase === "inicio" || apertura) && <InicioTotem key="inicio" alEmpezar={empezar} />}
+
+      {fase !== "inicio" && (
+        <AperturaTotem key={vez} origen={apertura} alTerminar={terminarApertura}>
+          <MenuTotem
+            items={items}
+            populares={populares}
+            orden={orden}
+            total={total}
+            alAgregar={agregar}
+            alCambiar={cambiar}
+            alVerPedido={verPedido}
+            alCancelar={reiniciar}
+          />
+        </AperturaTotem>
+      )}
 
       {(fase === "pedido" || fase === "pago") && (
         <CirculoTotem ref={circulo} origen={origen}>
