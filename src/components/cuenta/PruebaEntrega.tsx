@@ -114,7 +114,7 @@ export default function PruebaEntrega({
             <dt>Recibió</dt>
             <dd>
               {recibidoPor}
-              {tipo && CALIDAD[tipo] && <small>{paraEquipo ? `En calidad de: ${CALIDAD_EQUIPO[tipo]}` : `Quedó ${CALIDAD[tipo]}.`}</small>}
+              {tipo && CALIDAD[tipo] && <small>{paraEquipo ? `Lo recibió ${CALIDAD_EQUIPO[tipo]}` : `Quedó ${CALIDAD[tipo]}.`}</small>}
             </dd>
           </div>
         )}
