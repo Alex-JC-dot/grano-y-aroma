@@ -89,22 +89,31 @@ function Autoservicio() {
   const circulo = useRef<ManejoCirculo>(null);
 
   const cargar = useCallback(async () => {
-    const [prods, pops] = await Promise.all([
+    const productos = () =>
       supabase
         .from("productos")
         .select("id, nombre, categoria, precio, stock, grupo, color, descripcion, presentacion, moliendas, foto")
         .eq("activo", true)
-        .in("categoria", ["bebida", "grano"])
-        .order("orden"),
-      supabase.rpc("populares_totem"),
-    ]);
+        .order("orden");
+    const [elegidos, pops] = await Promise.all([productos().eq("en_totem", true), supabase.rpc("populares_totem")]);
+    // Sin la migración 017 todavía no hay qué elegir: se muestra la barra y el café en grano.
+    const prods = elegidos.error ? await productos().in("categoria", ["bebida", "grano"]) : elegidos;
+    if (prods.error) return; // sin internet: se queda con lo que ya estaba en pantalla
     setItems(((prods.data as ItemTotem[]) ?? []).map((i) => ({ ...i, precio: Number(i.precio) })));
     setPopulares(((pops.data as { producto_id: string }[] | null) ?? []).map((p) => p.producto_id));
   }, []);
 
   useEffect(() => {
     const t = window.setTimeout(cargar, 0);
-    return () => window.clearTimeout(t);
+    // Si el admin enciende, apaga o cambia un producto, el tótem se actualiza solo.
+    const canal = supabase
+      .channel("totem-productos")
+      .on("postgres_changes", { event: "*", schema: "public", table: "productos" }, () => cargar())
+      .subscribe();
+    return () => {
+      window.clearTimeout(t);
+      supabase.removeChannel(canal);
+    };
   }, [cargar]);
 
   const reiniciar = useCallback(() => {

@@ -8,11 +8,13 @@ import type { FilaProducto } from "@/store/catalogoStore";
 import type { Categoria } from "@/lib/types";
 import SelectorFoto from "@/components/equipo/SelectorFoto";
 import { subirFoto } from "@/lib/archivos";
+import { GALERIA_TOTEM } from "@/lib/totem";
 
 /**
  * Productos del administrador (RF-01, RF-05, RF-21): agregar productos a la tienda o a la
  * barra, editarlos (el mismo formulario, con los datos actuales ya cargados), cambiar precio
- * y stock desde la tabla, y ocultarlos sin borrarlos. La tienda los toma de aquí al
+ * y stock desde la tabla, y ocultarlos sin borrarlos. El interruptor "Tótem" decide si cada
+ * producto se ofrece en el autoservicio (migración 017). La tienda los toma de aquí al
  * instante (Realtime). Solo el admin puede escribir en el catálogo (RLS).
  */
 
@@ -22,7 +24,7 @@ const CATEGORIAS: { v: Categoria; label: string }[] = [
   { v: "jarabe", label: "Jarabe" },
   { v: "equipo", label: "Equipo" },
   { v: "accesorio", label: "Accesorio" },
-  { v: "bebida", label: "Barra (solo caja)" },
+  { v: "bebida", label: "Barra (caja y tótem)" },
 ];
 const GRUPOS = ["Bebidas calientes", "Métodos", "Bebidas frías", "Pastelería", "Otros"];
 const FOTOS = [
@@ -35,6 +37,8 @@ const MOLIENDAS_CAFE = "Grano Entero, Espresso, V60, Moka";
 
 type Fila = FilaProducto;
 const esCafe = (c: Categoria) => c === "grano" || c === "molido";
+/** Lo que normalmente se ofrece en el tótem; el admin puede cambiarlo en cada producto. */
+const vaAlTotem = (c: Categoria) => c === "bebida" || c === "grano";
 
 const vacio = () => ({
   nombre: "",
@@ -54,6 +58,7 @@ const vacio = () => ({
   foto: "",
   color: COLORES[0],
   grupo: GRUPOS[0],
+  en_totem: true,
 });
 type Form = ReturnType<typeof vacio>;
 
@@ -76,12 +81,13 @@ const desdeFila = (p: FilaProducto): Form => ({
   foto: p.foto?.src ?? "",
   color: p.color ?? COLORES[0],
   grupo: p.grupo ?? GRUPOS[0],
+  en_totem: p.en_totem ?? vaAlTotem(p.categoria),
 });
 
 export default function PaginaProductos() {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [filtro, setFiltro] = useState<Categoria | "todos">("todos");
+  const [filtro, setFiltro] = useState<Categoria | "todos" | "totem">("todos");
   const [cambios, setCambios] = useState<Record<string, { precio?: string; stock?: string }>>({});
   const [guardando, setGuardando] = useState<string | null>(null);
   const [f, setF] = useState<Form>(vacio);
@@ -105,6 +111,9 @@ export default function PaginaProductos() {
     const t = window.setTimeout(cargar, 0);
     return () => window.clearTimeout(t);
   }, [cargar]);
+
+  // La columna llega con la 017: hasta entonces no se muestra ni se envía nada del tótem.
+  const conTotem = filas.some((p) => p.en_totem !== undefined);
 
   const guardarFila = async (p: Fila) => {
     const c = cambios[p.id];
@@ -133,6 +142,16 @@ export default function PaginaProductos() {
     setAviso(p.activo ? `${p.nombre} ya no se ve en la tienda.` : `${p.nombre} vuelve a la tienda.`);
   };
 
+  const alternarTotem = async (p: Fila) => {
+    const en_totem = !p.en_totem;
+    setGuardando(p.id);
+    const { error } = await supabase.from("productos").update({ en_totem }).eq("id", p.id);
+    setGuardando(null);
+    if (error) return setAviso(mensajeDeError(error));
+    setFilas((xs) => xs.map((x) => (x.id === p.id ? { ...x, en_totem } : x)));
+    setAviso(en_totem ? `${p.nombre} ya se ofrece en el tótem.` : `${p.nombre} ya no sale en el tótem.`);
+  };
+
   const cambiarFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0];
     e.target.value = "";
@@ -145,7 +164,7 @@ export default function PaginaProductos() {
       const { error } = await supabase.from("productos").update({ foto }).eq("id", p.id);
       if (error) throw new Error(mensajeDeError(error));
       setFilas((xs) => xs.map((x) => (x.id === p.id ? { ...x, foto } : x)));
-      setAviso(`Nueva foto para ${p.nombre}. Ya se ve en la tienda.`);
+      setAviso(`Nueva foto para ${p.nombre}. Ya se ve en ${p.categoria === "bebida" ? "el tótem" : "la tienda"}.`);
     } catch (err) {
       setAviso(err instanceof Error ? err.message : "No se pudo cambiar la foto.");
     } finally {
@@ -207,9 +226,10 @@ export default function PaginaProductos() {
       fecha_tueste: cafe ? (editando?.fecha_tueste ?? new Date().toISOString().slice(0, 10)) : null,
       moliendas: cafe ? f.moliendas.split(",").map((x) => x.trim()).filter(Boolean) : ["Única"],
       // Si la foto no cambió se guarda tal cual (con su texto alternativo y demás datos).
-      foto: f.categoria !== "bebida" && f.foto ? (editando?.foto?.src === f.foto ? editando.foto : { src: f.foto }) : null,
+      foto: f.foto ? (editando?.foto?.src === f.foto ? editando.foto : { src: f.foto }) : null,
       color: cafe ? f.color : null,
       grupo: f.categoria === "bebida" ? f.grupo : null,
+      ...(conTotem ? { en_totem: f.en_totem } : {}),
     };
     setGuardando("nuevo");
     const { error } = editando
@@ -234,10 +254,17 @@ export default function PaginaProductos() {
     cargar();
   };
 
+  // En un producto nuevo, al cambiar la categoría se sugiere si va o no al tótem.
+  const cambiarCategoria = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const categoria = e.target.value as Categoria;
+    setF((x) => ({ ...x, categoria, en_totem: editando ? x.en_totem : vaAlTotem(categoria) }));
+  };
+
   const cambiar = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF((x) => ({ ...x, [k]: e.target.value }));
 
-  const visibles = filas.filter((p) => filtro === "todos" || p.categoria === filtro);
+  const visibles = filas.filter((p) => filtro === "todos" || (filtro === "totem" ? p.en_totem && p.activo : p.categoria === filtro));
+  const enTotem = filas.filter((p) => p.en_totem && p.activo).length;
   const cafe = esCafe(f.categoria);
 
   return (
@@ -266,7 +293,7 @@ export default function PaginaProductos() {
                 <input id="p-nombre" value={f.nombre} onChange={cambiar("nombre")} />
               </Campo>
               <Campo id="p-cat" etiqueta="Categoría">
-                <select id="p-cat" className="tueste-form__select" value={f.categoria} onChange={cambiar("categoria")}>
+                <select id="p-cat" className="tueste-form__select" value={f.categoria} onChange={cambiarCategoria}>
                   {CATEGORIAS.map((c) => <option key={c.v} value={c.v}>{c.label}</option>)}
                 </select>
               </Campo>
@@ -287,12 +314,19 @@ export default function PaginaProductos() {
               <Campo id="p-stock" etiqueta={editando ? "Stock" : "Stock inicial"}>
                 <input id="p-stock" type="number" inputMode="numeric" value={f.stock} onChange={cambiar("stock")} placeholder="0" />
               </Campo>
-              {f.categoria !== "bebida" && (
-                <Campo id="p-desc" etiqueta={cafe ? "Notas de cata" : "Descripción"} ancho>
-                  <textarea id="p-desc" rows={2} value={f.descripcion} onChange={cambiar("descripcion")} />
-                </Campo>
-              )}
+              <Campo id="p-desc" etiqueta={cafe ? "Notas de cata" : f.categoria === "bebida" ? "Descripción corta (se ve en el tótem)" : "Descripción"} ancho>
+                <textarea id="p-desc" rows={2} value={f.descripcion} onChange={cambiar("descripcion")} />
+              </Campo>
             </div>
+            {conTotem && (
+              <label className="admin-prod__totem">
+                <input type="checkbox" checked={f.en_totem} onChange={(e) => setF((x) => ({ ...x, en_totem: e.target.checked }))} />
+                <span>
+                  <strong>Mostrar en el tótem</strong>
+                  <small>Los clientes podrán pedirlo en la pantalla de autoservicio.</small>
+                </span>
+              </label>
+            )}
           </fieldset>
 
           {cafe && (
@@ -342,19 +376,23 @@ export default function PaginaProductos() {
               </div>
             </fieldset>
           )}
-          {f.categoria !== "bebida" && (
-            <fieldset>
-              <legend>{cafe ? "Foto propia (opcional: si no subes una, se usa la bolsa con el color)" : "Foto"}</legend>
-              <SelectorFoto
-                carpeta="productos"
-                etiqueta="Foto del producto"
-                valor={f.foto}
-                galeria={cafe ? [] : FOTOS.filter(Boolean).map((src) => ({ src }))}
-                alCambiar={(src) => setF((x) => ({ ...x, foto: src }))}
-                conSinFoto
-              />
-            </fieldset>
-          )}
+          <fieldset>
+            <legend>
+              {cafe
+                ? "Foto propia (opcional: si no subes una, se usa la bolsa con el color)"
+                : f.categoria === "bebida"
+                  ? "Foto para el tótem (mejor un PNG sin fondo; con Sin foto se usa la de su mismo nombre o un dibujo)"
+                  : "Foto"}
+            </legend>
+            <SelectorFoto
+              carpeta="productos"
+              etiqueta="Foto del producto"
+              valor={f.foto}
+              galeria={cafe ? [] : f.categoria === "bebida" ? GALERIA_TOTEM : FOTOS.filter(Boolean).map((src) => ({ src }))}
+              alCambiar={(src) => setF((x) => ({ ...x, foto: src }))}
+              conSinFoto
+            />
+          </fieldset>
 
           {error && <p className="carrito__error" role="alert">{error}</p>}
           <div className="equipo__fila">
@@ -370,7 +408,7 @@ export default function PaginaProductos() {
 
       <div className="equipo__acciones">
         <div className="filtros__opciones" role="group" aria-label="Categoría">
-          {[{ v: "todos" as const, label: "Todo" }, ...CATEGORIAS].map((c) => (
+          {[{ v: "todos" as const, label: "Todo" }, ...(conTotem ? [{ v: "totem" as const, label: `En el tótem (${enTotem})` }] : []), ...CATEGORIAS].map((c) => (
             <button key={c.v} type="button" className={`chip${filtro === c.v ? " is-on" : ""}`} aria-pressed={filtro === c.v} onClick={() => setFiltro(c.v)}>
               {c.label}
             </button>
@@ -392,6 +430,7 @@ export default function PaginaProductos() {
                 <th scope="col" className="num">Precio (Bs.)</th>
                 <th scope="col" className="num">Stock</th>
                 <th scope="col">Estado</th>
+                {conTotem && <th scope="col">Tótem</th>}
                 <th scope="col"><span className="sr-only">Acciones</span></th>
               </tr>
             </thead>
@@ -430,6 +469,19 @@ export default function PaginaProductos() {
                         {!p.activo ? "Oculto" : p.stock <= 0 ? "Agotado" : bajo ? "Stock bajo" : "A la venta"}
                       </span>
                     </td>
+                    {conTotem && (
+                      <td>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={!!p.en_totem}
+                          aria-label={`Ofrecer ${p.nombre} en el tótem`}
+                          className="interruptor"
+                          disabled={guardando === p.id}
+                          onClick={() => alternarTotem(p)}
+                        />
+                      </td>
+                    )}
                     <td>
                       <div className="equipo__fila admin-sub__acciones">
                         {c && (
@@ -440,19 +492,17 @@ export default function PaginaProductos() {
                         <button type="button" className="link" disabled={guardando === p.id} onClick={() => abrirEdicion(p)}>
                           Editar
                         </button>
-                        {p.categoria !== "bebida" && (
-                          <button
-                            type="button"
-                            className="link"
-                            disabled={guardando === p.id}
-                            onClick={() => {
-                              setFilaFoto(p);
-                              archivoFila.current?.click();
-                            }}
-                          >
-                            {guardando === p.id && filaFoto?.id === p.id ? "Subiendo…" : "Cambiar foto"}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="link"
+                          disabled={guardando === p.id}
+                          onClick={() => {
+                            setFilaFoto(p);
+                            archivoFila.current?.click();
+                          }}
+                        >
+                          {guardando === p.id && filaFoto?.id === p.id ? "Subiendo…" : "Cambiar foto"}
+                        </button>
                         <button type="button" className="link" disabled={guardando === p.id} onClick={() => alternarActivo(p)}>
                           {p.activo ? "Ocultar" : "Mostrar"}
                         </button>

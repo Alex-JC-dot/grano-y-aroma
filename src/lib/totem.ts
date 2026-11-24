@@ -32,9 +32,12 @@ export const SECCIONES: { id: string; nombre: string; foto?: string; dibujo: Dib
   { id: "Café para llevar", nombre: "Café en bolsa", dibujo: "bolsa" },
   { id: "Métodos", nombre: "Métodos", dibujo: "metodo" },
   { id: "Otros", nombre: "Otras bebidas", dibujo: "botella" },
+  { id: "Tienda", nombre: "Para tu casa", dibujo: "botella" },
 ];
 
-export const seccionDe = (i: ItemTotem) => (i.categoria === "bebida" ? i.grupo ?? "Otros" : "Café para llevar");
+const esCafe = (i: ItemTotem) => i.categoria === "grano" || i.categoria === "molido";
+/** Los productos de la tienda que el admin suma al tótem (jarabes, equipos…) van en "Para tu casa". */
+export const seccionDe = (i: ItemTotem) => (i.categoria === "bebida" ? i.grupo ?? "Otros" : esCafe(i) ? "Café para llevar" : "Tienda");
 
 /** Si todavía no hay ventas suficientes, estos completan "Populares". */
 export const POPULARES = ["Cappuccino", "Latte", "Croissant", "Iced Latte", "Espresso", "Cheesecake"];
@@ -60,6 +63,10 @@ const FOTOS: Record<string, string> = {
   alfajor: "alfajor",
   "galleta-con-chispas": "galleta-chispas",
 };
+
+/** Fotos ya recortadas: el admin puede elegirlas para un producto de la barra. */
+export const GALERIA_TOTEM = Object.values(FOTOS).map((archivo) => ({ src: `${RUTA}${archivo}.webp` }));
+export const esRecorte = (src: string) => src.startsWith(RUTA);
 
 const DESCRIPCIONES: Record<string, string> = {
   espresso: "Corto e intenso, con crema dorada",
@@ -105,7 +112,7 @@ export function fotoDe(i: ItemTotem): string | null {
 }
 
 export const descripcionDe = (i: ItemTotem) =>
-  i.categoria === "grano" ? i.presentacion ?? "Bolsa de 250 g" : i.descripcion?.trim() || DESCRIPCIONES[slug(i.nombre)] || "";
+  i.categoria !== "bebida" ? i.presentacion ?? (esCafe(i) ? "Bolsa de 250 g" : i.descripcion) : i.descripcion?.trim() || DESCRIPCIONES[slug(i.nombre)] || "";
 
 export function dibujoDe(i: ItemTotem): Dibujo {
   return SECCIONES.find((s) => s.id === seccionDe(i))?.dibujo ?? "taza";
@@ -117,7 +124,10 @@ const SIN_AZUCAR = new Set(["affogato", "agua-mineral"]);
 
 /** Grupos de opciones de un producto. La primera de cada grupo es la normal. */
 export function opcionesDe(i: ItemTotem): { titulo: string; valores: string[] }[] {
-  if (i.categoria === "grano") return [{ titulo: "Molienda", valores: i.moliendas?.length ? i.moliendas : ["Grano Entero"] }];
+  if (i.categoria !== "bebida") {
+    const m = (i.moliendas ?? []).filter((x) => x !== "Única");
+    return m.length ? [{ titulo: "Molienda", valores: m }] : [];
+  }
   const s = slug(i.nombre);
   const bebida = ["Bebidas calientes", "Bebidas frías", "Métodos"].includes(seccionDe(i));
   const grupos: { titulo: string; valores: string[] }[] = [];
@@ -129,7 +139,7 @@ export function opcionesDe(i: ItemTotem): { titulo: string; valores: string[] }[
 /** Texto de lo elegido. En bebidas solo se anota lo que sale de lo normal; "" = tal cual. */
 export function textoOpciones(i: ItemTotem, elegidas: string[]): string {
   const grupos = opcionesDe(i);
-  if (i.categoria === "grano") return elegidas[0] ?? grupos[0].valores[0];
+  if (i.categoria !== "bebida") return grupos.length ? elegidas[0] ?? grupos[0].valores[0] : "";
   return grupos.map((g, k) => (elegidas[k] && elegidas[k] !== g.valores[0] ? elegidas[k] : "")).filter(Boolean).join(" · ");
 }
 

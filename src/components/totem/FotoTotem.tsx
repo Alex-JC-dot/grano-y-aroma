@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
-import { dibujoDe, fotoDe, type Dibujo, type ItemTotem } from "@/lib/totem";
+import { dibujoDe, esRecorte, fotoDe, type Dibujo, type ItemTotem } from "@/lib/totem";
 
 /** Dibujo para lo que todavía no tiene foto: mismo tamaño y misma sombra que las fotos. */
 export function DibujoTotem({ tipo, color = "#7a4a2c" }: { tipo: Dibujo; color?: string }) {
@@ -62,7 +62,7 @@ export default function FotoTotem({ item, ref }: { item: ItemTotem; ref?: React.
   return (
     <span ref={ref} className="foto-totem__marco">
       {src ? (
-        <img className="foto-totem" src={src} alt="" draggable={false} />
+        <img className={`foto-totem${esRecorte(src) ? "" : " foto-totem--cuadro"}`} src={src} alt="" draggable={false} />
       ) : (
         <DibujoTotem tipo={dibujoDe(item)} color={item.color ?? undefined} />
       )}

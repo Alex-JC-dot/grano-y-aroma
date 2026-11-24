@@ -34,6 +34,8 @@ export type FilaProducto = {
   color: string | null;
   orden: number;
   grupo: string | null;
+  /** Se ofrece en el tótem (migración 017). */
+  en_totem?: boolean;
 };
 
 const TUESTES = ["Ligero", "Medio", "Oscuro"] as const;
