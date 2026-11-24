@@ -227,6 +227,7 @@ Las migraciones están en [`supabase/migrations`](supabase/migrations) y se ejec
 | `015` | Una sola `confirmar_pedido`: canje de puntos y tótem |
 | `016`–`018` | Menú del tótem: productos, interruptor "En el tótem" y más bebidas |
 | `019` | El cobro del Club se confirma solo, sin el admin |
+| `020` | El código del pedido nunca se repite |
 
 Todas se pueden ejecutar más de una vez sin duplicar ni romper nada. El orden importa: de la `009` en adelante, cada una agrega reglas a funciones que define la anterior.
 
