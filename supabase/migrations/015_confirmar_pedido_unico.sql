@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Grano y Aroma · 015 · Una sola confirmar_pedido (canje de puntos + tótem)
 -- =====================================================================
--- Arregla un choque: el canje de puntos (013_canje_de_puntos de Janet) dejó confirmar_pedido
+-- Arregla un choque: el canje de puntos (013b_canje_de_puntos, de Janet) dejó confirmar_pedido
 -- con 8 parámetros (el último, p_puntos) y la 014 (tótem) volvió a crear la de 7. Con las
 -- dos, PostgreSQL no sabe cuál llamar y fallan TODAS las compras (tienda, caja y tótem).
 --
@@ -11,7 +11,7 @@
 --   · Tótem (014): canal "totem" solo para la cuenta Tótem o el equipo, sin cliente (como la
 --     caja) y con el número de turno del día para el ticket.
 --
--- Requiere la 013_canje_de_puntos y la 014 ya ejecutadas. Se puede ejecutar más de una vez.
+-- Requiere la 013b_canje_de_puntos y la 014 ya ejecutadas. Se puede ejecutar más de una vez.
 
 drop function if exists public.confirmar_pedido(jsonb, public.canal, text, text, text, text, text);
 

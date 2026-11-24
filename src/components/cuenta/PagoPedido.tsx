@@ -2,19 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
+import { qrDePago } from "@/lib/qr-emvco";
 import { formatBs } from "@/lib/utils";
 
 /**
- * Pago por QR de un pedido: el código para pagar y la confirmación AUTOMÁTICA del pago.
- * Se usa al confirmar la compra (carrito) y después desde Mi cuenta, mientras el pago esté
- * pendiente.
+ * Pago por QR de un pedido o de un envío del Club: el código para pagar y la confirmación
+ * AUTOMÁTICA del pago. Se usa al confirmar la compra (carrito), después desde Mi cuenta, mientras
+ * el pago esté pendiente, y en la suscripción del Club.
  *
  * Antes el cliente subía un comprobante y el admin lo aprobaba a mano. Ahora nadie del equipo
  * interviene: en un sistema real el banco avisa al instante cuando entra el pago (un
  * "webhook") y el pedido queda pagado solo. Aquí eso se simula: el cliente paga, toca "Ya
- * pagué" y el "banco" lo confirma (función pagar_qr de la migración 013).
+ * pagué" y el "banco" lo confirma (pagar_qr de la migración 013;
+ * pagar_cobro_club de la 019 para el Club).
  *
- * El QR es de demostración: codifica el pedido y el monto, no una cuenta bancaria real.
+ * El QR lleva el formato EMVCo (ver lib/qr-emvco.ts) con una cuenta inventada: no cobra nada real.
  */
 
 export type PagoEstado = "no_aplica" | "pendiente" | "por_verificar" | "aprobado" | "rechazado";
@@ -27,16 +29,17 @@ export const TEXTO_PAGO: Record<PagoEstado, string> = {
   rechazado: "Pago rechazado",
 };
 
-export function QrPago({ codigo, total }: { codigo: string; total: number }) {
+export function QrPago({ codigo, total, concepto = "Pedido" }: { codigo: string; total: number; concepto?: string }) {
   const [svg, setSvg] = useState("");
 
   useEffect(() => {
     let vivo = true;
     import("qrcode").then((qr) =>
       qr
-        .toString(`GRANO Y AROMA | Pago de demostración | Pedido ${codigo} | Bs ${total.toFixed(2)}`, {
+        .toString(qrDePago(total, `${concepto} ${codigo}`), {
           type: "svg",
           margin: 1,
+          errorCorrectionLevel: "M",
           color: { dark: "#2a1f1a", light: "#ffffff" },
         })
         .then((s) => vivo && setSvg(s)),
@@ -44,7 +47,7 @@ export function QrPago({ codigo, total }: { codigo: string; total: number }) {
     return () => {
       vivo = false;
     };
-  }, [codigo, total]);
+  }, [codigo, total, concepto]);
 
   return (
     <figure className="pago-qr">
@@ -58,17 +61,20 @@ export function QrPago({ codigo, total }: { codigo: string; total: number }) {
 }
 
 /**
- * "Ya pagué": el banco (simulado) confirma el pago y el pedido queda pagado al instante, sin
- * que nadie del equipo tenga que revisar nada.
+ * "Ya pagué": el banco (simulado) confirma el pago y el pedido (o el envío del Club) queda pagado
+ * al instante, sin que nadie del equipo tenga que revisar nada.
  */
 export function ConfirmarPagoQr({
   pedidoId,
   estado,
   alPagar,
+  destino = "pedido",
 }: {
+  /** Id del pedido, o del cobro cuando destino es "club". */
   pedidoId: number;
   estado: PagoEstado;
   alPagar?: () => void;
+  destino?: "pedido" | "club";
 }) {
   const [fase, setFase] = useState<"listo" | "verificando" | "pagado">("listo");
   const [error, setError] = useState("");
@@ -76,7 +82,7 @@ export function ConfirmarPagoQr({
   if (fase === "pagado" || estado === "aprobado") {
     return (
       <p className="pago-aviso pago-aviso--ok" role="status">
-        <strong>Pago confirmado por el banco.</strong> Tu pedido ya pasó a preparación.
+        <strong>Pago confirmado por el banco.</strong> {destino === "club" ? "Tu envío quedó programado." : "Tu pedido ya pasó a preparación."}
       </p>
     );
   }
@@ -86,10 +92,12 @@ export function ConfirmarPagoQr({
     setError("");
     setFase("verificando");
     await new Promise((r) => window.setTimeout(r, 1500)); // el banco "avisa"
-    const { error: e } = await supabase.rpc("pagar_qr", { p_pedido: pedidoId });
+    const { error: e } = destino === "club"
+      ? await supabase.rpc("pagar_cobro_club", { p_cobro: pedidoId })
+      : await supabase.rpc("pagar_qr", { p_pedido: pedidoId });
     if (e) {
       setFase("listo");
-      return setError(/pagar_qr|schema cache/i.test(e.message) ? "Falta la migración 013 en Supabase." : mensajeDeError(e));
+      return setError(/pagar_qr|pagar_cobro_club|schema cache/i.test(e.message) ? `Falta la migración ${destino === "club" ? "019" : "013"} en Supabase.` : mensajeDeError(e));
     }
     setFase("pagado");
     alPagar?.();

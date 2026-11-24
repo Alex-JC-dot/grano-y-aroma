@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
+import { useAuth } from "@/store/authStore";
 import { ConfirmarPagoQr, QrPago, TEXTO_PAGO, type PagoEstado } from "./PagoPedido";
 import PruebaEntrega from "./PruebaEntrega";
 
@@ -103,6 +104,7 @@ export default function MisPedidos({ uid }: { uid: string }) {
     setCancelando(null);
     if (error) return setError(mensajeDeError(error));
     cargar();
+    useAuth.getState().cargarPerfil(); // los puntos canjeados vuelven al saldo
   };
 
   if (pedidos === null) return <p aria-busy="true">Cargando pedidos…</p>;

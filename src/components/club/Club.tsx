@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { create } from "zustand";
-import { supabase } from "@/lib/supabase";
+import { mensajeDeError, supabase } from "@/lib/supabase";
 import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
 import { categoriaDe, esCafe } from "@/lib/catalogo";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
+import { ConfirmarPagoQr, QrPago, type PagoEstado } from "@/components/cuenta/PagoPedido";
 import { useAuth } from "@/store/authStore";
 
 /**
@@ -88,8 +89,12 @@ type FilaSub = {
   inicio: string;
   saltos: number;
   pausa_hasta: string | null;
+  pago_estado: PagoEstado;
 };
-type SubGuardada = Suscripcion & { id?: number };
+type SubGuardada = Suscripcion & { id?: number; pagoEstado: PagoEstado };
+/** El cobro que falta pagar, si hay alguno. */
+type CobroClub = { id: number; periodo: string; monto: number; estado: PagoEstado };
+
 const aSub = (x: FilaSub): SubGuardada => ({
   id: x.id,
   frecuencia: x.frecuencia,
@@ -100,12 +105,17 @@ const aSub = (x: FilaSub): SubGuardada => ({
   inicio: x.inicio,
   saltos: x.saltos,
   pausaHasta: x.pausa_hasta,
+  pagoEstado: x.pago_estado ?? "pendiente",
 });
 
-const useClubStore = create<{ sub: SubGuardada | null }>(() => ({ sub: null }));
+const useClubStore = create<{ sub: SubGuardada | null; cobro: CobroClub | null; error: string }>(() => ({
+  sub: null,
+  cobro: null,
+  error: "",
+}));
 
 async function cargarSub(uid: string | null) {
-  if (!uid) return useClubStore.setState({ sub: null });
+  if (!uid) return useClubStore.setState({ sub: null, cobro: null, error: "" });
   const { data } = await supabase
     .from("suscripciones")
     .select("*")
@@ -114,38 +124,62 @@ async function cargarSub(uid: string | null) {
     .order("creado_en", { ascending: false })
     .limit(1)
     .maybeSingle();
-  useClubStore.setState({ sub: data ? aSub(data as FilaSub) : null });
+  const sub = data ? aSub(data as FilaSub) : null;
+
+  // El cobro más próximo que todavía no está aprobado: es el que hay que pagar.
+  // No se filtra por cliente: lo hace la política de RLS de la tabla (migración 014b).
+  let cobro: CobroClub | null = null;
+  if (sub?.id) {
+    const { data: c } = await supabase
+      .from("cobros_club")
+      .select("id, periodo, monto, estado")
+      .eq("suscripcion_id", sub.id)
+      .neq("estado", "aprobado")
+      .order("periodo", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (c) cobro = { ...(c as CobroClub), monto: Number(c.monto) };
+  }
+  useClubStore.setState({ sub, cobro, error: "" });
 }
 
-/** Guarda la suscripción en la cuenta (null = cancelar). La base solo deja tocar la propia (RLS). */
+/**
+ * Guarda la suscripción (null = cancelar).
+ *
+ * El precio NO viaja desde aquí. Antes se calculaba en el navegador y se insertaba tal cual,
+ * así que cualquiera con la consola abierta podía suscribirse por Bs. 0. Ahora la base recibe
+ * solo lo que el cliente eligió —plan, café, molienda, fechas— y ella pone el precio y crea el
+ * cobro (migración 014b). El navegador ya ni siquiera tiene permiso de escribir en la tabla.
+ */
 async function guardar(s: Suscripcion | null) {
   const uid = useAuth.getState().session?.user.id;
   if (!uid) return;
-  const actual = useClubStore.getState().sub;
+
   if (!s) {
-    useClubStore.setState({ sub: null });
-    if (actual?.id) await supabase.from("suscripciones").update({ estado: "cancelada" }).eq("id", actual.id);
+    useClubStore.setState({ sub: null, cobro: null, error: "" });
+    const { error } = await supabase.rpc("cancelar_suscripcion");
+    if (error) useClubStore.setState({ error: mensajeDeError(error) });
+    await cargarSub(uid);
     return;
   }
-  const fila = {
-    frecuencia: s.frecuencia,
-    gramos: s.gramos,
-    cafe: s.cafe,
-    molienda: s.molienda,
-    estado: s.estado,
-    inicio: s.inicio,
-    saltos: s.saltos,
-    pausa_hasta: s.pausaHasta,
-    precio: precios(s.cafe, s.gramos, s.frecuencia).club,
-    proximo_envio: aISO(proximosEnvios(s, 1)[0]),
-  };
-  useClubStore.setState({ sub: { ...s, id: actual?.id } });
-  if (actual?.id) {
-    await supabase.from("suscripciones").update(fila).eq("id", actual.id);
-  } else {
-    const { data } = await supabase.from("suscripciones").insert({ ...fila, cliente_id: uid }).select().single();
-    if (data) useClubStore.setState({ sub: aSub(data as FilaSub) });
-  }
+
+  // Se pinta enseguida lo que eligió y después se reconcilia con lo que respondió la base.
+  const actual = useClubStore.getState().sub;
+  useClubStore.setState({ sub: { ...s, id: actual?.id, pagoEstado: actual?.pagoEstado ?? "pendiente" }, error: "" });
+
+  const { error } = await supabase.rpc("guardar_suscripcion", {
+    p_frecuencia: s.frecuencia,
+    p_gramos: s.gramos,
+    p_cafe: s.cafe,
+    p_molienda: s.molienda,
+    p_inicio: s.inicio,
+    p_saltos: s.saltos,
+    p_pausa_hasta: s.pausaHasta,
+    p_estado: s.estado,
+    p_proximo_envio: aISO(proximosEnvios(s, 1)[0]),
+  });
+  if (error) useClubStore.setState({ error: mensajeDeError(error) });
+  await cargarSub(uid);
 }
 
 const sinSuscripcion = () => () => {};
@@ -156,6 +190,8 @@ export default function Club() {
     cargarSub(uid);
   }, [uid]);
   const sub = useClubStore((s) => s.sub);
+  const cobro = useClubStore((s) => s.cobro);
+  const errorSub = useClubStore((s) => s.error);
   // Las fechas dependen del día de hoy: se escriben en el navegador, no al compilar la página.
   const enNavegador = useSyncExternalStore(sinSuscripcion, () => true, () => false);
 
@@ -182,13 +218,20 @@ export default function Club() {
     if (!vigente) await cargarSub(useAuth.getState().session?.user.id ?? null);
     const ya = useClubStore.getState().sub;
     if (ya && ya.estado !== "cancelada") {
-      guardar({ ...ya, frecuencia, gramos, cafe, molienda });
+      await guardar({ ...ya, frecuencia, gramos, cafe, molienda });
       setMensaje("Guardamos los cambios: se aplican desde tu próximo envío.");
     } else {
-      guardar({ frecuencia, gramos, cafe, molienda, estado: "activa", inicio: aISO(sumarDias(hoy(), 3)), saltos: 0, pausaHasta: null });
-      setMensaje("¡Bienvenido al Club! Tu primer envío sale en 3 días.");
+      await guardar({ frecuencia, gramos, cafe, molienda, estado: "activa", inicio: aISO(sumarDias(hoy(), 3)), saltos: 0, pausaHasta: null });
+      setMensaje("¡Bienvenido al Club! Paga el primer envío con el QR y toca “Ya pagué”: queda programado al instante.");
     }
-    document.getElementById("mi-suscripcion")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // Se espera a que la base responda y a que React pinte: lo que hay que mostrar es el QR,
+    // y antes de eso el bloque del cobro todavía no existe en la página. Sin esa espera el
+    // salto caía en la cabecera del panel y había que bajar a buscar el QR a mano.
+    window.setTimeout(() => {
+      const destino = document.getElementById("cobro-del-club") ?? document.getElementById("mi-suscripcion");
+      destino?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
   };
 
   const editar = () => {
@@ -243,9 +286,39 @@ export default function Club() {
             <div className="panel">
               <div className="panel__cabeza">
                 <h2 id="mi-sub-titulo">Tu suscripción</h2>
-                <span className={`estado estado--${vigente.estado}`}>{vigente.estado === "activa" ? "Activa" : "En pausa"}</span>
+                {/* Con un envío sin pagar no se anuncia como "Activa". */}
+                {cobro ? (
+                  <span className="estado estado--pendiente">Falta pagar</span>
+                ) : (
+                  <span className={`estado estado--${vigente.estado}`}>{vigente.estado === "activa" ? "Activa" : "En pausa"}</span>
+                )}
               </div>
               {mensaje && <p className="club__aviso" role="status">{mensaje}</p>}
+              {errorSub && <p className="carrito__error" role="alert">{errorSub}</p>}
+
+              {/*
+                Cobro del envío: QR y "Ya pagué". El banco (simulado) lo confirma al instante, el
+                mismo recorrido que un pedido de la tienda (RF-07, migración 019).
+              */}
+              {cobro && (
+                <div className="club__cobro" id="cobro-del-club">
+                  <h3>Falta pagar este envío</h3>
+                  <p className="club__fecha-nota">
+                    Envío del {fechaLarga(deISO(cobro.periodo))} · <strong>{formatBs(cobro.monto)}</strong>
+                  </p>
+                  <QrPago codigo={`Club #${cobro.id}`} total={cobro.monto} concepto="Suscripción" />
+                  <ConfirmarPagoQr
+                    key={cobro.id}
+                    pedidoId={cobro.id}
+                    estado={cobro.estado}
+                    destino="club"
+                    alPagar={async () => {
+                      setMensaje(`Pago confirmado por el banco. Tu envío del ${fechaLarga(deISO(cobro.periodo))} quedó programado.`);
+                      await cargarSub(uid);
+                    }}
+                  />
+                </div>
+              )}
               <dl className="panel__datos">
                 <div><dt>Café</dt><dd>{nombreCafe(vigente.cafe)}</dd></div>
                 <div><dt>Cada envío</dt><dd>{nombreCantidad(vigente.gramos)} · {vigente.molienda}</dd></div>
@@ -262,7 +335,7 @@ export default function Club() {
                         <li key={i}>
                           <span>{fechaLarga(f)}</span>
                           <span className="club__fecha-nota">
-                            {i === 0 ? `cobro de ${formatBs(ps.club)} el ${fechaLarga(sumarDias(f, -2))}` : formatBs(ps.club)}
+                            {formatBs(ps.club)}{cobro?.periodo === aISO(f) && " · falta pagar"}
                           </span>
                         </li>
                       ))}
@@ -270,7 +343,7 @@ export default function Club() {
                   ) : (
                     <p className="panel__nota">Pausada sin fecha: no se te cobrará hasta que la reactives.</p>
                   )}
-                  <p className="club__fecha-nota">Te avisamos por correo dos días antes de cada cobro y el día de cada envío.</p>
+                  <p className="club__fecha-nota">El cobro de cada envío aparece aquí tres días antes y se paga por QR.</p>
                 </div>
                 <div className="club__ahorro">
                   {enviosHechos > 0 ? (
@@ -431,7 +504,9 @@ export default function Club() {
               <button type="button" className="btn btn--primary club__boton" onClick={suscribir}>
                 {vigente ? "Guardar cambios" : `Suscribirme · ${formatBs(p.club)} por envío`}
               </button>
-              <p className="club__fecha-nota">Pago de demostración: no se realiza ningún cobro real.</p>
+              <p className="club__fecha-nota">
+                Pago de demostración: no se realiza ningún cobro real. El pago se confirma solo, igual que en la tienda.
+              </p>
             </aside>
           </div>
         </div>

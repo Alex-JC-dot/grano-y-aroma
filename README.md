@@ -220,6 +220,14 @@ Las migraciones están en [`supabase/migrations`](supabase/migrations) y se ejec
 | `010` | Prueba de entrega: foto y nombre de quien recibió |
 | `011` | Proveedores, órdenes de compra y constancia por etapa |
 | `012` | Rol repartidor con cuenta propia y verificación de la entrega |
+| `013` | Pagos por QR confirmados automáticamente |
+| `013b` | Canje de puntos por descuento, con historial de movimientos |
+| `014` | Tótem de autoservicio y pantalla de la barra |
+| `014b` | Cobro de cada envío del Club y precio calculado en la base |
+| `015` | Una sola `confirmar_pedido`: canje de puntos y tótem |
+| `016`–`018` | Menú del tótem: productos, interruptor "En el tótem" y más bebidas |
+| `019` | El cobro del Club se confirma solo, sin el admin |
+| `020` | El código del pedido nunca se repite |
 
 Todas se pueden ejecutar más de una vez sin duplicar ni romper nada. El orden importa: de la `009` en adelante, cada una agrega reglas a funciones que define la anterior.
 
@@ -275,7 +283,7 @@ Dónde se demuestra cada módulo del documento. Lo que no está hecho también f
 | Ecommerce: catálogo, carrito, pago y trazabilidad del lote | ✅ | `/tienda`, `/cuenta` |
 | Comprobante de compra | ✅ | Se descarga en PDF al confirmar el pedido |
 | Cuenta, historial y seguimiento | ✅ | `/cuenta` |
-| Club de suscripción | ✅ | `/club` |
+| Club de suscripción | ✅ | `/club` · cobro por envío con QR y confirmación automática |
 | Subastas de micro-lotes en vivo | ✅ | `/subastas` · pujas en tiempo real |
 | Punto de venta y cierre de caja | ✅ | `/pos` |
 | Bodega, inventario y mermas | ✅ | `/erp` |
@@ -283,7 +291,7 @@ Dónde se demuestra cada módulo del documento. Lo que no está hecho también f
 | Proveedores y órdenes de compra | ✅ | `/admin/proveedores` |
 | Logística y entregas con constancia | ✅ | `/logistica`, `/repartidor` |
 | Administración, roles y reportes | ✅ | `/admin` · reportes en Excel y PDF |
-| Cartera virtual y fidelización | ⏳ | Los puntos se acumulan con cada compra; falta poder gastarlos |
+| Cartera virtual y fidelización | ✅ | 1 punto por cada Bs. 10; se canjean en el checkout, con tope del 50 % e historial |
 
 **Mejoras sobre el alcance**, que el documento no pedía: modo claro y oscuro, exportación de reportes a Excel, comprobantes en PDF, firma del cliente en la entrega y subastas con cierre automático.
 
