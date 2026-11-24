@@ -15,15 +15,10 @@ import type { Product } from "@/lib/types";
 type Opcion = { activa: boolean; alElegir: () => void };
 
 export function OpcionFrecuencia({ dias, descuento, activa, alElegir }: { dias: 15 | 30; descuento: number } & Opcion) {
-  // Un mes de puntitos: los días de envío son granos de café.
-  const envios = dias === 15 ? [4, 18] : [11];
   return (
     <button type="button" className={`copc copc--frec copc--d${dias}${activa ? " is-on" : ""}`} aria-pressed={activa} onClick={alElegir}>
       <span className="copc__escena" aria-hidden="true">
         <span className="copc__num">{dias}</span>
-        <span className="copc__mes">
-          {Array.from({ length: 28 }, (_, k) => (envios.includes(k) ? <svg key={k} viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(28 12 12)" /><path d="M15.5 3.5c-4 4-1 7-4 9s-1 5-3.5 7.5" /></svg> : <i key={k} />))}
-        </span>
         <Onda />
       </span>
       <span className="copc__texto">

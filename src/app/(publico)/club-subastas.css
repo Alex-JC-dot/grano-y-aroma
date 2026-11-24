@@ -459,12 +459,8 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
 .inicio .copc--frec .copc__escena { height: 138px; }
 .inicio .copc--d15 { --cc: #94492a; }
 .inicio .copc--frec .copc__texto strong { font-size: 27px; }
-.inicio .copc__num { position: absolute; right: 14px; top: -6px; font: 400 124px / 1 var(--f-display); color: rgba(255, 255, 255, 0.16); }
-.inicio .copc__mes { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); display: grid; grid-template-columns: repeat(7, 20px); gap: 4px 9px; }
-.inicio .copc__mes i { width: 8px; height: 8px; margin: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.45); }
-.inicio .copc__mes svg { width: 30px; height: 30px; margin: -5px; fill: #4a2716; stroke: #ffe2b8; stroke-width: 1.6; stroke-linecap: round; animation: cplan-late 2.2s ease-in-out infinite; }
-.inicio .copc__mes svg path { fill: none; }
-@keyframes cplan-late { 50% { transform: scale(1.22) rotate(10deg); } }
+.inicio .copc__num { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); font: 400 112px / 1 var(--f-display); letter-spacing: -0.02em; color: rgba(255, 244, 226, 0.92); transition: transform 0.35s var(--ease); }
+.inicio .copc--frec:hover .copc__num { transform: translateX(-50%) scale(1.07); }
 
 .inicio .copc .foto-totem { display: block; width: auto; filter: drop-shadow(0 9px 8px rgba(35, 16, 8, 0.45)); }
 .inicio .copc__bolsa { position: absolute; left: 50%; top: -42px; height: 136px; transform: translateX(-50%); transition: transform 0.35s var(--ease); }
@@ -530,16 +526,14 @@ html[data-revelar-activo="on"] .inicio .lote-grafico:not([data-visible]) .pujas-
   .inicio .copc__bolsas[data-n="1"] .foto-totem, .inicio .copc__bolsas[data-n="2"] .foto-totem { height: 88px; }
   .inicio .copc__bolsas[data-n="4"] .foto-totem { height: 66px; }
   .inicio .copc--frec .copc__texto strong { font-size: 22px; }
-  .inicio .copc__mes { grid-template-columns: repeat(7, 14px); gap: 4px 5px; }
-  .inicio .copc__mes i { width: 6px; height: 6px; margin: 4px; }
-  .inicio .copc__mes svg { width: 24px; height: 24px; margin: -5px; }
   .inicio .copc--sorpresa { flex-direction: column-reverse; padding-top: 8px; margin-top: 44px; }
   .inicio .copc--sorpresa .copc__texto { max-width: none; align-items: center; text-align: center; padding: 14px 20px 22px; }
   .inicio .copc__abanico { margin: -44px 0 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .inicio .copc, .inicio .copc:hover, .inicio .copc__mes svg { animation: none; transition: none; transform: none; }
+  .inicio .copc, .inicio .copc:hover { animation: none; transition: none; transform: none; }
 }
+
 /* En laptops de pantalla baja el resumen se compacta: el botón tiene que verse siempre. */
 @media (min-width: 1024px) and (max-height: 900px) {
   .inicio .cplan.club__resumen { top: calc(var(--nav) + 72px); }
