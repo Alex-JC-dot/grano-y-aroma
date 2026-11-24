@@ -451,3 +451,17 @@
   background: #fff;
 }
 .inicio .prueba-entrega__firma figcaption { margin-top: 6px; font-size: 13px; color: var(--muted); }
+
+/* Historial de puntos en Mi cuenta (RF-32). */
+.inicio .cuenta__puntos-vacio { font-size: 14px; color: var(--muted); }
+.inicio .cuenta__movimientos {
+  list-style: none; margin: 16px 0 0; padding: 16px 0 0; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.inicio .cuenta__movimientos li { display: flex; align-items: baseline; gap: 12px; }
+.inicio .cuenta__mov-signo {
+  flex: 0 0 42px; font: 500 15px var(--f-text); font-variant-numeric: tabular-nums; color: var(--exito);
+}
+.inicio .cuenta__mov-signo.is-resta { color: var(--accent); }
+.inicio .cuenta__mov-motivo { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.inicio .cuenta__mov-motivo small { font-size: 12px; color: var(--muted); }

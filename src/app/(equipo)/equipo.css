@@ -688,3 +688,13 @@
 .admin-prod__totem span { display: flex; flex-direction: column; gap: 2px; }
 .admin-prod__totem small { color: var(--muted); }
 .admin-sub__foto img[src^="/totem/"] { object-fit: contain; padding: 6px; }
+
+/* Cobros del Club (RF-07), en el panel. */
+.estado--pendiente { background: var(--aviso-bg); color: var(--aviso); text-transform: none; }
+.estado--pagado { background: var(--exito-bg); color: var(--exito); text-transform: none; }
+
+/* La etiqueta de estado es una píldora: si se parte en dos líneas, el fondo se rompe. */
+.cobros__tabla .estado { display: inline-block; white-space: nowrap; }
+.cobros__tabla td:nth-child(2),
+.cobros__tabla td:nth-child(3) { white-space: nowrap; }
+.cobros__tabla td small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }

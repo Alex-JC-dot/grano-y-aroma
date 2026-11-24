@@ -11,11 +11,14 @@ import HojaDocumento from "@/components/ui/HojaDocumento";
 import { imprimirDocumento, numeroDocumento } from "@/lib/documento";
 import { ConfirmarPagoQr, QrPago } from "@/components/cuenta/PagoPedido";
 import FormTarjeta, { TARJETA_VACIA, consultarBanco, validarTarjeta, type DatosTarjeta } from "@/components/ui/TarjetaSimulada";
+import UsarPuntos from "./UsarPuntos";
+import { bsPorPuntos, enPuntos, puntosAplicables } from "@/lib/puntos";
 
 /**
  * Carrito y checkout en 3 pasos (RNF-05): carrito → datos de entrega → pago.
  * Al confirmar, la base de datos (confirmar_pedido) valida y descuenta el stock en una sola
- * transacción, guarda el pedido y suma los puntos (RF-02, RF-21). El pago es de demostración:
+ * transacción, guarda el pedido, aplica el canje de puntos y suma los nuevos (RF-02, RF-21,
+ * RF-32). El pago es de demostración:
  * con tarjeta se piden los datos (formulario simulado, igual que en la Caja), se validan y se
  * "consulta al banco"; el pedido se crea solo si el pago se aprueba. Los datos no se guardan.
  *
@@ -36,6 +39,12 @@ type Comprobante = {
   numero: string;
   fecha: string;
   lineas: { nombre: string; detalle: string; cantidad: number; precio: number }[];
+  /** Lo que sumaron los productos, antes del canje. */
+  subtotal: number;
+  descuento: number;
+  puntosUsados: number;
+  puntosGanados: number;
+  /** Lo que el cliente paga de verdad: subtotal menos descuento. */
   total: number;
   metodo: string;
   cliente: Datos;
@@ -54,7 +63,16 @@ export default function CartDrawer() {
   const [errorPedido, setErrorPedido] = useState("");
   const [tarjeta, setTarjeta] = useState<DatosTarjeta>(TARJETA_VACIA);
   const [consultando, setConsultando] = useState(false);
+  const [puntos, setPuntos] = useState(0);
   const cerrarRef = useRef<HTMLButtonElement>(null);
+  const saldo = useAuth((s) => s.perfil?.puntos ?? 0);
+
+  // El carrito puede cambiar después de elegir los puntos: quitar una bolsa baja el tope del
+  // 50 % y dejaría el canje fuera de rango. Se recorta al vuelo en vez de corregirlo con un
+  // efecto, que es lo que obliga a repintar dos veces y deja un total viejo en pantalla.
+  const canje = Math.min(puntos, puntosAplicables(saldo, total));
+  const descuento = bsPorPuntos(canje);
+  const aPagar = total - descuento;
 
   // Al abrir, el foco va al botón de cerrar; Escape cierra.
   useEffect(() => {
@@ -130,6 +148,7 @@ export default function CartDrawer() {
         p_telefono: datos.telefono.trim(),
         p_direccion: datos.direccion.trim(),
         p_referencia: datos.referencia.trim() || null,
+        p_puntos: canje,
       });
       if (error) throw error;
       // Guarda teléfono y dirección en el perfil para rellenarlos la próxima vez.
@@ -142,6 +161,12 @@ export default function CartDrawer() {
         numero: data.codigo ?? numeroDocumento("GA"),
         fecha: new Date().toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" }),
         lineas,
+        // Las cifras del canje salen de lo que devolvió la base, no de la cuenta del navegador:
+        // ella es la que decide cuántos puntos entraron y es lo que quedó guardado.
+        subtotal: Number(data.total) + Number(data.descuento ?? 0),
+        descuento: Number(data.descuento ?? 0),
+        puntosUsados: Number(data.puntos_usados ?? 0),
+        puntosGanados: Number(data.puntos_ganados ?? 0),
         total: Number(data.total),
         metodo: pago === "qr" ? "QR Bolivia" : "Tarjeta de débito o crédito",
         cliente,
@@ -149,6 +174,7 @@ export default function CartDrawer() {
       clearCart();
       setDatos(VACIO);
       setTarjeta(TARJETA_VACIA);
+      setPuntos(0);
     } catch (err) {
       setErrorPedido(mensajeDeError(err));
     } finally {
@@ -218,9 +244,18 @@ export default function CartDrawer() {
               <dl className="carrito__resumen">
                 <dt>Entrega estimada</dt><dd>Hoy o mañana en Sucre</dd>
                 <dt>Método de pago</dt><dd>{pedido.metodo}</dd>
+                {pedido.descuento > 0 && (
+                  <>
+                    <dt>Subtotal</dt><dd>{formatBs(pedido.subtotal)}</dd>
+                    <dt>Descuento por {enPuntos(pedido.puntosUsados)}</dt><dd>−{formatBs(pedido.descuento)}</dd>
+                  </>
+                )}
                 <dt>{pedido.porQr ? "Total a pagar" : "Total pagado"}</dt><dd>{formatBs(pedido.total)}</dd>
               </dl>
-              <p className="carrito__nota">Sumaste {Math.floor(pedido.total / 10)} puntos. Puedes seguir tu pedido en Mi cuenta.</p>
+              <p className="carrito__nota">
+                {pedido.descuento > 0 && `Canjeaste ${enPuntos(pedido.puntosUsados)} por ${formatBs(pedido.descuento)} de descuento. `}
+                Sumaste {enPuntos(pedido.puntosGanados)}. Puedes seguir tu pedido en Mi cuenta.
+              </p>
               <div className="carrito__acciones-listo">
                 <button
                   type="button"
@@ -308,10 +343,17 @@ export default function CartDrawer() {
                 </fieldset>
               )}
               <p className="carrito__nota">Pago de demostración: no se realiza ningún cobro real.</p>
+              <UsarPuntos saldo={saldo} total={total} valor={canje} alCambiar={setPuntos} deshabilitado={enviando} />
               <dl className="carrito__resumen">
                 <dt>Subtotal</dt><dd>{formatBs(total)}</dd>
+                {descuento > 0 && (
+                  <>
+                    <dt>Descuento por {enPuntos(canje)}</dt><dd>−{formatBs(descuento)}</dd>
+                  </>
+                )}
                 <dt>Envío en Sucre</dt><dd>Sin costo</dd>
                 <dt>Entrega a</dt><dd>{datos.direccion}</dd>
+                <dt>Total a pagar</dt><dd>{formatBs(aPagar)}</dd>
               </dl>
             </div>
           )}
@@ -321,7 +363,10 @@ export default function CartDrawer() {
           <footer className="carrito__pie">
             <div className="carrito__total">
               <span>Total ({cantidad} {cantidad === 1 ? "bolsa" : "bolsas"})</span>
-              <strong>{formatBs(total)}</strong>
+              <strong>
+                {descuento > 0 && <s>{formatBs(total)}</s>}
+                {formatBs(aPagar)}
+              </strong>
             </div>
             {paso < 2 ? (
               <button type="button" className="btn btn--primary carrito__boton" onClick={siguiente}>
@@ -336,8 +381,8 @@ export default function CartDrawer() {
                     : enviando
                       ? "Confirmando…"
                       : pago === "tarjeta"
-                        ? `Pagar y confirmar · ${formatBs(total)}`
-                        : `Confirmar pedido · ${formatBs(total)}`}
+                        ? `Pagar y confirmar · ${formatBs(aPagar)}`
+                        : `Confirmar pedido · ${formatBs(aPagar)}`}
                 </button>
               </>
             )}
@@ -398,10 +443,22 @@ export default function CartDrawer() {
                 ))}
               </tbody>
               <tfoot>
+                {pedido.descuento > 0 && (
+                  <tr>
+                    <td colSpan={3}>Subtotal</td>
+                    <td className="num">{formatBs(pedido.subtotal)}</td>
+                  </tr>
+                )}
                 <tr>
                   <td colSpan={3}>Envío en Sucre</td>
                   <td className="num">Sin costo</td>
                 </tr>
+                {pedido.descuento > 0 && (
+                  <tr>
+                    <td colSpan={3}>Descuento por canje de {enPuntos(pedido.puntosUsados)}</td>
+                    <td className="num">−{formatBs(pedido.descuento)}</td>
+                  </tr>
+                )}
                 <tr className="doc__gran-total">
                   <td colSpan={3}>Total</td>
                   <td className="num">{formatBs(pedido.total)}</td>
