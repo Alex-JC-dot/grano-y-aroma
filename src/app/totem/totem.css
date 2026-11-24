@@ -278,6 +278,23 @@
 .tprod.is-agotado { opacity: 0.5; }
 @keyframes tsalta { from { transform: scale(0.4); } to { transform: scale(1); } }
 
+/* Celular o tablet angosta: el + más chico y el texto a su medida, para que no tape el precio. */
+@media (max-width: 640px) {
+  .tprod__abrir { padding: 0 10px 10px; }
+  .tprod__nombre { font-size: 16px; }
+  .tprod__precio { min-height: 46px; padding-top: 4px; font-size: 15px; white-space: nowrap; }
+  .tprod__mas { right: 8px; bottom: 10px; width: 42px; height: 42px; border-radius: 12px; font-size: 25px; }
+  .tcat { font-size: 13px; }
+  .tfranja__qty button { width: 34px; height: 34px; border-radius: 10px; }
+  .tfranja__ver { font-size: 15px; }
+}
+
+@media (max-width: 350px) {
+  .tprod__abrir { padding: 0 8px 8px; }
+  .tprod__precio { font-size: 13px; }
+  .tprod__mas { right: 6px; bottom: 8px; width: 36px; height: 36px; font-size: 22px; }
+}
+
 /* ---------- Franja "Mi pedido" ---------- */
 .tfranja { display: flex; flex-direction: column; min-height: 0; padding: calc(var(--u) * 5) 0 calc(var(--u) * 2.4); background: var(--surface); box-shadow: calc(var(--u) * -1) 0 calc(var(--u) * 4) rgba(59, 36, 24, 0.08); }
 .tfranja h2 { margin: 0 calc(var(--u) * 2.4) calc(var(--u) * 2.4); font: 600 calc(var(--u) * 4.4) / 1.05 var(--f-display); }

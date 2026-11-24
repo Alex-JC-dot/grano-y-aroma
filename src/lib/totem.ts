@@ -154,6 +154,9 @@ export function textoOpciones(i: ItemTotem, elegidas: string[]): string {
   return grupos.map((g, k) => (elegidas[k] && elegidas[k] !== g.valores[0] ? elegidas[k] : "")).filter(Boolean).join(" · ");
 }
 
+/** Precio corto para las tarjetas: "Bs 14" (con decimales solo si los tiene). */
+export const precioCorto = (n: number) => `Bs ${n.toLocaleString("es-BO", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`;
+
 export const porDefecto = (i: ItemTotem) => opcionesDe(i).map((g) => g.valores[0]);
 
 // ---------- Movimiento ----------

@@ -3,7 +3,7 @@
 
 import { useRef, useState } from "react";
 import { formatBs } from "@/lib/utils";
-import { descripcionDe, opcionesDe, POPULARES, rutaFoto, SECCIONES, seccionDe, textoOpciones, porDefecto, volarAlPedido, type ItemTotem, type LineaTotem } from "@/lib/totem";
+import { descripcionDe, opcionesDe, POPULARES, precioCorto, rutaFoto, SECCIONES, seccionDe, textoOpciones, porDefecto, volarAlPedido, type ItemTotem, type LineaTotem } from "@/lib/totem";
 import FotoTotem, { DibujoTotem } from "./FotoTotem";
 import DetalleTotem from "./DetalleTotem";
 
@@ -99,7 +99,7 @@ export default function MenuTotem({
                   <span className="tprod__foto"><FotoTotem item={it} /></span>
                   <span className="tprod__nombre">{it.nombre}</span>
                   <span className="tprod__texto">{descripcionDe(it)}</span>
-                  <span className="tprod__precio">{agotado ? "Agotado" : formatBs(it.precio)}</span>
+                  <span className="tprod__precio">{agotado ? "Agotado" : precioCorto(it.precio)}</span>
                 </button>
                 {!agotado && (
                   <button type="button" className="tprod__mas" disabled={lleno} aria-label={`Agregar ${it.nombre}`} onClick={(e) => masUno(it, e.currentTarget)}>
@@ -127,7 +127,7 @@ export default function MenuTotem({
                 <FotoTotem item={l.item} />
                 <span className="tfranja__nombre">{l.item.nombre}</span>
                 {l.opciones && opcionesDe(l.item).length > 0 && <small>{l.opciones}</small>}
-                <span className="tfranja__precio">{formatBs(l.item.precio * l.qty)}</span>
+                <span className="tfranja__precio">{precioCorto(l.item.precio * l.qty)}</span>
                 <span className="tfranja__qty">
                   <button type="button" aria-label={`Quitar uno de ${l.item.nombre}`} onClick={() => alCambiar(l.clave, -1)}>−</button>
                   <output>{l.qty}</output>
