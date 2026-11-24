@@ -1,10 +1,11 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, panelesDe, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { imprimirDocumento } from "@/lib/documento";
-import { fotoDe, type ItemTotem, type LineaTotem } from "@/lib/totem";
+import { fotoDe, rutaFoto, type ItemTotem, type LineaTotem } from "@/lib/totem";
 import { useAuth } from "@/store/authStore";
 import { TarjetaCuenta } from "@/components/cuenta/VentanaCuenta";
 import InicioTotem from "@/components/totem/InicioTotem";
@@ -171,7 +172,7 @@ function Autoservicio() {
   useEffect(() => {
     if (fase !== "inicio" || !items.length) return;
     const t = window.setTimeout(() => {
-      for (const src of new Set(items.map(fotoDe))) if (src) new Image().src = src;
+      for (const src of new Set([...items.map(fotoDe), rutaFoto("bolsa")])) if (src) new Image().src = src;
     }, 1200);
     return () => window.clearTimeout(t);
   }, [fase, items]);
@@ -334,6 +335,7 @@ function Autoservicio() {
               <div className="tpedido__modos" role="radiogroup" aria-label="¿Para aquí o para llevar?">
                 {MODOS.map((m) => (
                   <button key={m} type="button" role="radio" aria-checked={modo === m} className={modo === m ? "is-on" : ""} onClick={() => setModo(m)}>
+                    <img src={rutaFoto(m === "Para llevar" ? "vaso-llevar" : "cappuccino")} alt="" draggable={false} />
                     {m}
                   </button>
                 ))}
