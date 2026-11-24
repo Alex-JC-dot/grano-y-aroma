@@ -457,7 +457,8 @@
 .ticket--vista { width: 320px; padding: 22px 20px 28px; background: #fff; box-shadow: var(--sombra-3); border-radius: 4px; font-size: 14px; }
 .ticket p { margin: 0; text-align: center; }
 .ticket hr { border: 0; border-top: 1px dashed #000; margin: 10px 0; }
-.ticket__marca { font-size: 20px; font-weight: 700; letter-spacing: 0.08em; }
+.ticket__logo { display: block; width: 46mm; height: auto; margin: 0 auto 8px; }
+.ticket--vista .ticket__logo { width: 36mm; }
 .ticket__sub { font-size: 12px; }
 .ticket__turno-et { font-size: 12px; font-weight: 700; }
 .ticket__turno { font-size: 52px; font-weight: 700; line-height: 1.05; }
@@ -470,8 +471,10 @@
 .ticket__aviso { font-size: 13px; font-weight: 700; }
 .ticket__qr { width: 110px; margin: 10px auto 6px; }
 .ticket__qr svg { display: block; width: 100%; height: auto; }
-/* La copia para el papel no se ve en pantalla. */
-.ticket-80 { display: none; }
+/* La copia para el papel va fuera de la vista (no oculta: hay que poder medir su largo). */
+.ticket-80 { position: fixed; left: -200vw; top: 0; width: 72mm; font-size: 12px; pointer-events: none; }
+/* En papel térmico la letra fina sale pálida. */
+.ticket-80 .ticket__sub, .ticket-80 td { font-weight: 700; }
 
 /* ---------- ¿Sigues ahí? ---------- */
 .totem__sigues { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: var(--velo-dialogo); }
@@ -482,7 +485,7 @@
 /* Tótem de pie (1080 de ancho): el lector y el ticket, dibujados en píxeles, se agrandan. */
 @media (orientation: portrait) and (min-width: 900px) {
   .lector { zoom: 1.7; }
-  .ticket--vista { zoom: 1.5; }
+  .ticket--vista { zoom: 1.25; }
 }
 @media (orientation: portrait), (max-width: 900px) {
   .totem--listo { grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: center; gap: calc(var(--u) * 5); }

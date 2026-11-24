@@ -1,6 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatBs } from "@/lib/utils";
 
@@ -25,6 +26,8 @@ export type DatosTicket = {
   pago: string;
 };
 
+export const LOGO_TICKET = "/totem/logo-ticket.png";
+
 const turnoTexto = (n: number) => `#${String(n).padStart(3, "0")}`;
 
 function QrTicket({ texto }: { texto: string }) {
@@ -46,9 +49,9 @@ function Contenido({ d }: { d: DatosTicket }) {
   const hora = d.fecha.toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit", hour12: false });
   return (
     <>
-      <p className="ticket__marca">GRANO Y AROMA</p>
-      <p className="ticket__sub">Café de especialidad · Sucre</p>
-      <p className="ticket__sub">Autoservicio · Tótem</p>
+      {/* En negro puro, sin grises: la impresora térmica solo quema o no quema. */}
+      <img className="ticket__logo" src={LOGO_TICKET} alt="Grano y Aroma, café de especialidad" width={1000} height={931} />
+      <p className="ticket__sub">Sucre, Bolivia · Autoservicio</p>
       <hr />
       <p className="ticket__turno-et">TU NÚMERO DE PEDIDO</p>
       <p className="ticket__turno">{turnoTexto(d.turno)}</p>
@@ -85,16 +88,30 @@ export function TicketVista({ datos }: { datos: DatosTicket }) {
   );
 }
 
-/** Copia para imprimir (invisible en pantalla). */
+/**
+ * Copia para imprimir (fuera de la vista). El papel térmico no tiene largo fijo y Chrome no acepta
+ * "80mm auto" (caía en A4): se mide el ticket y se pide una hoja exactamente de ese largo.
+ */
 export function TicketImpresion({ datos }: { datos: DatosTicket }) {
   const [montado, setMontado] = useState(false);
+  const [largo, setLargo] = useState(0);
+  const papel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const t = window.setTimeout(() => setMontado(true), 0);
     return () => window.clearTimeout(t);
   }, []);
+  useEffect(() => {
+    const p = papel.current;
+    if (!p) return;
+    // px → mm, más los 6 mm de márgenes y un resto para que no salte a una segunda hoja.
+    const o = new ResizeObserver(() => setLargo(Math.ceil((p.scrollHeight / 96) * 25.4) + 12));
+    o.observe(p);
+    return () => o.disconnect();
+  }, [montado]);
   if (!montado) return null;
   return createPortal(
-    <div className="ticket ticket-80 imprimible">
+    <div ref={papel} className="ticket ticket-80 imprimible" aria-hidden="true">
+      {largo > 0 && <style>{`@page ticket { size: 80mm ${largo}mm; }`}</style>}
       <Contenido d={datos} />
     </div>,
     document.body,

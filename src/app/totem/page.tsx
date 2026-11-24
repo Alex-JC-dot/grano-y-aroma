@@ -14,7 +14,7 @@ import CirculoTotem, { type ManejoCirculo } from "@/components/totem/CirculoTote
 import PagoTotem, { type EstadoPago } from "@/components/totem/PagoTotem";
 import { Flecha } from "@/components/totem/DetalleTotem";
 import FotoTotem from "@/components/totem/FotoTotem";
-import { TicketImpresion, TicketVista, turnoTexto, type DatosTicket } from "@/components/totem/TicketTotem";
+import { LOGO_TICKET, TicketImpresion, TicketVista, turnoTexto, type DatosTicket } from "@/components/totem/TicketTotem";
 
 /**
  * Tótem de autoservicio (EXPOSOFT, migraciones 014 y 016). El cliente, sin cuenta y sin ayuda:
@@ -171,7 +171,7 @@ function Autoservicio() {
   useEffect(() => {
     if (fase !== "inicio" || !items.length) return;
     const t = window.setTimeout(() => {
-      for (const src of new Set([...items.map(fotoDe), rutaFoto("bolsa")])) if (src) new Image().src = src;
+      for (const src of new Set([...items.map(fotoDe), rutaFoto("bolsa"), LOGO_TICKET])) if (src) new Image().src = src;
     }, 1200);
     return () => window.clearTimeout(t);
   }, [fase, items]);
