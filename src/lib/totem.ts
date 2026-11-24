@@ -30,8 +30,8 @@ export const SECCIONES: { id: string; nombre: string; foto?: string; dibujo: Dib
   { id: "Bebidas frías", nombre: "Cafés fríos", foto: "iced-latte", dibujo: "vaso" },
   { id: "Pastelería", nombre: "Masitas", foto: "croissant", dibujo: "masita" },
   { id: "Café para llevar", nombre: "Café en bolsa", dibujo: "bolsa" },
-  { id: "Métodos", nombre: "Métodos", dibujo: "metodo" },
-  { id: "Otros", nombre: "Otras bebidas", dibujo: "botella" },
+  { id: "Métodos", nombre: "Café filtrado", dibujo: "metodo" },
+  { id: "Otros", nombre: "Bebidas", foto: "limonada", dibujo: "botella" },
   { id: "Tienda", nombre: "Para tu casa", dibujo: "botella" },
 ];
 
@@ -55,6 +55,14 @@ const FOTOS: Record<string, string> = {
   "matcha-latte": "matcha-latte",
   "iced-latte": "iced-latte",
   "cold-brew": "cold-brew",
+  "americano-helado": "americano-helado",
+  "mocaccino-helado": "mocaccino-helado",
+  "macchiato-de-caramelo": "macchiato-helado",
+  "matcha-helado": "matcha-helado",
+  limonada: "limonada",
+  "jugo-de-naranja": "jugo-naranja",
+  "te-helado-de-durazno": "te-helado",
+  mocochinchi: "mocochinchi",
   croissant: "croissant",
   cunape: "cunape",
   brownie: "brownie",
@@ -115,12 +123,14 @@ export const descripcionDe = (i: ItemTotem) =>
   i.categoria !== "bebida" ? i.presentacion ?? (esCafe(i) ? "Bolsa de 250 g" : i.descripcion) : i.descripcion?.trim() || DESCRIPCIONES[slug(i.nombre)] || "";
 
 export function dibujoDe(i: ItemTotem): Dibujo {
+  if (slug(i.nombre).startsWith("mate") || slug(i.nombre).startsWith("te-")) return "taza";
   return SECCIONES.find((s) => s.id === seccionDe(i))?.dibujo ?? "taza";
 }
 
 // ---------- Opciones (sin costo extra) ----------
-const CON_LECHE = new Set(["cappuccino", "latte", "flat-white", "macchiato", "mocaccino", "chocolate-caliente", "matcha-latte", "iced-latte", "frappe-de-caramelo"]);
-const SIN_AZUCAR = new Set(["affogato", "agua-mineral"]);
+const CON_LECHE = new Set(["cappuccino", "latte", "flat-white", "macchiato", "mocaccino", "chocolate-caliente", "matcha-latte", "iced-latte", "frappe-de-caramelo", "frappe-de-chocolate", "mocaccino-helado", "macchiato-de-caramelo", "matcha-helado"]);
+const SIN_AZUCAR = new Set(["affogato", "espresso-tonica"]);
+const CON_HIELO = new Set(["limonada", "jugo-de-naranja", "te-helado-de-durazno", "mocochinchi"]);
 
 /** Grupos de opciones de un producto. La primera de cada grupo es la normal. */
 export function opcionesDe(i: ItemTotem): { titulo: string; valores: string[] }[] {
@@ -133,6 +143,7 @@ export function opcionesDe(i: ItemTotem): { titulo: string; valores: string[] }[
   const grupos: { titulo: string; valores: string[] }[] = [];
   if (CON_LECHE.has(s)) grupos.push({ titulo: "Leche", valores: ["Leche entera", "Leche de avena"] });
   if (bebida && !SIN_AZUCAR.has(s)) grupos.push({ titulo: "Azúcar", valores: ["Azúcar normal", "Sin azúcar", "Extra azúcar"] });
+  if (CON_HIELO.has(s)) grupos.push({ titulo: "Hielo", valores: ["Con hielo", "Sin hielo"] });
   return grupos;
 }
 

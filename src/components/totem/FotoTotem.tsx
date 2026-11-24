@@ -23,10 +23,10 @@ export function DibujoTotem({ tipo, color = "#7a4a2c" }: { tipo: Dibujo; color?:
       )}
       {tipo === "metodo" && (
         <>
-          <path d="M28 18h64L70 56H50Z" fill="#efe4d4" />
+          <path d="M28 18h64L70 56H50Z" fill="#d8c3a6" />
           <path d="M36 22h48L68 50H52Z" fill="#7a4a2c" />
           <rect x="44" y="56" width="32" height="6" rx="3" fill="#b5683a" />
-          <path d="M46 66h28l14 34a8 8 0 0 1-7 11H39a8 8 0 0 1-7-11Z" fill="#f3eadd" />
+          <path d="M46 66h28l14 34a8 8 0 0 1-7 11H39a8 8 0 0 1-7-11Z" fill="#e6d8c2" />
           <path d="M40 86h40l7 15a5 5 0 0 1-5 6H38a5 5 0 0 1-5-6Z" fill="#8a5432" />
         </>
       )}
