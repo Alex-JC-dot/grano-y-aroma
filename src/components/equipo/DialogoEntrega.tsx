@@ -172,7 +172,7 @@ export default function DialogoEntrega({
           </div>
 
           <fieldset className="entrega__quien">
-            <legend>En qué calidad</legend>
+            <legend>¿Quién recibió el pedido?</legend>
             {QUIEN.map((q) => (
               <label key={q.v} className={`entrega__opcion${tipo === q.v ? " is-on" : ""}`}>
                 <input type="radio" name="entrega-tipo" value={q.v} checked={tipo === q.v} onChange={() => setTipo(q.v)} disabled={guardando} />

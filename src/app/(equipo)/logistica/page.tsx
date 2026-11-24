@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { TEXTO_PAGO, type PagoEstado } from "@/components/cuenta/PagoPedido";
@@ -121,6 +121,7 @@ const productosDe = (p: Pedido) =>
 export default function PaginaLogistica() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [cargando, setCargando] = useState(true);
+  const detalle = useRef<HTMLElement>(null);
   const [elegidoId, setElegidoId] = useState<number | null>(null);
   const [filtro, setFiltro] = useState<Estado | "todos">("todos");
   const [guardando, setGuardando] = useState(false);
@@ -192,6 +193,17 @@ export default function PaginaLogistica() {
     cargar();
   };
 
+  // Al elegir otro pedido, el detalle empieza desde arriba; en el celular está debajo de la lista
+  // y hay que llevar la pantalla hasta él.
+  const elegir = (id: number) => {
+    setElegidoId(id);
+    setError("");
+    setMotivo("");
+    setDevolviendo(false);
+    detalle.current?.scrollTo({ top: 0 });
+    if (window.matchMedia("(max-width: 1100px)").matches) detalle.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const devolver = async (p: Pedido) => {
     if (!motivo.trim()) return setError("Escribe qué tiene que corregir el repartidor.");
     setGuardando(true);
@@ -247,7 +259,7 @@ export default function PaginaLogistica() {
             {lista.length === 0 && <li className="caja__vacia">No hay pedidos {filtro === "todos" ? "todavía" : "en este estado"}.</li>}
             {lista.map((p) => (
               <li key={p.id}>
-                <button type="button" className={`pedido${p.id === elegido?.id ? " is-on" : ""}`} onClick={() => { setElegidoId(p.id); setError(""); setMotivo(""); setDevolviendo(false); }}>
+                <button type="button" className={`pedido${p.id === elegido?.id ? " is-on" : ""}`} onClick={() => elegir(p.id)}>
                   <span className="pedido__fila">
                     <strong>{p.codigo}</strong>
                     <span className={`estado ${CLASE[p.estado]}`}>{NOMBRE[p.estado]}</span>
@@ -269,7 +281,7 @@ export default function PaginaLogistica() {
             ))}
           </ul>
 
-          <section className="panel detalle" aria-live="polite">
+          <section ref={detalle} className="panel detalle" aria-live="polite">
             {elegido ? (
               <>
                 <div className="panel__cabeza">
