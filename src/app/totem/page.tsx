@@ -6,6 +6,7 @@ import { formatBs } from "@/lib/utils";
 import { imprimirDocumento } from "@/lib/documento";
 import { useAuth } from "@/store/authStore";
 import { TarjetaCuenta } from "@/components/cuenta/VentanaCuenta";
+import InicioTotem from "@/components/totem/InicioTotem";
 import { TicketImpresion, TicketVista, turnoTexto, type DatosTicket } from "@/components/totem/TicketTotem";
 
 /**
@@ -218,17 +219,7 @@ function Autoservicio() {
 
   // ---------- Pantallas ----------
   if (fase === "inicio") {
-    return (
-      <button type="button" className="totem totem--inicio" onClick={empezar}>
-        <span className="totem__inicio-velo" aria-hidden="true" />
-        <span className="totem__inicio-texto">
-          <span className="totem__marca">Grano y Aroma</span>
-          <span className="totem__lema">Café de especialidad tostado en Sucre</span>
-          <span className="totem__tocar">Toca para pedir</span>
-          <span className="totem__ayuda">Pide, paga con tu tarjeta y retira en la barra</span>
-        </span>
-      </button>
-    );
+    return <InicioTotem alEmpezar={empezar} />;
   }
 
   if (fase === "listo" && ticket) {
