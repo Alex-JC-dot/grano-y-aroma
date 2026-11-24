@@ -71,7 +71,7 @@ export const supabase = createClient(url ?? "http://localhost", clave ?? "falta-
   },
 });
 
-export type Rol = "cliente" | "cajero" | "tostador" | "repartidor" | "admin";
+export type Rol = "cliente" | "cajero" | "tostador" | "repartidor" | "totem" | "admin";
 
 export type Perfil = {
   id: string;
@@ -86,11 +86,13 @@ export type Perfil = {
 export const PANELES: Record<Rol, string[]> = {
   cliente: [],
   // El cajero también opera Logística (preparar y despachar): el admin solo supervisa.
-  cajero: ["/pos", "/logistica"],
+  cajero: ["/pos", "/barra", "/logistica"],
   tostador: ["/erp", "/admin/proveedores"],
   // Solo su pantalla: confirma las entregas que le asignaron (migración 012).
   repartidor: ["/repartidor"],
-  admin: ["/admin", "/admin/productos", "/admin/subastas", "/admin/usuarios", "/admin/proveedores", "/pos", "/erp", "/logistica"],
+  // La tablet del tótem (migración 014): solo la pantalla de autoservicio.
+  totem: ["/totem"],
+  admin: ["/admin", "/admin/productos", "/admin/subastas", "/admin/usuarios", "/admin/proveedores", "/pos", "/erp", "/logistica", "/barra", "/totem"],
 };
 
 /**

@@ -17,6 +17,7 @@ const ROLES: { v: Rol; label: string; detalle: string }[] = [
   { v: "cajero", label: "Cajero", detalle: "Caja de la cafetería" },
   { v: "tostador", label: "Tostador", detalle: "Bodega y tueste" },
   { v: "repartidor", label: "Repartidor", detalle: "Lleva y entrega pedidos" },
+  { v: "totem", label: "Tótem", detalle: "Tablet de autoservicio" },
   { v: "admin", label: "Administrador", detalle: "Todo" },
 ];
 
@@ -66,7 +67,7 @@ export default function PaginaUsuarios() {
         </div>
       </div>
 
-      <div className="tarjetas-dato tarjetas-dato--5">
+      <div className="tarjetas-dato tarjetas-dato--6">
         {ROLES.map((r) => (
           <div key={r.v} className="dato">
             <span className="dato__label">{r.label}</span>

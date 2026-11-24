@@ -14,11 +14,13 @@ const ENLACES = [
   { href: "/admin/proveedores", label: "Proveedores", detalle: "Compras y recepciones" },
   { href: "/pos", label: "Caja", detalle: "Venta en la cafetería" },
   { href: "/erp", label: "Bodega y tueste", detalle: "Stock y lotes" },
+  { href: "/barra", label: "Barra", detalle: "Pedidos del tótem" },
+  { href: "/totem", label: "Tótem", detalle: "Abrir el autoservicio" },
   { href: "/logistica", label: "Logística", detalle: "Pedidos y entregas" },
   { href: "/repartidor", label: "Mis entregas", detalle: "Pedidos para llevar" },
 ];
 
-const NOMBRE_ROL = { cliente: "Cliente", cajero: "Cajero", tostador: "Tostador", repartidor: "Repartidor", admin: "Administrador" } as const;
+const NOMBRE_ROL = { cliente: "Cliente", cajero: "Cajero", tostador: "Tostador", repartidor: "Repartidor", totem: "Tótem", admin: "Administrador" } as const;
 
 /** Barra lateral de los paneles internos: solo muestra los que el rol puede abrir. */
 export default function MenuEquipo() {
