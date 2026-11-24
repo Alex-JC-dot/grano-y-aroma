@@ -1,22 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
-import { qrDePago } from "@/lib/qr-emvco";
+import { enlacePago } from "@/lib/pago-qr";
 import { formatBs } from "@/lib/utils";
 
 /**
- * Pago por QR de un pedido o de un envío del Club: el código para pagar y la confirmación
- * AUTOMÁTICA del pago. Se usa al confirmar la compra (carrito), después desde Mi cuenta, mientras
- * el pago esté pendiente, y en la suscripción del Club.
+ * Pago por QR de un pedido o de un envío del Club. El cliente NO confirma nada: escanea el código
+ * con su celular, la página /pagar avisa al sistema (como el aviso automático del banco en un
+ * sistema real) y esta pantalla, que está escuchando, pasa sola a "¡Pago exitoso!".
  *
- * Antes el cliente subía un comprobante y el admin lo aprobaba a mano. Ahora nadie del equipo
- * interviene: en un sistema real el banco avisa al instante cuando entra el pago (un
- * "webhook") y el pedido queda pagado solo. Aquí eso se simula: el cliente paga, toca "Ya
- * pagué" y el "banco" lo confirma (pagar_qr de la migración 013;
- * pagar_cobro_club de la 019 para el Club).
- *
- * El QR lleva el formato EMVCo (ver lib/qr-emvco.ts) con una cuenta inventada: no cobra nada real.
+ * Se usa al confirmar la compra (carrito), en Mi cuenta mientras el pago esté pendiente y en la
+ * suscripción del Club. Es una simulación: no se mueve dinero (migración 021).
  */
 
 export type PagoEstado = "no_aplica" | "pendiente" | "por_verificar" | "aprobado" | "rechazado";
@@ -29,87 +24,136 @@ export const TEXTO_PAGO: Record<PagoEstado, string> = {
   rechazado: "Pago rechazado",
 };
 
-export function QrPago({ codigo, total, concepto = "Pedido" }: { codigo: string; total: number; concepto?: string }) {
+/** El QR con un enlace de pago. Sirve también para la Caja. */
+export function QrPago({ enlace, total }: { enlace: string; total: number }) {
   const [svg, setSvg] = useState("");
 
   useEffect(() => {
     let vivo = true;
     import("qrcode").then((qr) =>
       qr
-        .toString(qrDePago(total, `${concepto} ${codigo}`), {
-          type: "svg",
-          margin: 1,
-          errorCorrectionLevel: "M",
-          color: { dark: "#2a1f1a", light: "#ffffff" },
-        })
+        .toString(enlace, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: "#2a1f1a", light: "#ffffff" } })
         .then((s) => vivo && setSvg(s)),
     );
     return () => {
       vivo = false;
     };
-  }, [codigo, total, concepto]);
+  }, [enlace]);
 
   return (
     <figure className="pago-qr">
       <div className="pago-qr__codigo" role="img" aria-label={`Código QR para pagar ${formatBs(total)}`} dangerouslySetInnerHTML={{ __html: svg }} />
       <figcaption>
-        Escanéalo desde la app de tu banco y paga <strong>{formatBs(total)}</strong>.
-        <small>QR de demostración: no lleva a ninguna cuenta real.</small>
+        Escanéalo con la cámara de tu celular para pagar <strong>{formatBs(total)}</strong>.
+        <small>QR de demostración: no se mueve dinero real.</small>
+        <span className="pago-qr__espera" role="status">
+          <i aria-hidden="true" /> Esperando el pago…
+        </span>
       </figcaption>
     </figure>
   );
 }
 
-/**
- * "Ya pagué": el banco (simulado) confirma el pago y el pedido (o el envío del Club) queda pagado
- * al instante, sin que nadie del equipo tenga que revisar nada.
- */
-export function ConfirmarPagoQr({
-  pedidoId,
+/** El resultado, igual para QR y tarjeta. */
+export function PagoExitoso({ total, detalle }: { total: number; detalle?: string }) {
+  return (
+    <div className="pago-exito" role="status">
+      <svg className="pago-exito__check" viewBox="0 0 72 72" aria-hidden="true">
+        <circle cx="36" cy="36" r="33" />
+        <path d="M22 37.5l9.5 9.5L51 27" />
+      </svg>
+      <strong>¡Pago exitoso!</strong>
+      <span>{formatBs(total)}{detalle && ` · ${detalle}`}</span>
+    </div>
+  );
+}
+
+const VER_EXITO = 2600; // lo que se ve "¡Pago exitoso!" antes de avisar a quien nos usa
+const CADA = 3000; // respaldo por si Realtime no avisa
+
+export default function PagoQr({
+  id,
+  total,
   estado,
-  alPagar,
   destino = "pedido",
+  alPagar,
 }: {
   /** Id del pedido, o del cobro cuando destino es "club". */
-  pedidoId: number;
+  id: number;
+  total: number;
   estado: PagoEstado;
-  alPagar?: () => void;
   destino?: "pedido" | "club";
+  /** Se llama una vez, cuando ya se vio el "¡Pago exitoso!". */
+  alPagar?: () => void;
 }) {
-  const [fase, setFase] = useState<"listo" | "verificando" | "pagado">("listo");
+  const [token, setToken] = useState("");
+  const [pagado, setPagado] = useState(false);
   const [error, setError] = useState("");
+  const avisado = useRef(false);
+  const avisar = useRef(alPagar);
+  useEffect(() => {
+    avisar.current = alPagar;
+  });
 
-  if (fase === "pagado" || estado === "aprobado") {
+  const tabla = destino === "club" ? "cobros_club" : "pedidos";
+  const columna = destino === "club" ? "estado" : "pago_estado";
+  const espera = !pagado && (estado === "pendiente" || estado === "por_verificar" || estado === "rechazado");
+
+  const exito = useCallback(() => {
+    if (avisado.current) return;
+    avisado.current = true;
+    setPagado(true);
+    window.setTimeout(() => avisar.current?.(), VER_EXITO);
+  }, []);
+
+  useEffect(() => {
+    if (!espera) return;
+    let vivo = true;
+    const revisar = async () => {
+      const { data, error: e } = await supabase.from(tabla).select(`pago_token, ${columna}`).eq("id", id).maybeSingle();
+      if (!vivo) return;
+      if (e) return setError(/pago_token/i.test(e.message) ? "Falta la migración 021 en Supabase." : mensajeDeError(e));
+      const fila = data as unknown as Record<string, string> | null;
+      if (!fila) return;
+      setError("");
+      setToken(fila.pago_token);
+      if (fila[columna] === "aprobado") exito();
+    };
+    const t = window.setTimeout(revisar, 0);
+    const cada = window.setInterval(revisar, CADA);
+    const volver = () => !document.hidden && revisar(); // al volver de la pestaña del pago
+    document.addEventListener("visibilitychange", volver);
+    const canal = supabase
+      .channel(`pago-${tabla}-${id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: tabla, filter: `id=eq.${id}` }, (c) => (c.new as Record<string, unknown>)[columna] === "aprobado" && exito())
+      .subscribe();
+    return () => {
+      vivo = false;
+      window.clearTimeout(t);
+      window.clearInterval(cada);
+      document.removeEventListener("visibilitychange", volver);
+      supabase.removeChannel(canal);
+    };
+  }, [espera, id, tabla, columna, exito]);
+
+  if (pagado) return <PagoExitoso total={total} detalle={destino === "club" ? "tu envío quedó programado" : "tu pedido está confirmado"} />;
+  if (estado === "aprobado")
     return (
       <p className="pago-aviso pago-aviso--ok" role="status">
-        <strong>Pago confirmado por el banco.</strong> {destino === "club" ? "Tu envío quedó programado." : "Tu pedido ya pasó a preparación."}
+        <strong>Pago confirmado por el banco.</strong> {destino === "club" ? "Tu envío quedó programado." : "Tu pedido está confirmado."}
       </p>
     );
-  }
-  if (estado !== "pendiente" && estado !== "por_verificar" && estado !== "rechazado") return null;
-
-  const pagar = async () => {
-    setError("");
-    setFase("verificando");
-    await new Promise((r) => window.setTimeout(r, 1500)); // el banco "avisa"
-    const { error: e } = destino === "club"
-      ? await supabase.rpc("pagar_cobro_club", { p_cobro: pedidoId })
-      : await supabase.rpc("pagar_qr", { p_pedido: pedidoId });
-    if (e) {
-      setFase("listo");
-      return setError(/pagar_qr|pagar_cobro_club|schema cache/i.test(e.message) ? `Falta la migración ${destino === "club" ? "019" : "013"} en Supabase.` : mensajeDeError(e));
-    }
-    setFase("pagado");
-    alPagar?.();
-  };
+  if (!espera) return null;
+  if (error) return <p className="carrito__error" role="alert">{error}</p>;
+  if (!token) return <p aria-busy="true">Generando tu código…</p>;
 
   return (
-    <div className="pago-subir">
-      <button type="button" className="btn btn--primary" disabled={fase === "verificando"} onClick={pagar}>
-        {fase === "verificando" ? "Verificando con el banco…" : "Ya pagué"}
-      </button>
-      <small className="pago-subir__ayuda">Cuando pagues desde tu banco, toca “Ya pagué”: el pago se confirma automáticamente (simulado).</small>
-      {error && <p className="carrito__error" role="alert">{error}</p>}
-    </div>
+    <>
+      <QrPago enlace={enlacePago(token)} total={total} />
+      {/* Quien compra desde el celular no puede escanear su propia pantalla. */}
+      <a className="btn btn--primary pago-qr__celular" href={enlacePago(token)} target="_blank" rel="noopener">
+        Pagar {formatBs(total)} desde este celular
+      </a>
+    </>
   );
 }

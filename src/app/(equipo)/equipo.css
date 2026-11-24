@@ -135,7 +135,7 @@
 .dato--boton.is-on { box-shadow: inset 0 0 0 2px var(--ink); }
 
 /* Tablas */
-.tabla-marco { overflow-x: auto; border-radius: var(--r-card); background: var(--surface); }
+.tabla-marco { position: relative; overflow-x: auto; border-radius: var(--r-card); background: var(--surface); }
 .tabla-marco--plano { background: transparent; border-radius: 0; }
 .tabla { width: 100%; border-collapse: collapse; font-size: 15px; }
 .tabla th { text-align: left; padding: 14px 20px; font: 500 13px/1.2 var(--f-text); color: var(--muted); border-bottom: 1px solid var(--line); }

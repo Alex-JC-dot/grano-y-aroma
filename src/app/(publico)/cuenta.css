@@ -334,7 +334,7 @@
    Pago por QR y comprobante (carrito y Mi cuenta)
    ===================================================================== */
 .inicio .pago-qr { display: flex; align-items: center; gap: 16px; margin: 16px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
-.inicio .pago-qr__codigo { flex: none; width: 132px; height: 132px; padding: 6px; border-radius: 8px; background: #fff; }
+.inicio .pago-qr__codigo { flex: none; width: 172px; height: 172px; padding: 6px; border-radius: 8px; background: #fff; }
 .inicio .pago-qr__codigo svg { display: block; width: 100%; height: 100%; }
 .inicio .pago-qr figcaption { font-size: 15px; line-height: 1.5; color: var(--ink); }
 .inicio .pago-qr figcaption small { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); }
@@ -344,6 +344,40 @@
 .inicio .pago-aviso--revision { background: var(--info-bg); color: var(--info); }
 .inicio .pago-aviso--rechazo { background: var(--peligro-bg); color: var(--peligro); }
 .inicio .pago-aviso--ok { background: var(--exito-bg); color: var(--exito); }
+.inicio .pago-qr__espera { display: flex; align-items: center; gap: 9px; margin-top: 12px; font-size: 14px; font-weight: 500; color: var(--accent); }
+.inicio .pago-qr__espera i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pago-late 1.3s ease-in-out infinite; }
+@keyframes pago-late { 50% { transform: scale(0.45); opacity: 0.35; } }
+/* En la computadora se escanea; en el celular no se puede escanear la propia pantalla. */
+.inicio .pago-qr__celular { display: none; }
+@media (hover: none) and (pointer: coarse) and (max-width: 900px) { .inicio .pago-qr__celular { display: flex; width: 100%; justify-content: center; margin-bottom: 12px; } }
+
+.inicio .pago-exito { align-self: stretch; display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 18px 0; padding: 26px 18px; border-radius: 14px; background: var(--exito-bg); color: var(--exito); text-align: center; animation: pago-entra 0.4s var(--ease) both; }
+.inicio .pago-exito strong { font: 400 30px / 1.15 var(--f-display); }
+.inicio .pago-exito > span { font-size: 16px; }
+.inicio .pago-exito__check { width: 84px; height: 84px; margin-bottom: 6px; fill: none; stroke: currentColor; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.inicio .pago-exito__check circle { stroke-dasharray: 208; stroke-dashoffset: 208; transform: rotate(-90deg); transform-origin: center; animation: pago-traza 0.55s ease-out 0.1s forwards; }
+.inicio .pago-exito__check path { stroke-dasharray: 46; stroke-dashoffset: 46; animation: pago-traza 0.35s ease-out 0.55s forwards; }
+@keyframes pago-traza { to { stroke-dashoffset: 0; } }
+@keyframes pago-entra { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+
+.inicio .pago-banco { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: var(--bg); text-align: center; }
+.inicio .pago-banco strong { font: 400 24px / 1.2 var(--f-display); }
+.inicio .pago-banco span { font-size: 15px; color: var(--muted); }
+.inicio .pago-banco i, .inicio .pagar__gira { width: 54px; height: 54px; margin-bottom: 10px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: pago-gira 0.9s linear infinite; }
+@keyframes pago-gira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .inicio .pago-qr__espera i, .inicio .pago-exito, .inicio .pago-banco i, .inicio .pagar__gira { animation: none; }
+  .inicio .pago-exito__check circle, .inicio .pago-exito__check path { animation: none; stroke-dashoffset: 0; }
+}
+
+/* Lo que ve el celular que escanea (/pagar). */
+.inicio.pagar { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 32px 22px; text-align: center; background: var(--bg); color: var(--ink); }
+.pagar__marca { font: 400 24px / 1 var(--f-display); margin: 0 0 18px; }
+.pagar__monto { margin: 0; font: 400 46px / 1.1 var(--f-display); }
+.pagar__concepto, .pagar__pie { margin: 0; color: var(--muted); }
+.pagar__pie { max-width: 26em; font-size: 14px; }
+.inicio.pagar .pago-exito { width: 100%; max-width: 380px; padding-block: 36px; }
+.inicio.pagar h1 { margin: 0; font: 400 26px / 1.2 var(--f-display); }
 @media (max-width: 420px) { .inicio .pago-qr { flex-direction: column; align-items: flex-start; } }
 
 /* ---------- Mis pedidos ---------- */

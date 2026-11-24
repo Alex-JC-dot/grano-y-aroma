@@ -7,7 +7,7 @@ import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
 import { categoriaDe, esCafe } from "@/lib/catalogo";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
-import { ConfirmarPagoQr, QrPago, type PagoEstado } from "@/components/cuenta/PagoPedido";
+import PagoQr, { type PagoEstado } from "@/components/cuenta/PagoPedido";
 import { useAuth } from "@/store/authStore";
 
 /**
@@ -222,7 +222,7 @@ export default function Club() {
       setMensaje("Guardamos los cambios: se aplican desde tu próximo envío.");
     } else {
       await guardar({ frecuencia, gramos, cafe, molienda, estado: "activa", inicio: aISO(sumarDias(hoy(), 3)), saltos: 0, pausaHasta: null });
-      setMensaje("¡Bienvenido al Club! Paga el primer envío con el QR y toca “Ya pagué”: queda programado al instante.");
+      setMensaje("¡Bienvenido al Club! Escanea el QR con tu celular para pagar el primer envío: queda programado al instante.");
     }
 
     // Se espera a que la base responda y a que React pinte: lo que hay que mostrar es el QR,
@@ -297,19 +297,19 @@ export default function Club() {
               {errorSub && <p className="carrito__error" role="alert">{errorSub}</p>}
 
               {/*
-                Cobro del envío: QR y "Ya pagué". El banco (simulado) lo confirma al instante, el
-                mismo recorrido que un pedido de la tienda (RF-07, migración 019).
+                Cobro del envío: se escanea el QR y el pago se confirma solo, el mismo
+                recorrido que un pedido de la tienda (RF-07, migración 019).
               */}
               {cobro && (
                 <div className="club__cobro" id="cobro-del-club">
-                  <h3>Falta pagar este envío</h3>
+                  <h3>Paga este envío</h3>
                   <p className="club__fecha-nota">
                     Envío del {fechaLarga(deISO(cobro.periodo))} · <strong>{formatBs(cobro.monto)}</strong>
                   </p>
-                  <QrPago codigo={`Club #${cobro.id}`} total={cobro.monto} concepto="Suscripción" />
-                  <ConfirmarPagoQr
+                  <PagoQr
                     key={cobro.id}
-                    pedidoId={cobro.id}
+                    id={cobro.id}
+                    total={cobro.monto}
                     estado={cobro.estado}
                     destino="club"
                     alPagar={async () => {

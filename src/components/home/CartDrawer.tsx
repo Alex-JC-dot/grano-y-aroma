@@ -9,7 +9,7 @@ import { mensajeDeError, supabase } from "@/lib/supabase";
 import BolsaVisual from "@/components/tienda/BolsaVisual";
 import HojaDocumento from "@/components/ui/HojaDocumento";
 import { imprimirDocumento, numeroDocumento } from "@/lib/documento";
-import { ConfirmarPagoQr, QrPago } from "@/components/cuenta/PagoPedido";
+import PagoQr, { PagoExitoso } from "@/components/cuenta/PagoPedido";
 import FormTarjeta, { TARJETA_VACIA, consultarBanco, validarTarjeta, type DatosTarjeta } from "@/components/ui/TarjetaSimulada";
 import UsarPuntos from "./UsarPuntos";
 import { bsPorPuntos, enPuntos, puntosAplicables } from "@/lib/puntos";
@@ -34,8 +34,12 @@ const VACIO: Datos = { nombre: "", telefono: "", direccion: "", referencia: "" }
 /** Lo que queda registrado al confirmar: el carrito se vacía enseguida. */
 type Comprobante = {
   id: number;
-  /** Pago por QR: hay que pagar con el código; el banco (simulado) lo confirma solo. */
+  /** Pago por QR: se confirma solo cuando el cliente escanea el código. */
   porQr: boolean;
+  /** Falso solo mientras se espera que escaneen el QR. */
+  pagado: boolean;
+  /** Últimos dígitos, si pagó con tarjeta. */
+  tarjeta: string;
   numero: string;
   fecha: string;
   lineas: { nombre: string; detalle: string; cantidad: number; precio: number }[];
@@ -158,6 +162,8 @@ export default function CartDrawer() {
       setPedido({
         id: data.id,
         porQr: pago === "qr",
+        pagado: pago !== "qr",
+        tarjeta: pago === "tarjeta" ? tarjeta.numero.slice(-4) : "",
         numero: data.codigo ?? numeroDocumento("GA"),
         fecha: new Date().toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" }),
         lineas,
@@ -211,7 +217,7 @@ export default function CartDrawer() {
       >
         <header className="carrito__cabeza">
           <div>
-            <h2 id="carrito-titulo">{pedido ? "Pedido confirmado" : PASOS[paso]}</h2>
+            <h2 id="carrito-titulo">{pedido ? (pedido.pagado ? "Pedido confirmado" : "Paga tu pedido") : PASOS[paso]}</h2>
             {!pedido && (
               <ol className="carrito__pasos" aria-label={`Paso ${paso + 1} de 3`}>
                 {PASOS.map((p, i) => (
@@ -227,19 +233,36 @@ export default function CartDrawer() {
           </button>
         </header>
 
+        {/* Mientras el banco (simulado) responde, no se toca nada más. */}
+        {consultando && (
+          <div className="pago-banco" role="status">
+            <i aria-hidden="true" />
+            <strong>Conectando con tu banco…</strong>
+            <span>No cierres esta ventana</span>
+          </div>
+        )}
+
         <div className="carrito__cuerpo">
           {pedido ? (
             <div className="carrito__listo">
               <p className="carrito__numero">{pedido.numero}</p>
               {pedido.porQr ? (
                 <>
-                  <p>Tu pedido está reservado. Paga con este QR desde la app de tu banco y toca “Ya pagué”.</p>
-                  <QrPago codigo={pedido.numero} total={pedido.total} />
-                  <ConfirmarPagoQr pedidoId={pedido.id} estado="pendiente" />
-                  <p className="carrito__nota">Si ahora no puedes, págalo después desde Mi cuenta.</p>
+                  {!pedido.pagado && <p>Tu pedido está reservado. Escanea el QR con tu celular: el pago se confirma solo.</p>}
+                  <PagoQr
+                    key={pedido.id}
+                    id={pedido.id}
+                    total={pedido.total}
+                    estado={pedido.pagado ? "aprobado" : "pendiente"}
+                    alPagar={() => setPedido((x) => (x && x.id === pedido.id ? { ...x, pagado: true } : x))}
+                  />
+                  {!pedido.pagado && <p className="carrito__nota">Si ahora no puedes, págalo después desde Mi cuenta.</p>}
                 </>
               ) : (
-                <p>Recibimos tu pedido y tu pago. Te avisaremos por WhatsApp cuando salga a entrega.</p>
+                <>
+                  <PagoExitoso total={pedido.total} detalle={`tarjeta terminada en ${pedido.tarjeta}`} />
+                  <p>Recibimos tu pedido. Te avisaremos por WhatsApp cuando salga a entrega.</p>
+                </>
               )}
               <dl className="carrito__resumen">
                 <dt>Entrega estimada</dt><dd>Hoy o mañana en Sucre</dd>
@@ -250,7 +273,7 @@ export default function CartDrawer() {
                     <dt>Descuento por {enPuntos(pedido.puntosUsados)}</dt><dd>−{formatBs(pedido.descuento)}</dd>
                   </>
                 )}
-                <dt>{pedido.porQr ? "Total a pagar" : "Total pagado"}</dt><dd>{formatBs(pedido.total)}</dd>
+                <dt>{pedido.pagado ? "Total pagado" : "Total a pagar"}</dt><dd>{formatBs(pedido.total)}</dd>
               </dl>
               <p className="carrito__nota">
                 {pedido.descuento > 0 && `Canjeaste ${enPuntos(pedido.puntosUsados)} por ${formatBs(pedido.descuento)} de descuento. `}
@@ -316,7 +339,7 @@ export default function CartDrawer() {
               <fieldset className="carrito__pagos">
                 <legend>Método de pago</legend>
                 {[
-                  { v: "qr" as const, t: "QR Bolivia", d: "Al confirmar te mostramos el QR; pagas desde la app de tu banco y el pago se confirma solo." },
+                  { v: "qr" as const, t: "QR Bolivia", d: "Al confirmar te mostramos el QR; lo escaneas con tu celular y el pago se confirma solo." },
                   { v: "tarjeta" as const, t: "Tarjeta de débito o crédito", d: "Visa o Mastercard. Escribe los datos aquí abajo." },
                 ].map((m) => (
                   <label key={m.v} className={`carrito__pago${pago === m.v ? " is-on" : ""}`}>
