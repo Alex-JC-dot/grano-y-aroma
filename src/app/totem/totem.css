@@ -458,6 +458,7 @@
 .ticket p { margin: 0; text-align: center; }
 .ticket hr { border: 0; border-top: 1px dashed #000; margin: 10px 0; }
 .ticket__logo { display: block; width: 46mm; height: auto; margin: 0 auto 8px; }
+.ticket--vista .ticket__logo { width: 36mm; }
 .ticket__sub { font-size: 12px; }
 .ticket__turno-et { font-size: 12px; font-weight: 700; }
 .ticket__turno { font-size: 52px; font-weight: 700; line-height: 1.05; }
@@ -484,7 +485,7 @@
 /* Tótem de pie (1080 de ancho): el lector y el ticket, dibujados en píxeles, se agrandan. */
 @media (orientation: portrait) and (min-width: 900px) {
   .lector { zoom: 1.7; }
-  .ticket--vista { zoom: 1.5; }
+  .ticket--vista { zoom: 1.25; }
 }
 @media (orientation: portrait), (max-width: 900px) {
   .totem--listo { grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: center; gap: calc(var(--u) * 5); }
