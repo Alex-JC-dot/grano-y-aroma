@@ -197,6 +197,10 @@
 .foto-totem--cuadro { width: auto; height: auto; border-radius: calc(var(--u) * 2.4); }
 .foto-totem--dibujo { width: 82%; height: 82%; }
 
+/* ---------- El botón se convierte en el menú ---------- */
+.tapertura.is-abriendo { position: fixed; inset: 0; z-index: 40; background: #f6ebdc; will-change: clip-path; }
+.tapertura__texto { position: fixed; display: grid; place-items: center; color: #2a1a12; font-family: var(--f-text); font-weight: 600; line-height: 1; white-space: nowrap; pointer-events: none; }
+
 /* ---------- Menú ---------- */
 .tmenu { display: grid; grid-template-columns: minmax(0, 1fr) calc(var(--u) * 25); height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); }
 .tmenu__contenido { overflow-y: auto; overscroll-behavior: contain; padding: calc(var(--u) * 4) calc(var(--u) * 4) calc(var(--u) * 8); scrollbar-width: none; }
@@ -277,6 +281,23 @@
 .tprod__en { position: absolute; top: calc(var(--u) * 1.6); right: calc(var(--u) * 2); min-width: calc(var(--u) * 5); height: calc(var(--u) * 5); display: grid; place-items: center; padding: 0 0.4em; border-radius: 999px; background: var(--t-choco); color: #fff; font: 600 max(14px, calc(var(--u) * 2.5)) / 1 var(--f-text); pointer-events: none; }
 .tprod.is-agotado { opacity: 0.5; }
 @keyframes tsalta { from { transform: scale(0.4); } to { transform: scale(1); } }
+
+/* Celular o tablet angosta: el + más chico y el texto a su medida, para que no tape el precio. */
+@media (max-width: 640px) {
+  .tprod__abrir { padding: 0 10px 10px; }
+  .tprod__nombre { font-size: 16px; }
+  .tprod__precio { min-height: 46px; padding-top: 4px; font-size: 15px; white-space: nowrap; }
+  .tprod__mas { right: 8px; bottom: 10px; width: 42px; height: 42px; border-radius: 12px; font-size: 25px; }
+  .tcat { font-size: 13px; }
+  .tfranja__qty button { width: 34px; height: 34px; border-radius: 10px; }
+  .tfranja__ver { font-size: 15px; }
+}
+
+@media (max-width: 350px) {
+  .tprod__abrir { padding: 0 8px 8px; }
+  .tprod__precio { font-size: 13px; }
+  .tprod__mas { right: 6px; bottom: 8px; width: 36px; height: 36px; font-size: 22px; }
+}
 
 /* ---------- Franja "Mi pedido" ---------- */
 .tfranja { display: flex; flex-direction: column; min-height: 0; padding: calc(var(--u) * 5) 0 calc(var(--u) * 2.4); background: var(--surface); box-shadow: calc(var(--u) * -1) 0 calc(var(--u) * 4) rgba(59, 36, 24, 0.08); }

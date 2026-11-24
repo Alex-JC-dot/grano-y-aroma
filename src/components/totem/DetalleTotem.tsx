@@ -1,8 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
-import { formatBs } from "@/lib/utils";
-import { descripcionDe, opcionesDe, porDefecto, SECCIONES, seccionDe, sinMovimiento, textoOpciones, type ItemTotem } from "@/lib/totem";
+import { descripcionDe, opcionesDe, porDefecto, precioCorto, SECCIONES, seccionDe, sinMovimiento, textoOpciones, type ItemTotem } from "@/lib/totem";
 import FotoTotem from "./FotoTotem";
 
 /**
@@ -112,7 +111,7 @@ export default function DetalleTotem({
           <button type="button" aria-label="Uno más" disabled={qty >= disponibles} onClick={() => setQty((q) => q + 1)}>+</button>
         </span>
         <button type="button" className="tprincipal" disabled={disponibles < 1} onClick={agregar}>
-          {disponibles < 1 ? "No queda más" : <>Agregar <strong>{formatBs(item.precio * qty)}</strong></>}
+          {disponibles < 1 ? "No queda más" : <>Agregar <strong>{precioCorto(item.precio * qty)}</strong></>}
         </button>
       </div>
     </div>
