@@ -2,15 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatBs } from "@/lib/utils";
-import { QrPago } from "@/components/cuenta/PagoPedido";
+import { PagoExitoso, QrPago, Verificando, VERIFICANDO } from "@/components/cuenta/PagoPedido";
+import { enlaceCaja, esperarAvisoCaja } from "@/lib/pago-qr";
 import FormTarjeta, { TARJETA_VACIA, consultarBanco, validarTarjeta, type DatosTarjeta } from "@/components/ui/TarjetaSimulada";
 
 /**
  * Cobro por QR o con tarjeta en la Caja, SIMULADO (como en la tienda en línea): no hay banco ni
  * pasarela de verdad, pero el flujo es el mismo que vería el cajero en un local real.
  *
- *  · QR: se muestra el código con el monto; el cliente paga desde la app de su banco y el
- *    cajero confirma con "Confirmar pago recibido". Recién ahí se registra la venta.
+ *  · QR: el cliente escanea el código con su celular; el aviso llega solo a la Caja (Realtime) y
+ *    recién ahí se registra la venta. El cajero no confirma nada.
  *  · Tarjeta: el formulario compartido con la tienda (TarjetaSimulada) valida los datos y
  *    "consulta al banco"; con la tarjeta de prueba terminada en 0002 el banco la rechaza.
  */
@@ -19,7 +20,7 @@ type Fase = "datos" | "procesando" | "aprobado" | "rechazado";
 
 export default function CobroSimulado({
   metodo,
-  total,
+  total: totalActual,
   alConfirmar,
   alCerrar,
 }: {
@@ -31,7 +32,10 @@ export default function CobroSimulado({
 }) {
   const dialogo = useRef<HTMLDialogElement>(null);
   const [fase, setFase] = useState<Fase>("datos");
-  const [referencia] = useState(() => `CAJA-${new Date().toTimeString().slice(0, 8).replace(/:/g, "")}`);
+  // Al registrar la venta la orden se vacía: el monto se guarda para mostrarlo en el resultado.
+  const [total] = useState(totalActual);
+  const [codigo] = useState(() => crypto.randomUUID());
+  const [enlace, setEnlace] = useState("");
   const [tarjeta, setTarjeta] = useState<DatosTarjeta>(TARJETA_VACIA);
   const [error, setError] = useState("");
 
@@ -47,15 +51,30 @@ export default function CobroSimulado({
     const ok = await alConfirmar();
     if (!ok) return dialogo.current?.close();
     setFase("aprobado");
-    await new Promise((r) => window.setTimeout(r, 1100));
+    await new Promise((r) => window.setTimeout(r, 2000));
     dialogo.current?.close();
   };
 
-  const pagarQr = async () => {
-    setFase("procesando");
-    await new Promise((r) => window.setTimeout(r, 900));
-    await aprobar();
-  };
+  // QR: se espera el aviso del celular. Solo cuenta el primero.
+  const alAviso = useRef<() => void>(() => {});
+  useEffect(() => {
+    alAviso.current = async () => {
+      if (fase !== "datos") return;
+      alAviso.current = () => {};
+      setFase("procesando");
+      await new Promise((r) => window.setTimeout(r, VERIFICANDO));
+      aprobar();
+    };
+  });
+  useEffect(() => {
+    if (metodo !== "qr") return;
+    const t = window.setTimeout(() => setEnlace(enlaceCaja(codigo, total)), 0);
+    const dejar = esperarAvisoCaja(codigo, () => alAviso.current());
+    return () => {
+      window.clearTimeout(t);
+      dejar();
+    };
+  }, [metodo, codigo, total]);
 
   const pagarTarjeta = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,19 +105,18 @@ export default function CobroSimulado({
       </div>
 
       {fase === "aprobado" ? (
-        <div className="cobro__resultado cobro__resultado--ok" role="status">
-          <span className="cobro__check" aria-hidden="true">✓</span>
-          <strong>Pago aprobado</strong>
-          <span>{formatBs(total)} · venta registrada</span>
-        </div>
+        <PagoExitoso total={total} detalle="venta registrada" />
       ) : metodo === "qr" ? (
         <div className="cobro__cuerpo">
-          <QrPago codigo={referencia} total={total} />
-          <p className="caja__sub">Muestra este código al cliente. Cuando su banco confirme el pago, regístralo.</p>
+          {ocupado ? (
+            <Verificando />
+          ) : (
+            <>
+              {enlace && <QrPago enlace={enlace} total={total} />}
+              <p className="caja__sub">Muestra este código al cliente: cuando lo escanee, la venta se registra sola.</p>
+            </>
+          )}
           <div className="entrega__acciones">
-            <button type="button" className="btn btn--primary" onClick={pagarQr} disabled={ocupado}>
-              {ocupado ? "Registrando…" : "Confirmar pago recibido"}
-            </button>
             <button type="button" className="btn btn--secondary" onClick={cerrar} disabled={ocupado}>Cancelar</button>
           </div>
         </div>

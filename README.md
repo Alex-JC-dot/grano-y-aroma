@@ -228,6 +228,7 @@ Las migraciones están en [`supabase/migrations`](supabase/migrations) y se ejec
 | `016`–`018` | Menú del tótem: productos, interruptor "En el tótem" y más bebidas |
 | `019` | El cobro del Club se confirma solo, sin el admin |
 | `020` | El código del pedido nunca se repite |
+| `021` | El pago se confirma solo al escanear el QR |
 
 Todas se pueden ejecutar más de una vez sin duplicar ni romper nada. El orden importa: de la `009` en adelante, cada una agrega reglas a funciones que define la anterior.
 
@@ -283,7 +284,7 @@ Dónde se demuestra cada módulo del documento. Lo que no está hecho también f
 | Ecommerce: catálogo, carrito, pago y trazabilidad del lote | ✅ | `/tienda`, `/cuenta` |
 | Comprobante de compra | ✅ | Se descarga en PDF al confirmar el pedido |
 | Cuenta, historial y seguimiento | ✅ | `/cuenta` |
-| Club de suscripción | ✅ | `/club` · cobro por envío con QR y confirmación automática |
+| Club de suscripción | ✅ | `/club` · cobro por envío con QR: se confirma al escanearlo |
 | Subastas de micro-lotes en vivo | ✅ | `/subastas` · pujas en tiempo real |
 | Punto de venta y cierre de caja | ✅ | `/pos` |
 | Bodega, inventario y mermas | ✅ | `/erp` |
