@@ -363,10 +363,13 @@
 .inicio .pago-banco { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: var(--bg); text-align: center; }
 .inicio .pago-banco strong { font: 400 24px / 1.2 var(--f-display); }
 .inicio .pago-banco span { font-size: 15px; color: var(--muted); }
-.inicio .pago-banco i, .inicio .pagar__gira { width: 54px; height: 54px; margin-bottom: 10px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: pago-gira 0.9s linear infinite; }
+.inicio .pago-verifica { align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 214px; margin: 16px 0; padding: 26px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); text-align: center; animation: pago-entra 0.3s var(--ease) both; }
+.inicio .pago-verifica strong { font: 400 26px / 1.15 var(--f-display); }
+.inicio .pago-verifica span { font-size: 15px; color: var(--muted); }
+.inicio .pago-verifica i, .inicio .pago-banco i, .inicio .pagar__gira { width: 54px; height: 54px; margin-bottom: 10px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: pago-gira 0.9s linear infinite; }
 @keyframes pago-gira { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .inicio .pago-qr__espera i, .inicio .pago-exito, .inicio .pago-banco i, .inicio .pagar__gira { animation: none; }
+  .inicio .pago-qr__espera i, .inicio .pago-exito, .inicio .pago-verifica { animation: none; }
   .inicio .pago-exito__check circle, .inicio .pago-exito__check path { animation: none; stroke-dashoffset: 0; }
 }
 

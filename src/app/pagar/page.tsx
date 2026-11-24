@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { avisarCaja } from "@/lib/pago-qr";
-import { PagoExitoso } from "@/components/cuenta/PagoPedido";
+import { PagoExitoso, VERIFICANDO } from "@/components/cuenta/PagoPedido";
 import { formatBs } from "@/lib/utils";
 
 /**
  * Lo que abre el celular al escanear el QR (migración 021). No hay nada que tocar: la página avisa
- * al sistema que el pago se hizo y la pantalla de la compra pasa sola a "¡Pago exitoso!".
+ * al sistema que el pago se hizo y las dos pantallas, esta y la de la compra, muestran a la vez
+ * "Verificando…" y después "¡Pago exitoso!".
  *
  * En un sistema real este aviso lo manda el banco; aquí lo manda el celular, como simulación.
  */
@@ -26,6 +27,7 @@ export default function PaginaPagar() {
   const corrido = useRef(-1);
 
   useEffect(() => {
+    const rueda = () => new Promise((r) => window.setTimeout(r, VERIFICANDO));
     if (corrido.current === intento) return; // en desarrollo React monta dos veces: se paga una
     corrido.current = intento;
     const q = new URLSearchParams(window.location.search);
@@ -40,14 +42,18 @@ export default function PaginaPagar() {
           const red = /fetch|network/i.test(error.message);
           return setEstado({ fase: "error", mensaje: red ? "No hay internet en este celular. Conéctate e intenta otra vez." : /pagar_con_qr/i.test(error.message) ? "Falta la migración 021 en Supabase." : error.message });
         }
+        if (!data.repetido) await rueda();
         return setEstado({ fase: "listo", monto: Number(data.total), concepto: data.concepto, repetido: !!data.repetido });
       }
       if (UUID.test(caja)) {
-        if (await avisarCaja(caja)) return setEstado({ fase: "listo", monto, concepto: "Compra en la cafetería", repetido: false });
+        if (await avisarCaja(caja)) {
+          await rueda();
+          return setEstado({ fase: "listo", monto, concepto: "Compra en la cafetería", repetido: false });
+        }
         return setEstado({ fase: "error", mensaje: "No pudimos avisar a la caja. Revisa tu internet e intenta otra vez." });
       }
       setEstado({ fase: "error", mensaje: "Este código de pago no es válido." });
-    }, 900);
+    }, 300);
   }, [intento]);
 
   return (
@@ -56,7 +62,7 @@ export default function PaginaPagar() {
       {estado.fase === "conectando" && (
         <>
           <i className="pagar__gira" aria-hidden="true" />
-          <h1 role="status">Procesando tu pago…</h1>
+          <h1 role="status">Verificando…</h1>
         </>
       )}
       {estado.fase === "listo" && (

@@ -8,7 +8,8 @@ import { formatBs } from "@/lib/utils";
 /**
  * Pago por QR de un pedido o de un envío del Club. El cliente NO confirma nada: escanea el código
  * con su celular, la página /pagar avisa al sistema (como el aviso automático del banco en un
- * sistema real) y esta pantalla, que está escuchando, pasa sola a "¡Pago exitoso!".
+ * sistema real) y en esta pantalla, que está escuchando, el QR desaparece: "Verificando…" y luego
+ * "¡Pago exitoso!".
  *
  * Se usa al confirmar la compra (carrito), en Mi cuenta mientras el pago esté pendiente y en la
  * suscripción del Club. Es una simulación: no se mueve dinero (migración 021).
@@ -54,6 +55,17 @@ export function QrPago({ enlace, total }: { enlace: string; total: number }) {
   );
 }
 
+/** La ruedita mientras el banco (simulado) responde. */
+export function Verificando() {
+  return (
+    <div className="pago-verifica" role="status">
+      <i aria-hidden="true" />
+      <strong>Verificando…</strong>
+      <span>Estamos confirmando tu pago</span>
+    </div>
+  );
+}
+
 /** El resultado, igual para QR y tarjeta. */
 export function PagoExitoso({ total, detalle }: { total: number; detalle?: string }) {
   return (
@@ -68,6 +80,7 @@ export function PagoExitoso({ total, detalle }: { total: number; detalle?: strin
   );
 }
 
+export const VERIFICANDO = 3000; // lo que gira la ruedita después de escanear
 const VER_EXITO = 2600; // lo que se ve "¡Pago exitoso!" antes de avisar a quien nos usa
 const CADA = 3000; // respaldo por si Realtime no avisa
 
@@ -87,7 +100,7 @@ export default function PagoQr({
   alPagar?: () => void;
 }) {
   const [token, setToken] = useState("");
-  const [pagado, setPagado] = useState(false);
+  const [fase, setFase] = useState<"qr" | "verificando" | "pagado">("qr");
   const [error, setError] = useState("");
   const avisado = useRef(false);
   const avisar = useRef(alPagar);
@@ -97,13 +110,16 @@ export default function PagoQr({
 
   const tabla = destino === "club" ? "cobros_club" : "pedidos";
   const columna = destino === "club" ? "estado" : "pago_estado";
-  const espera = !pagado && (estado === "pendiente" || estado === "por_verificar" || estado === "rechazado");
+  const espera = fase === "qr" && (estado === "pendiente" || estado === "por_verificar" || estado === "rechazado");
 
   const exito = useCallback(() => {
     if (avisado.current) return;
     avisado.current = true;
-    setPagado(true);
-    window.setTimeout(() => avisar.current?.(), VER_EXITO);
+    setFase("verificando");
+    window.setTimeout(() => {
+      setFase("pagado");
+      window.setTimeout(() => avisar.current?.(), VER_EXITO);
+    }, VERIFICANDO);
   }, []);
 
   useEffect(() => {
@@ -136,7 +152,8 @@ export default function PagoQr({
     };
   }, [espera, id, tabla, columna, exito]);
 
-  if (pagado) return <PagoExitoso total={total} detalle={destino === "club" ? "tu envío quedó programado" : "tu pedido está confirmado"} />;
+  if (fase === "verificando") return <Verificando />;
+  if (fase === "pagado") return <PagoExitoso total={total} detalle={destino === "club" ? "tu envío quedó programado" : "tu pedido está confirmado"} />;
   if (estado === "aprobado")
     return (
       <p className="pago-aviso pago-aviso--ok" role="status">

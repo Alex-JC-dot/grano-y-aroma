@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatBs } from "@/lib/utils";
-import { PagoExitoso, QrPago } from "@/components/cuenta/PagoPedido";
+import { PagoExitoso, QrPago, Verificando, VERIFICANDO } from "@/components/cuenta/PagoPedido";
 import { enlaceCaja, esperarAvisoCaja } from "@/lib/pago-qr";
 import FormTarjeta, { TARJETA_VACIA, consultarBanco, validarTarjeta, type DatosTarjeta } from "@/components/ui/TarjetaSimulada";
 
@@ -56,11 +56,13 @@ export default function CobroSimulado({
   };
 
   // QR: se espera el aviso del celular. Solo cuenta el primero.
-  const alAviso = useRef(() => {});
+  const alAviso = useRef<() => void>(() => {});
   useEffect(() => {
-    alAviso.current = () => {
+    alAviso.current = async () => {
       if (fase !== "datos") return;
+      alAviso.current = () => {};
       setFase("procesando");
+      await new Promise((r) => window.setTimeout(r, VERIFICANDO));
       aprobar();
     };
   });
@@ -106,8 +108,14 @@ export default function CobroSimulado({
         <PagoExitoso total={total} detalle="venta registrada" />
       ) : metodo === "qr" ? (
         <div className="cobro__cuerpo">
-          {enlace && <QrPago enlace={enlace} total={total} />}
-          <p className="caja__sub">Muestra este código al cliente: cuando lo escanee, la venta se registra sola.</p>
+          {ocupado ? (
+            <Verificando />
+          ) : (
+            <>
+              {enlace && <QrPago enlace={enlace} total={total} />}
+              <p className="caja__sub">Muestra este código al cliente: cuando lo escanee, la venta se registra sola.</p>
+            </>
+          )}
           <div className="entrega__acciones">
             <button type="button" className="btn btn--secondary" onClick={cerrar} disabled={ocupado}>Cancelar</button>
           </div>
