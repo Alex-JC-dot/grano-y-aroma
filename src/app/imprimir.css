@@ -74,11 +74,11 @@
   }
 
   /*
-   * Ticket del tótem (EXPOSOFT): papel de impresora térmica de 80 mm, de largo libre. Es una
-   * página con nombre: solo la usa el elemento que la pide (.ticket-80), el resto sigue en A4.
+   * Ticket del tótem (EXPOSOFT): papel de impresora térmica de 80 mm. El largo exacto lo pone
+   * TicketTotem al medir el ticket; este es el de reserva. Es una página con nombre: solo la usa el elemento que la pide (.ticket-80), el resto sigue en A4.
    */
   @page ticket {
-    size: 80mm auto;
+    size: 80mm 200mm;
     margin: 3mm 4mm;
   }
   .ticket-80 {
