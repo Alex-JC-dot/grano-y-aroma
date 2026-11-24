@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, panelesDe, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { imprimirDocumento } from "@/lib/documento";
-import { fotoDe, type ItemTotem, type LineaTotem } from "@/lib/totem";
+import { fotoDe, rutaFoto, type ItemTotem, type LineaTotem } from "@/lib/totem";
 import { useAuth } from "@/store/authStore";
 import { TarjetaCuenta } from "@/components/cuenta/VentanaCuenta";
 import InicioTotem from "@/components/totem/InicioTotem";
@@ -171,7 +171,7 @@ function Autoservicio() {
   useEffect(() => {
     if (fase !== "inicio" || !items.length) return;
     const t = window.setTimeout(() => {
-      for (const src of new Set(items.map(fotoDe))) if (src) new Image().src = src;
+      for (const src of new Set([...items.map(fotoDe), rutaFoto("bolsa")])) if (src) new Image().src = src;
     }, 1200);
     return () => window.clearTimeout(t);
   }, [fase, items]);

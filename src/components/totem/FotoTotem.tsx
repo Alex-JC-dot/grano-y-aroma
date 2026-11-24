@@ -1,8 +1,26 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
-import { dibujoDe, esRecorte, fotoDe, type Dibujo, type ItemTotem } from "@/lib/totem";
+import { dibujoDe, esRecorte, fotoDe, rutaFoto, type Dibujo, type ItemTotem } from "@/lib/totem";
+
+/** La bolsa kraft de la tienda: la foto tiene la franja calada y detrás va el color del café. */
+function BolsaTotem({ color, nombre }: { color: string; nombre?: string }) {
+  return (
+    <svg className="foto-totem" viewBox="0 0 600 906" aria-hidden="true">
+      <rect x="2" y="465" width="594" height="202" fill={color} />
+      <rect x="2" y="465" width="26" height="202" fill="#000" opacity="0.14" />
+      <rect x="570" y="465" width="26" height="202" fill="#000" opacity="0.2" />
+      <image href={rutaFoto("bolsa")} width="600" height="906" />
+      <text x="300" y="290" textAnchor="middle" fontFamily="var(--f-display)" fontSize="72" fill="#3b2418">Grano y Aroma</text>
+      <text x="300" y="352" textAnchor="middle" fontFamily="var(--f-text)" fontSize="30" letterSpacing="4" fill="#3b2418" opacity="0.75">CAFÉ DE BOLIVIA</text>
+      {nombre && (
+        <text x="300" y="586" textAnchor="middle" fontFamily="var(--f-display)" fontSize={Math.min(76, 1000 / nombre.length)} fill="#fff6e8">{nombre}</text>
+      )}
+    </svg>
+  );
+}
 
 /** Dibujo para lo que todavía no tiene foto: mismo tamaño y misma sombra que las fotos. */
-export function DibujoTotem({ tipo, color = "#7a4a2c" }: { tipo: Dibujo; color?: string }) {
+export function DibujoTotem({ tipo, color = "#7a4a2c", nombre }: { tipo: Dibujo; color?: string; nombre?: string }) {
+  if (tipo === "bolsa") return <BolsaTotem color={color} nombre={nombre} />;
   return (
     <svg className="foto-totem foto-totem--dibujo" viewBox="0 0 120 120" aria-hidden="true">
       {tipo === "taza" && (
@@ -37,16 +55,6 @@ export function DibujoTotem({ tipo, color = "#7a4a2c" }: { tipo: Dibujo; color?:
           <rect x="42" y="62" width="36" height="24" fill="#fffaf2" />
         </>
       )}
-      {tipo === "bolsa" && (
-        <>
-          <path d="M30 22h60l5 84a6 6 0 0 1-6 6H31a6 6 0 0 1-6-6Z" fill="#c49a6c" />
-          <path d="M30 22h60l1 14H29Z" fill="#a97f52" />
-          <path d="M76 36h15l4 70a6 6 0 0 1-6 6H78Z" fill="#b1875a" opacity="0.6" />
-          <rect x="27" y="56" width="66" height="30" fill={color} />
-          <ellipse cx="60" cy="71" rx="9" ry="11" fill="#fff6e8" />
-          <path d="M63 61c-6 6 2 12-5 20" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-        </>
-      )}
       {tipo === "masita" && (
         <>
           <ellipse cx="60" cy="70" rx="44" ry="32" fill="#d89a4e" />
@@ -64,7 +72,7 @@ export default function FotoTotem({ item, ref }: { item: ItemTotem; ref?: React.
       {src ? (
         <img className={`foto-totem${esRecorte(src) ? "" : " foto-totem--cuadro"}`} src={src} alt="" draggable={false} />
       ) : (
-        <DibujoTotem tipo={dibujoDe(item)} color={item.color ?? undefined} />
+        <DibujoTotem tipo={dibujoDe(item)} color={item.color ?? undefined} nombre={item.nombre} />
       )}
     </span>
   );
