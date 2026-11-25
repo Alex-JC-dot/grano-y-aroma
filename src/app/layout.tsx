@@ -39,10 +39,14 @@ const FIJAR_TEMA = `(function(){try{var t=localStorage.getItem("ga-tema");if(t!=
 
 /**
  * Decide si sale la animación de entrada (components/inicio/Intro.tsx), también antes del primer
- * pintado: solo en el Inicio, una vez por visita (pestaña) y si no se pidió reducir movimiento.
- * Con /?intro se fuerza, para mostrarla. Pase lo que pase, a los 7 segundos se quita sola.
+ * pintado. Sale una sola vez por visita (pestaña) y solo al entrar al sitio por el Inicio:
+ *  · no, si ya se vio o si la visita empezó en otra página;
+ *  · no, si se llega a una sección (/#contacto) o desde un enlace del propio sitio;
+ *  · no, si se pidió reducir movimiento.
+ * Con /?intro se fuerza una vez, para mostrarla: al terminar, Intro borra el ?intro de la dirección
+ * para que no se repita. Pase lo que pase, a los 7 segundos se quita sola.
  */
-const DECIDIR_INTRO = `(function(){try{var d=document.documentElement,f=/[?&]intro\\b/.test(location.search);if(location.pathname!=="/")return;if(!f&&(sessionStorage.getItem("ga-intro")||window.matchMedia("(prefers-reduced-motion: reduce)").matches))return;sessionStorage.setItem("ga-intro","1");d.setAttribute("data-intro","si");setTimeout(function(){if(d.getAttribute("data-intro")==="si")d.setAttribute("data-intro","fin")},7000)}catch(e){}})()`;
+const DECIDIR_INTRO = `(function(){try{var d=document.documentElement,l=location,f=/[?&]intro\b/.test(l.search),v=sessionStorage.getItem("ga-intro"),i=document.referrer.indexOf(l.origin+"/")===0;sessionStorage.setItem("ga-intro","1");if(l.pathname!=="/")return;if(!f&&(v||i||l.hash||window.matchMedia("(prefers-reduced-motion: reduce)").matches))return;d.setAttribute("data-intro","si");setTimeout(function(){if(d.getAttribute("data-intro")==="si")d.setAttribute("data-intro","fin")},7000)}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
