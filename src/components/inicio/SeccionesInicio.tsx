@@ -90,17 +90,11 @@ export function AsiTrabajamos() {
           </div>
         </div>
         <div className="recorrido" data-revelar>
-          {/* El grano recorre los cuatro pasos. */}
-          <div className="recorrido__via" aria-hidden="true">
-            {TRABAJO.map((p, i) => <i key={p.titulo} style={{ "--i": i } as React.CSSProperties} />)}
-            <svg className="recorrido__grano" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(28 12 12)" /><path d="M15.5 3.5c-4 4-1 7-4 9s-1 5-3.5 7.5" /></svg>
-          </div>
           <ol className="recorrido__pasos">
-            {TRABAJO.map((p, i) => (
+            {TRABAJO.map((p) => (
               <li key={p.titulo} className="recorrido__paso">
                 <div className="recorrido__foto">
                   <img src={p.img} alt={p.alt} loading="lazy" decoding="async" />
-                  <span className="recorrido__num" aria-hidden="true">{i + 1}</span>
                   <Onda />
                 </div>
                 <h3>{p.titulo}</h3>
