@@ -4,7 +4,6 @@ import { formatBs } from "@/lib/utils";
 import { useAuth } from "@/store/authStore";
 import { useSubastas, type Subasta } from "@/store/subastasStore";
 import { Onda } from "@/components/club/PlanesClub";
-import { colorLote } from "./colorLote";
 import { Reloj } from "./PanelPuja";
 import { datosLote, FotoLote, Medalla } from "./Subastas";
 
@@ -60,9 +59,8 @@ export function Proximas({ lista, ahora }: { lista: Subasta[]; ahora: number }) 
     <div className={`slotes${lista.length < 3 ? " slotes--pocos" : ""}`} role="tabpanel" aria-label="Próximas subastas">
       {lista.map((p) => {
         const avisar = avisos.has(p.id);
-        const color = colorLote(p);
         return (
-          <article key={p.id} className="slote" style={{ "--cc": color } as React.CSSProperties}>
+          <article key={p.id} className="slote">
             <FotoLote lote={p} enlace={false}>
               <Medalla puntaje={p.puntaje} />
               <Reloj hasta={p.abre_en} ahora={ahora} texto="Abre en" />
@@ -102,7 +100,7 @@ export function Cerradas({ lista }: { lista: Subasta[] }) {
       {lista.map((c) => {
         const final = c.puja_actual;
         return (
-          <article key={c.id} className="slote slote--cerrado" style={{ "--cc": colorLote(c) } as React.CSSProperties}>
+          <article key={c.id} className="slote slote--cerrado">
             <FotoLote lote={c}>
               <span className="slote__cerrando">
                 Cerró el {new Date(c.cierra_en).toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" })}
@@ -148,7 +146,7 @@ export function ComoFunciona() {
         </div>
         <ol className="spasos">
           {pasos.map(([t, d], i) => (
-            <li key={t} className="copc spaso" data-revelar style={{ "--i": i, "--cc": ["#b5743c", "#94492a", "#7d2a35", "#5d6b35"][i] } as React.CSSProperties}>
+            <li key={t} className="copc spaso" data-revelar style={{ "--i": i } as React.CSSProperties}>
               <span className="copc__escena" aria-hidden="true"><span className="copc__num">{i + 1}</span><Onda /></span>
               <div className="copc__texto">
                 <h3>{t}</h3>

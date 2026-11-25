@@ -7,7 +7,6 @@ import { Cerradas, ComoFunciona, Pestanas, Proximas, type Pestana } from "./Suba
 import { AvisoSubasta, useSubastasEnVivo } from "./EnVivo";
 import Escenario from "./Escenario";
 import PanelPuja, { MontoVivo, Podio, Reloj } from "./PanelPuja";
-import { colorLote } from "./colorLote";
 import { Onda } from "@/components/club/PlanesClub";
 import { abierta, useSubastas, type Subasta } from "@/store/subastasStore";
 
@@ -92,9 +91,8 @@ export const datosLote = (a: Subasta) =>
 
 function LoteVivo({ lote: a, ahora }: { lote: Subasta; ahora: number }) {
   const cerrada = !abierta(a, ahora);
-  const color = colorLote(a);
   return (
-    <article className={`slote${cerrada ? " is-cerrada" : ""}`} style={{ "--cc": color } as React.CSSProperties}>
+    <article className={`slote${cerrada ? " is-cerrada" : ""}`}>
       <FotoLote lote={a}>
         <Medalla puntaje={a.puntaje} />
         {cerrada ? <span className="slote__cerrando">Cerrando…</span> : <Reloj hasta={a.cierra_en} ahora={ahora} texto="Cierra en" />}

@@ -26,6 +26,7 @@
 .inicio .subastas .subastas__pestanas { margin: 0 0 32px; }
 .inicio .slotes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 58px 28px; padding-bottom: 34px; }
 .inicio .slotes--pocos { grid-template-columns: repeat(auto-fit, minmax(0, 520px)); justify-content: center; }
+.inicio .slote, .inicio .spaso { --cc: #b5743c; } /* un solo color: el caramelo */
 .inicio .slote { --c3: var(--cc); --boton: var(--cc); --boton-tinta: #fff8ee; position: relative; display: flex; flex-direction: column; border: 3px solid var(--cc); border-radius: 28px; background: var(--surface); transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); }
 .inicio .slote:hover { transform: translateY(-5px); box-shadow: 0 28px 50px -24px rgba(43, 21, 12, 0.6); }
 .inicio .slote__foto { position: relative; height: 286px; border-radius: 24px 24px 0 0; overflow: hidden; background: var(--cc); }
@@ -96,7 +97,6 @@
 .inicio .panel-puja__primero strong { font: 400 22px / 1.15 var(--f-display); }
 .inicio .panel-puja__primero span { font-size: 15px; }
 .inicio .slote:has(.panel-puja__primero) .slote__cuerpo { padding-bottom: 26px; }
-.inicio .slote:has(.panel-puja__primero) { border-color: var(--exito-solido); }
 
 /* ---------- Avisos ---------- */
 .inicio .ganaste { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: rgba(26, 12, 6, 0.78); overflow: hidden; animation: pago-entra 0.3s var(--ease) both; }

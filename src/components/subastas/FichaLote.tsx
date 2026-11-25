@@ -7,7 +7,6 @@ import { useEffect } from "react";
 import { abierta, nombreCorto, useSubastas, type Puja, type Subasta } from "@/store/subastasStore";
 import { AvisoSubasta, horaDe, useSubastasEnVivo } from "./EnVivo";
 import PanelPuja, { MontoVivo, Podio, Reloj } from "./PanelPuja";
-import { colorLote } from "./colorLote";
 import { Medalla } from "./Subastas";
 import { formatBs } from "@/lib/utils";
 
@@ -53,7 +52,6 @@ function Lote({ lote }: { lote: Subasta }) {
   const proxima = lote.estado === "proxima" && new Date(lote.abre_en).getTime() > ahora;
   const enCurso = abierta(lote, ahora);
   const cerrada = !proxima && !enCurso;
-  const color = colorLote(lote);
   const hayPujas = lote.num_pujas > 0;
 
   useEffect(() => {
@@ -97,7 +95,7 @@ function Lote({ lote }: { lote: Subasta }) {
               <h1 id="lote-titulo" className="ficha__titulo">{lote.titulo}</h1>
               <p className="ficha__notas">{lote.descripcion}</p>
 
-              <div className="slote slote--ficha" style={{ "--cc": color } as React.CSSProperties}>
+              <div className="slote slote--ficha">
                 <div className="slote__cuerpo">
                   <div className="puja-actual">
                     <span>
