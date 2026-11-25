@@ -16,39 +16,39 @@ export const metadata: Metadata = {
 export default function PaginaNosotros() {
   return (
     <div className="nosotros">
-      <section className="section page-top" aria-labelledby="nosotros-titulo">
-        <div className="wrap intro">
-          <h1 id="nosotros-titulo" data-revelar>
-            Tostamos en Sucre el café de los productores bolivianos
-          </h1>
-          <div className="intro__texto" data-revelar style={{ "--i": 1 } as React.CSSProperties}>
-            <p>
-              Somos una tostaduría y cafetería en el centro histórico de Sucre. Compramos café verde por
-              lote a productores de los Yungas, Caranavi y los valles de Chuquisaca, como Villa Serrano y
-              Padilla.
-            </p>
-            <p>
-              Cada lote se registra desde que llega: su origen, su curva de tueste y sus notas de catación.
-              Por eso cada bolsa lleva un código con el que puedes saber de qué finca y de qué tueste viene
-              tu café.
-            </p>
+      <section className="portada-nos" aria-labelledby="nosotros-titulo">
+        {/* eslint-disable-next-line @next/next/no-img-element -- export estático */}
+        <img
+          className="portada-nos__foto"
+          src="/images/origen/sucre.webp"
+          alt="Techos de tejas y fachadas blancas de Sucre con un campanario, frente a los cerros al atardecer"
+          fetchPriority="high"
+        />
+        <div className="wrap">
+          <div className="portada-nos__texto">
+            <p className="eyebrow">Nosotros</p>
+            <h1 id="nosotros-titulo">Tostamos en Sucre el café de los productores bolivianos</h1>
             <Link href="/tienda" className="btn btn--primary">
               Ver los cafés
             </Link>
           </div>
         </div>
-        <div className="wrap">
-          <figure className="banda-foto banda-foto--alta" data-revelar>
-            {/* eslint-disable-next-line @next/next/no-img-element -- export estático */}
-            <img
-              src="/images/origen/sucre.webp"
-              alt="Techos de tejas y fachadas blancas de Sucre con un campanario, frente a los cerros al atardecer"
-              decoding="async"
-            />
-          </figure>
-        </div>
       </section>
       <Cifras />
+      <section className="nos-historia" aria-label="Quiénes somos">
+        <div className="wrap nos-historia__textos" data-revelar>
+          <p>
+            Somos una tostaduría y cafetería en el centro histórico de Sucre. Compramos café verde por
+            lote a productores de los Yungas, Caranavi y los valles de Chuquisaca, como Villa Serrano y
+            Padilla.
+          </p>
+          <p>
+            Cada lote se registra desde que llega: su origen, su curva de tueste y sus notas de catación.
+            Por eso cada bolsa lleva un código con el que puedes saber de qué finca y de qué tueste viene
+            tu café.
+          </p>
+        </div>
+      </section>
       <MapaOrigenes conRegiones />
       <AsiTrabajamos />
       <CurvaTueste />

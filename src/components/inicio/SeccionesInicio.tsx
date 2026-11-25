@@ -2,6 +2,7 @@
 import Link from "next/link";
 import TazaPie from "./TazaPie";
 import Contacto from "./Contacto";
+import { Onda } from "@/components/club/PlanesClub";
 
 /**
  * Secciones compartidas de las páginas públicas (proceso, visita y pie).
@@ -88,17 +89,26 @@ export function AsiTrabajamos() {
             <p>Cada lote pasa por cuatro pasos y queda registrado en cada uno.</p>
           </div>
         </div>
-        <ol className="process" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {TRABAJO.map((p, i) => (
-            <li key={p.titulo} className="process__item" data-revelar style={{ "--i": i } as React.CSSProperties}>
-              <figure>
-                <img src={p.img} alt={p.alt} loading="lazy" decoding="async" />
-              </figure>
-              <h3>{p.titulo}</h3>
-              <p>{p.texto}</p>
-            </li>
-          ))}
-        </ol>
+        <div className="recorrido" data-revelar>
+          {/* El grano recorre los cuatro pasos. */}
+          <div className="recorrido__via" aria-hidden="true">
+            {TRABAJO.map((p, i) => <i key={p.titulo} style={{ "--i": i } as React.CSSProperties} />)}
+            <svg className="recorrido__grano" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(28 12 12)" /><path d="M15.5 3.5c-4 4-1 7-4 9s-1 5-3.5 7.5" /></svg>
+          </div>
+          <ol className="recorrido__pasos">
+            {TRABAJO.map((p, i) => (
+              <li key={p.titulo} className="recorrido__paso">
+                <div className="recorrido__foto">
+                  <img src={p.img} alt={p.alt} loading="lazy" decoding="async" />
+                  <span className="recorrido__num" aria-hidden="true">{i + 1}</span>
+                  <Onda />
+                </div>
+                <h3>{p.titulo}</h3>
+                <p>{p.texto}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
   );
