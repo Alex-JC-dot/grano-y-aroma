@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { useAuth } from "@/store/authStore";
+import BotonUbicacion from "./BotonUbicacion";
 
 /**
  * Teléfono y dirección para un envío que todavía no los tiene: antes de pagar el Club (se guardan
@@ -42,6 +43,7 @@ export default function DatosEnvio({ pedido, alGuardar }: { pedido?: number; alG
         <label htmlFor="envio-dir">Dirección</label>
         <input id="envio-dir" autoComplete="street-address" placeholder="Calle, número y zona" value={direccion} onChange={(e) => setDireccion(e.target.value)} disabled={guardando} />
       </div>
+      <BotonUbicacion alUbicar={(p) => p.direccion && setDireccion(p.direccion)} deshabilitado={guardando} />
       {error && <p className="carrito__error" role="alert">{error}</p>}
       <button type="submit" className="btn btn--primary" disabled={guardando}>{guardando ? "Guardando…" : "Guardar y continuar"}</button>
     </form>

@@ -15,7 +15,7 @@ const TONOS = {
 
 const MAYORES = ["primary", "secondary", "trunk", "motorway"];
 
-export function estiloMapa(tema: "dark" | "light"): StyleSpecification {
+export function estiloMapa(tema: "dark" | "light", chico = false): StyleSpecification {
   const c = TONOS[tema];
   const ancho = (a: number, b: number): ["interpolate", ["exponential", number], ["zoom"], ...number[]] => ["interpolate", ["exponential", 1.5], ["zoom"], 12, a, 18, b];
   const es = ["coalesce", ["get", "name:es"], ["get", "name"]] as ["coalesce", ["get", string], ["get", string]];
@@ -35,7 +35,8 @@ export function estiloMapa(tema: "dark" | "light"): StyleSpecification {
       { id: "avenidas", type: "line", source: "osm", "source-layer": "transportation", filter: ["match", ["get", "class"], MAYORES, true, false], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": c.mayor, "line-width": ancho(1.6, 21) } },
       { id: "edificios", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 14, paint: { "fill-extrusion-color": c.edificio, "fill-extrusion-height": ["coalesce", ["get", "render_height"], 6], "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0], "fill-extrusion-opacity": 0.82 } },
       { id: "nombres-calles", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 14.5, layout: { "symbol-placement": "line", "text-field": es, "text-font": ["Noto Sans Regular"], "text-size": ["interpolate", ["linear"], ["zoom"], 14, 10, 18, 14], "symbol-spacing": 380 }, paint: { "text-color": c.texto, "text-halo-color": c.halo, "text-halo-width": 1.4 } },
-      { id: "nombres-lugares", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 14.5, filter: ["match", ["get", "class"], ["museum", "park", "place_of_worship", "college", "town_hall", "attraction", "monument", "castle"], true, false], layout: { "text-field": es, "text-font": ["Noto Sans Regular"], "text-size": 12, "text-max-width": 8, "text-padding": 14, "symbol-sort-key": ["get", "rank"] }, paint: { "text-color": c.lugar, "text-halo-color": c.halo, "text-halo-width": 1.5 } },
+      // En el celular los nombres de lugares se encimarían con el punto: solo calles.
+      { id: "nombres-lugares", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 14.5, filter: ["match", ["get", "class"], ["museum", "park", "place_of_worship", "college", "town_hall", "attraction", "monument", "castle"], true, false], layout: { visibility: chico ? "none" : "visible", "text-field": es, "text-font": ["Noto Sans Regular"], "text-size": 12, "text-max-width": 8, "text-padding": 14, "symbol-sort-key": ["get", "rank"] }, paint: { "text-color": c.lugar, "text-halo-color": c.halo, "text-halo-width": 1.5 } },
       { id: "nombres-zonas", type: "symbol", source: "osm", "source-layer": "place", filter: ["match", ["get", "class"], ["city", "town", "suburb", "neighbourhood", "quarter", "village"], true, false], maxzoom: 15.5, layout: { "text-field": es, "text-font": ["Noto Sans Regular"], "text-size": ["match", ["get", "class"], "city", 22, 13] }, paint: { "text-color": c.texto, "text-halo-color": c.halo, "text-halo-width": 1.6 } },
     ],
   };
