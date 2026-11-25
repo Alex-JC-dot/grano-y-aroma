@@ -82,7 +82,7 @@ export default function Intro() {
     };
     const terminar = () => {
       html.dataset.intro = "fin";
-      if (/[?&]intro/.test(window.location.search)) window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+      if (window.location.search.includes("intro")) window.history.replaceState(null, "", window.location.pathname + window.location.hash);
       setFin(true);
     };
     const saltar = () => {
