@@ -8,6 +8,8 @@ import HojaDocumento from "@/components/ui/HojaDocumento";
 import BotonesDocumento from "@/components/ui/BotonesDocumento";
 import { fechaISO, imprimirDocumento } from "@/lib/documento";
 import type { HojaExcel } from "@/lib/excel";
+import { coincide } from "@/lib/buscar";
+import Buscador from "@/components/equipo/Buscador";
 import CobroSimulado from "@/components/equipo/CobroSimulado";
 
 /**
@@ -59,6 +61,7 @@ export default function PaginaCaja() {
   const [items, setItems] = useState<Item[]>([]);
   const [cargando, setCargando] = useState(true);
   const [cat, setCat] = useState("Todos");
+  const [busqueda, setBusqueda] = useState("");
   const [orden, setOrden] = useState<Linea[]>([]);
   const [metodo, setMetodo] = useState<Metodo>("efectivo");
   const [turno, setTurno] = useState<Turno>(TURNO_VACIO);
@@ -113,8 +116,10 @@ export default function PaginaCaja() {
   const grupos = ["Todos", ...ORDEN_GRUPOS.filter((g) => items.some((i) => grupoDe(i) === g))];
   // En "Todos" va primero la barra (lo que más se vende en el local: espresso, americano,
   // cappuccino…) y al final las bolsas y accesorios de la tienda, en el orden de las pestañas.
+  // Al escribir se busca en todo, sin importar la pestaña.
+  const buscando = busqueda.trim() !== "";
   const visibles = items
-    .filter((i) => cat === "Todos" || grupoDe(i) === cat)
+    .filter((i) => (buscando ? coincide(`${i.nombre} ${grupoDe(i)}`, busqueda) : cat === "Todos" || grupoDe(i) === cat))
     .sort((a, b) => ORDEN_GRUPOS.indexOf(grupoDe(a)) - ORDEN_GRUPOS.indexOf(grupoDe(b)));
   const total = orden.reduce((s, i) => s + i.precio * i.qty, 0);
   const unidades = orden.reduce((s, i) => s + i.qty, 0);
@@ -260,9 +265,21 @@ export default function PaginaCaja() {
           </button>
         </div>
 
+        <Buscador
+          valor={busqueda}
+          alCambiar={setBusqueda}
+          etiqueta="Buscar producto"
+          ejemplo="Buscar producto: escribe el nombre y pulsa Enter"
+          alEnter={() => {
+            const primero = visibles.find((i) => i.stock > 0);
+            if (!primero) return;
+            agregar(primero);
+            setBusqueda("");
+          }}
+        />
         <div className="filtros__opciones caja__categorias" role="group" aria-label="Categorías">
           {grupos.map((c) => (
-            <button key={c} type="button" className={`chip${cat === c ? " is-on" : ""}`} aria-pressed={cat === c} onClick={() => setCat(c)}>
+            <button key={c} type="button" className={`chip${!buscando && cat === c ? " is-on" : ""}`} aria-pressed={!buscando && cat === c} onClick={() => { setCat(c); setBusqueda(""); }}>
               {c}
             </button>
           ))}
@@ -270,6 +287,8 @@ export default function PaginaCaja() {
 
         {cargando ? (
           <p className="caja__vacia" aria-busy="true">Cargando productos…</p>
+        ) : visibles.length === 0 ? (
+          <p className="caja__vacia" role="status">{buscando ? `No hay ningún producto con “${busqueda.trim()}”.` : "No hay productos aquí."}</p>
         ) : (
           <div className="caja__grid">
             {visibles.map((item) => {
