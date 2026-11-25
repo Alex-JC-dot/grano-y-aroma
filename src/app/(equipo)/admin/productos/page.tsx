@@ -9,6 +9,8 @@ import type { Categoria } from "@/lib/types";
 import SelectorFoto from "@/components/equipo/SelectorFoto";
 import { subirFoto } from "@/lib/archivos";
 import { GALERIA_TOTEM } from "@/lib/totem";
+import { coincide } from "@/lib/buscar";
+import Buscador from "@/components/equipo/Buscador";
 
 /**
  * Productos del administrador (RF-01, RF-05, RF-21): agregar productos a la tienda o a la
@@ -88,6 +90,7 @@ export default function PaginaProductos() {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtro, setFiltro] = useState<Categoria | "todos" | "totem">("todos");
+  const [busqueda, setBusqueda] = useState("");
   const [cambios, setCambios] = useState<Record<string, { precio?: string; stock?: string }>>({});
   const [guardando, setGuardando] = useState<string | null>(null);
   const [f, setF] = useState<Form>(vacio);
@@ -263,7 +266,9 @@ export default function PaginaProductos() {
   const cambiar = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF((x) => ({ ...x, [k]: e.target.value }));
 
-  const visibles = filas.filter((p) => filtro === "todos" || (filtro === "totem" ? p.en_totem && p.activo : p.categoria === filtro));
+  // Al escribir se busca en todo, sin importar el filtro: por nombre, categoría o lote.
+  const buscando = busqueda.trim() !== "";
+  const visibles = filas.filter((p) => buscando ? coincide(`${p.nombre} ${CATEGORIAS.find((x) => x.v === p.categoria)?.label ?? ""} ${p.codigo_lote ?? ""} ${p.grupo ?? ""}`, busqueda) : filtro === "todos" || (filtro === "totem" ? p.en_totem && p.activo : p.categoria === filtro));
   const enTotem = filas.filter((p) => p.en_totem && p.activo).length;
   const cafe = esCafe(f.categoria);
 
@@ -406,10 +411,11 @@ export default function PaginaProductos() {
         </form>
       )}
 
+      <Buscador valor={busqueda} alCambiar={setBusqueda} etiqueta="Buscar producto" ejemplo="Buscar por nombre, categoría o lote" />
       <div className="equipo__acciones">
         <div className="filtros__opciones" role="group" aria-label="Categoría">
           {[{ v: "todos" as const, label: "Todo" }, ...(conTotem ? [{ v: "totem" as const, label: `En el tótem (${enTotem})` }] : []), ...CATEGORIAS].map((c) => (
-            <button key={c.v} type="button" className={`chip${filtro === c.v ? " is-on" : ""}`} aria-pressed={filtro === c.v} onClick={() => setFiltro(c.v)}>
+            <button key={c.v} type="button" className={`chip${!buscando && filtro === c.v ? " is-on" : ""}`} aria-pressed={!buscando && filtro === c.v} onClick={() => { setFiltro(c.v); setBusqueda(""); }}>
               {c.label}
             </button>
           ))}
@@ -435,6 +441,9 @@ export default function PaginaProductos() {
               </tr>
             </thead>
             <tbody>
+              {visibles.length === 0 && (
+                <tr><td colSpan={6} className="caja__vacia">{buscando ? `No hay ningún producto con “${busqueda.trim()}”.` : "No hay productos en esta categoría."}</td></tr>
+              )}
               {visibles.map((p) => {
                 const c = cambios[p.id];
                 const bajo = p.stock <= p.stock_minimo;

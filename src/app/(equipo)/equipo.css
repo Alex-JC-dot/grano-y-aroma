@@ -171,6 +171,15 @@
 /* ---------- Caja ---------- */
 .caja { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 100vh; }
 .caja__productos { padding: 40px 40px 48px 48px; }
+/* Buscador de los paneles (Caja y Productos). */
+.buscador { position: relative; display: flex; align-items: center; max-width: 560px; margin-bottom: 18px; }
+.buscador > svg { position: absolute; left: 16px; color: var(--muted); pointer-events: none; }
+.buscador input { width: 100%; height: 50px; padding: 0 48px; border: 1px solid var(--line-fuerte); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+.buscador input::placeholder { color: var(--muted); opacity: 1; }
+.buscador input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.buscador button { position: absolute; right: 5px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+.buscador button:hover { color: var(--ink); }
+
 .caja__categorias { margin-bottom: 24px; }
 .caja__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 .caja__item {
