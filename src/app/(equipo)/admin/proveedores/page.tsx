@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
+import { codigoLote } from "@/lib/lotes";
 import { formatBs } from "@/lib/utils";
 
 /**
@@ -58,7 +59,7 @@ const CLASE_ORDEN: Record<Orden["estado"], string> = {
 };
 
 const PROV_VACIO = { nombre: "", contacto: "", telefono: "", correo: "", region: "", notas: "" };
-const ITEM_VACIO = { codigo: "", nombre: "", origen: "", kg: "", costo_kg: "" };
+const ITEM_VACIO = { nombre: "", origen: "", kg: "", costo_kg: "" };
 
 const fecha = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("es-BO", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -82,18 +83,28 @@ export default function PaginaProveedores() {
   const [provElegido, setProvElegido] = useState<number | null>(null);
   const [items, setItems] = useState([{ ...ITEM_VACIO }]);
   const [notasOrden, setNotasOrden] = useState("");
+  const [lotes, setLotes] = useState<string[]>([]);
+
+  // El código de cada lote se arma solo: origen, año y el número que sigue (también entre estas líneas).
+  const region = proveedores?.find((p) => p.id === provElegido)?.region ?? "";
+  const codigos = items.reduce<string[]>((ya, i) => {
+    const vacia = !i.nombre.trim() && !i.origen.trim();
+    return [...ya, vacia ? "" : codigoLote([i.origen, i.nombre, region], [...lotes, ...ordenes.flatMap((o) => o.orden_items.map((x) => x.codigo)), ...ya], new Date().getFullYear())];
+  }, []);
 
   const faltaMigracion = (m: string) => /does not exist|schema cache/i.test(m);
 
   const cargar = useCallback(async () => {
-    const [p, o] = await Promise.all([
+    const [p, o, l] = await Promise.all([
       supabase.from("proveedores").select("*").order("nombre"),
       supabase
         .from("ordenes_compra")
         .select("*, proveedores(nombre), orden_items(*)")
         .order("creado_en", { ascending: false })
         .limit(100),
+      supabase.from("cafe_verde").select("codigo"),
     ]);
+    setLotes(((l.data as { codigo: string }[] | null) ?? []).map((x) => x.codigo));
     if (p.error) {
       setError(
         faltaMigracion(p.error.message)
@@ -140,8 +151,11 @@ export default function PaginaProveedores() {
 
   const guardarOrden = async () => {
     if (!provElegido) return setError("Elige a qué proveedor le compras.");
-    const validos = items.filter((i) => i.codigo.trim() && i.nombre.trim() && Number(i.kg) > 0 && Number(i.costo_kg) >= 0);
-    if (!validos.length) return setError("Carga al menos un lote con código, nombre, kilos y costo.");
+    const validos = items
+      .map((i, k) => ({ ...i, codigo: codigos[k] }))
+      .filter((i) => i.codigo && i.nombre.trim() && Number(i.kg) > 0 && Number(i.costo_kg) >= 0);
+    if (!validos.length) return setError("Carga al menos un lote con nombre, origen, kilos y costo.");
+    if (validos.length < items.filter((i) => i.nombre.trim() || i.origen.trim() || i.kg || i.costo_kg).length) return setError("Hay un lote a medias: completa su nombre, origen, kilos y costo, o quítalo.");
 
     setGuardando(true);
     setError("");
@@ -163,7 +177,7 @@ export default function PaginaProveedores() {
     const { error: e2 } = await supabase.from("orden_items").insert(
       validos.map((i) => ({
         orden_id: (data as { id: number }).id,
-        codigo: i.codigo.trim().toUpperCase(),
+        codigo: i.codigo,
         nombre: i.nombre.trim(),
         origen: i.origen.trim() || null,
         kg: Number(i.kg),
@@ -335,9 +349,8 @@ export default function PaginaProveedores() {
               {items.map((it, i) => (
                 <div key={i} className="orden-linea">
                   <div className="carrito__campo">
-                    <label htmlFor={`i-cod-${i}`}>Código del lote</label>
-                    <input id={`i-cod-${i}`} value={it.codigo} placeholder="VS-2026-GRN-014"
-                      onChange={(e) => setItems(items.map((x, j) => (j === i ? { ...x, codigo: e.target.value } : x)))} disabled={guardando} />
+                    <span className="lote-auto__et">Código (automático)</span>
+                    <output className="lote-auto">{codigos[i] || "Con el origen"}</output>
                   </div>
                   <div className="carrito__campo">
                     <label htmlFor={`i-nom-${i}`}>Nombre</label>
