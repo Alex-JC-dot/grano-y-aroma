@@ -347,13 +347,11 @@
 .inicio .pago-qr__espera { display: flex; align-items: center; gap: 9px; margin-top: 12px; font-size: 14px; font-weight: 500; color: var(--accent); }
 .inicio .pago-qr__espera i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pago-late 1.3s ease-in-out infinite; }
 @keyframes pago-late { 50% { transform: scale(0.45); opacity: 0.35; } }
-/* En la computadora se escanea; en el celular no se puede escanear la propia pantalla. */
+/* El QR siempre se escanea; en el celular se baja la imagen. */
 .inicio .pago-qr__acciones { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; align-self: stretch; width: 100%; margin-bottom: 12px; }
-.inicio .pago-qr__celular { display: none; }
 .inicio .pago-qr__bajar { display: inline-flex; align-items: center; justify-content: center; gap: 9px; }
 .inicio .pago-qr__ayuda { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
 @media (hover: none) and (pointer: coarse) and (max-width: 900px) {
-  .inicio .pago-qr__celular { display: flex; width: 100%; justify-content: center; text-align: center; }
   .inicio .pago-qr__bajar { width: 100%; }
 }
 

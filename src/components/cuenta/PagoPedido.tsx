@@ -193,11 +193,8 @@ export default function PagoQr({
   return (
     <>
       <QrPago enlace={enlacePago(token)} total={total} />
-      {/* Quien compra desde el celular no puede escanear su propia pantalla. */}
+      {/* Quien compra desde el celular no puede escanear su propia pantalla: baja la imagen. */}
       <div className="pago-qr__acciones">
-        <a className="btn btn--primary pago-qr__celular" href={enlacePago(token)} target="_blank" rel="noopener">
-          Pagar {formatBs(total)} desde este celular
-        </a>
         <button type="button" className="btn btn--secondary pago-qr__bajar" onClick={bajar} disabled={bajando === "si"}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 4v11m0 0 4.5-4.5M12 15l-4.5-4.5M5 19.5h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
