@@ -7,6 +7,7 @@ import BotonesDocumento from "@/components/ui/BotonesDocumento";
 import HojaDocumento from "@/components/ui/HojaDocumento";
 import { fechaISO } from "@/lib/documento";
 import type { HojaExcel } from "@/lib/excel";
+import { codigoLote } from "@/lib/lotes";
 
 /**
  * Bodega y tueste (RF-22 a RF-26), con Supabase:
@@ -41,8 +42,8 @@ type FormTueste = { verde: string; kgVerde: string; kgTostado: string; perfil: s
 const TUESTE_VACIO: FormTueste = { verde: "", kgVerde: "", kgTostado: "", perfil: "", puntaje: "", notas: "", producto: "", bolsas: "" };
 // proveedorId: el id de uno de nuestros proveedores (tabla de la 011), "otro" o "" (ninguno).
 // proveedor: el nombre escrito a mano, solo cuando se elige "Otro".
-type FormVerde = { codigo: string; nombre: string; origen: string; proveedorId: string; proveedor: string; kg: string; costo: string };
-const VERDE_VACIO: FormVerde = { codigo: "", nombre: "", origen: "", proveedorId: "", proveedor: "", kg: "", costo: "" };
+type FormVerde = { nombre: string; origen: string; proveedorId: string; proveedor: string; kg: string; costo: string };
+const VERDE_VACIO: FormVerde = { nombre: "", origen: "", proveedorId: "", proveedor: "", kg: "", costo: "" };
 type Proveedor = { id: number; nombre: string; region: string | null };
 
 export default function PaginaBodega() {
@@ -58,16 +59,21 @@ export default function PaginaBodega() {
   const [abierto, setAbierto] = useState<"tueste" | "verde" | null>(null);
   const [ft, setFt] = useState<FormTueste>(TUESTE_VACIO);
   const [fv, setFv] = useState<FormVerde>(VERDE_VACIO);
+  /** Códigos reservados por las órdenes de compra que todavía no llegan. */
+  const [pedidos, setPedidos] = useState<string[]>([]);
+  const codigoNuevo = codigoLote([fv.origen, fv.nombre], [...verdes.map((v) => v.codigo), ...pedidos], new Date().getFullYear());
   const [enviando, setEnviando] = useState(false);
 
   const cargar = useCallback(async () => {
-    const [v, i, t, tu, pr] = await Promise.all([
+    const [v, i, t, tu, pr, oi] = await Promise.all([
       supabase.from("cafe_verde").select("*").order("codigo"),
       supabase.from("insumos").select("*").order("nombre"),
       supabase.from("productos").select("id, nombre, stock, stock_minimo, codigo_lote, categoria").in("categoria", ["grano", "molido"]).order("orden"),
       supabase.from("tuestes").select("*, cafe_verde(codigo, nombre), productos(nombre)").order("creado_en", { ascending: false }),
       supabase.from("proveedores").select("id, nombre, region").eq("activo", true).order("nombre"),
+      supabase.from("orden_items").select("codigo"),
     ]);
+    setPedidos(((oi.data as { codigo: string }[] | null) ?? []).map((x) => x.codigo));
     setProveedores((pr.data as Proveedor[]) ?? []);
     setVerdes(((v.data as Verde[]) ?? []).map((x) => ({ ...x, kg: Number(x.kg), kg_minimo: Number(x.kg_minimo) })));
     setInsumos(((i.data as Insumo[]) ?? []).map((x) => ({ ...x, cantidad: Number(x.cantidad), minimo: Number(x.minimo) })));
@@ -122,9 +128,9 @@ export default function PaginaBodega() {
     e.preventDefault();
     setError("");
     const kg = num(fv.kg);
-    const codigo = fv.codigo.trim().toUpperCase();
-    if (!/^[A-Z]{2,4}-\d{4}-GRN-\d{3}$/.test(codigo)) return setError("El código va así: VS-2025-GRN-013.");
+    const codigo = codigoNuevo;
     if (!fv.nombre.trim()) return setError("Escribe el nombre del café verde.");
+    if (!codigo) return setError("Escribe el origen del café: con eso se arma el código del lote.");
     if (!(kg > 0)) return setError("Escribe los kilos que entraron.");
     if (fv.proveedorId === "otro" && !fv.proveedor.trim()) return setError("Escribe el nombre del proveedor.");
     // Uno de nuestros proveedores: se guarda el vínculo (proveedor_id) y su nombre, que es lo
@@ -265,7 +271,6 @@ export default function PaginaBodega() {
         <form className="panel tueste-form" onSubmit={ingresarVerde} noValidate>
           <h2>Ingreso de café verde</h2>
           <div className="tueste-form__grid">
-            {campo("v-codigo", "Código del lote", fv.codigo, (x) => setFv((f) => ({ ...f, codigo: x })), "VS-2025-GRN-013")}
             {campo("v-nombre", "Nombre", fv.nombre, (x) => setFv((f) => ({ ...f, nombre: x })), "Café verde Villa Serrano")}
             {campo("v-origen", "Origen", fv.origen, (x) => setFv((f) => ({ ...f, origen: x })), "Villa Serrano, Chuquisaca")}
             <div className="carrito__campo">
@@ -291,6 +296,10 @@ export default function PaginaBodega() {
             {fv.proveedorId === "otro" && campo("v-prov-otro", "Nombre del proveedor", fv.proveedor, (x) => setFv((f) => ({ ...f, proveedor: x })), "Cooperativa de Caranavi")}
             {campo("v-kg", "Kilos que entraron", fv.kg, (x) => setFv((f) => ({ ...f, kg: x })), "60", "number")}
             {campo("v-costo", "Costo por kg (Bs.)", fv.costo, (x) => setFv((f) => ({ ...f, costo: x })), "45", "number")}
+            <div className="carrito__campo">
+              <span className="lote-auto__et">Código del lote (automático)</span>
+              <output className="lote-auto">{codigoNuevo || "Se arma con el origen"}</output>
+            </div>
           </div>
           {error && <p className="carrito__error" role="alert">{error}</p>}
           <div className="equipo__fila">
