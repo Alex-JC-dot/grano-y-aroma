@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/store/authStore";
 import MisPedidos from "@/components/cuenta/MisPedidos";
 import Puntos from "@/components/cuenta/Puntos";
+import MiGatito from "@/components/cuenta/MiGatito";
 
 /** Mi cuenta (RF-04): datos, puntos de fidelidad y pedidos con su seguimiento y pago. */
 export default function PaginaCuenta() {
@@ -32,8 +33,7 @@ export default function PaginaCuenta() {
             <div className="cuenta">
               <div className="cuenta__bloque">
                 <h2>Tus datos</h2>
-                <p><strong>{perfil?.nombre}</strong></p>
-                <p>{session.user.email}</p>
+                <MiGatito />
                 <button type="button" className="link equipo__salir" onClick={() => salir()}>Salir de la cuenta</button>
               </div>
               <Puntos saldo={perfil?.puntos ?? 0} />

@@ -330,6 +330,38 @@
   .tarjeta-cuenta--pantalla .tarjeta-cuenta__contenido { max-width: none; }
 }
 
+/* Los botones con forma de enlace, sin el estilo gris del navegador. */
+:where(button.link) { border: 0; background-color: transparent; padding: 0; font: inherit; cursor: pointer; }
+
+/* ---------- El gatito de la cuenta ---------- */
+.gatito { display: block; width: 100%; height: 100%; border-radius: 50%; }
+.gatito__ojos { transform-box: fill-box; transform-origin: center; animation: gatito-parpadea 5.5s ease-in-out infinite; }
+.gatito__mirada { animation: gatito-mira 7s ease-in-out infinite; }
+@keyframes gatito-parpadea { 0%, 92%, 100% { transform: scaleY(1); } 95%, 96.5% { transform: scaleY(0.08); } }
+@keyframes gatito-mira { 0%, 30%, 100% { transform: translateX(0); } 38%, 52% { transform: translateX(-1.6px); } 60%, 74% { transform: translateX(1.6px); } }
+.gatitos { min-width: 0; margin: 0; padding: 0; border: 0; }
+.gatitos legend { padding: 0; margin-bottom: 10px; font-size: 14px; font-weight: 500; }
+.tc-form .gatitos legend { color: var(--tc-suave, #c9bdb1); }
+.gatitos__fila { display: flex; gap: 14px; }
+.gatitos__opcion { position: relative; flex: none; width: 60px; height: 60px; padding: 4px; border-radius: 50%; box-shadow: 0 0 0 2px transparent; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.gatitos__opcion input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.gatitos__opcion:not(.is-on) .gatito { opacity: 0.82; }
+.gatitos__opcion:hover { transform: translateY(-3px); }
+.gatitos__opcion:hover .gatito, .gatitos__opcion.is-on .gatito { opacity: 1; }
+.gatitos__opcion.is-on { box-shadow: 0 0 0 2.5px #d39a6a; }
+.gatitos__opcion:has(:focus-visible) { outline: 2px solid #d39a6a; outline-offset: 5px; }
+.gatitos:disabled { opacity: 0.6; }
+.inicio .menu-cuenta__boton--gato { padding: 0; border-color: transparent; border-radius: 50%; overflow: hidden; }
+.inicio .mi-gatito { display: flex; flex-direction: column; gap: 18px; margin-bottom: 18px; }
+.inicio .mi-gatito__cabeza { display: flex; align-items: center; gap: 18px; }
+.inicio .mi-gatito__cabeza > div { min-width: 0; }
+.inicio .mi-gatito__foto { flex: none; width: 92px; height: 92px; display: grid; place-items: center; border-radius: 50%; overflow: hidden; background: var(--accent); color: var(--accent-ink); font: 400 40px/1 var(--f-display); }
+.inicio .mi-gatito p { margin: 0; }
+.inicio .mi-gatito__nombre { font-weight: 600; }
+.inicio .mi-gatito .mi-gatito__correo { font-size: 15px; color: var(--muted); overflow-wrap: anywhere; }
+.inicio .mi-gatito__cambiar { margin-top: 8px; padding: 0; border: 0; background-color: transparent; font: 500 15px var(--f-text); color: var(--accent); cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .gatito__ojos, .gatito__mirada { animation: none; } }
+
 /* =====================================================================
    Pago por QR y comprobante (carrito y Mi cuenta)
    ===================================================================== */

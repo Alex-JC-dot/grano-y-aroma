@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/store/authStore";
 import { mensajeDeError, recordarSesion, supabase } from "@/lib/supabase";
+import { ElegirGatito, type Gato } from "./Gatito";
 
 /**
  * Cuenta de Grano y Aroma con un solo diseño en toda la web: la tarjeta con el molino en
@@ -167,6 +168,7 @@ export function TarjetaCuenta({ pantalla = false, volver, children, ...props }: 
 export function FormularioCuenta({ motivo, alTerminar, alCancelar, soloEntrar = false, modoInicial = "entrar" }: Props) {
   const [modo, setModo] = useState<Modo>(modoInicial);
   const [nombre, setNombre] = useState("");
+  const [gato, setGato] = useState<Gato>("naranja");
   const [email, setEmail] = useState("");
   const [clave, setClave] = useState("");
   const [clave2, setClave2] = useState("");
@@ -204,7 +206,7 @@ export function FormularioCuenta({ motivo, alTerminar, alCancelar, soloEntrar = 
         const { data, error } = await supabase.auth.signUp({
           email: correo,
           password: clave,
-          options: { data: { nombre: nombre.trim() } },
+          options: { data: { nombre: nombre.trim(), avatar: gato } },
         });
         if (error) throw error;
         if (data.session) {
@@ -269,6 +271,12 @@ export function FormularioCuenta({ motivo, alTerminar, alCancelar, soloEntrar = 
           <button type="button" role="tab" aria-selected={modo === "crear"} className={modo === "crear" ? "is-on" : ""} onClick={() => cambiarModo("crear")}>
             Crear cuenta
           </button>
+        </div>
+      )}
+
+      {modo === "crear" && (
+        <div className="tc-anima">
+          <ElegirGatito valor={gato} alElegir={setGato} titulo="Elige tu gatito: será tu foto" />
         </div>
       )}
 

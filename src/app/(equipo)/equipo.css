@@ -171,6 +171,9 @@
 /* ---------- Caja ---------- */
 .caja { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 100vh; }
 .caja__productos { padding: 40px 40px 48px 48px; }
+/* Los botones con forma de enlace, sin el estilo gris del navegador. */
+:where(button.link) { border: 0; background-color: transparent; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+
 .lote-auto__et { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; }
 .lote-auto { display: flex; align-items: center; height: 48px; padding: 0 14px; border: 1px dashed var(--line-fuerte); border-radius: 6px; color: var(--accent); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
@@ -580,6 +583,11 @@
 
 /* ---------- Proveedores y órdenes de compra ---------- */
 .admin-form { margin-bottom: 24px; }
+.admin-form--orden { display: flex; flex-direction: column; gap: 18px; }
+.admin-form--orden h2, .admin-form--orden .admin-form__sub { margin: 0; }
+.admin-form--orden .tueste-form__select { max-width: 460px; }
+.admin-form--orden .orden-agregar { align-self: flex-start; }
+.admin-form--orden .caja__total { margin-top: 4px; padding-top: 18px; }
 .admin-form h2 { margin: 0 0 16px; font: 400 24px/1.2 var(--f-display); }
 .admin-form__sub { margin: 20px 0 10px; font: 500 12px/1.4 var(--f-text); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .admin-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 20px; margin-bottom: 18px; }
@@ -595,7 +603,9 @@
   border-radius: 10px;
   background: var(--surface);
 }
-.orden-linea__quitar { border: 0; background: none; padding: 0 0 10px; font: 500 14px var(--f-text); color: var(--peligro); cursor: pointer; text-align: left; }
+.admin-form--orden .orden-linea { margin-bottom: 0; }
+@media (min-width: 1180px) { .admin-form--orden .orden-linea { grid-template-columns: 182px 1.7fr 1.3fr 0.8fr 0.8fr; } }
+.inicio .orden-linea__quitar, .orden-linea__quitar { justify-self: start; border: 0; background: none; padding: 0; font: 500 14px var(--f-text); color: var(--peligro); cursor: pointer; text-align: left; }
 
 .ordenes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 20px; }
 .orden { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
