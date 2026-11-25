@@ -13,6 +13,8 @@ import { imprimirDocumento, numeroDocumento } from "@/lib/documento";
 import PagoQr, { PagoExitoso } from "@/components/cuenta/PagoPedido";
 import FormTarjeta, { TARJETA_VACIA, consultarBanco, validarTarjeta, type DatosTarjeta } from "@/components/ui/TarjetaSimulada";
 import UsarPuntos from "./UsarPuntos";
+import BotonUbicacion from "@/components/cuenta/BotonUbicacion";
+import { conUbicacion, sinUbicacion, type Punto } from "@/lib/ubicacion";
 import { bsPorPuntos, enPuntos, puntosAplicables } from "@/lib/puntos";
 
 /**
@@ -38,6 +40,7 @@ export default function CartDrawer() {
   const cantidad = useCartStore((s) => s.itemCount());
   const [paso, setPaso] = useState(0);
   const [datos, setDatos] = useState<Datos>(VACIO);
+  const [punto, setPunto] = useState<Punto | null>(null);
   const [errores, setErrores] = useState<Partial<Record<keyof Datos, string>>>({});
   const [pago, setPago] = useState<"qr" | "tarjeta">("qr");
   const [confirmado, setConfirmado] = useState<Comprobante | null>(null);
@@ -174,7 +177,7 @@ export default function CartDrawer() {
         p_nombre: datos.nombre.trim(),
         p_telefono: datos.telefono.trim(),
         p_direccion: datos.direccion.trim(),
-        p_referencia: datos.referencia.trim() || null,
+        p_referencia: conUbicacion(datos.referencia, punto) || null,
         p_puntos: canje,
       });
       if (error) throw error;
@@ -204,6 +207,7 @@ export default function CartDrawer() {
       usePendiente.getState().guardar(nuevo.pagado ? null : nuevo);
       clearCart();
       setDatos(VACIO);
+      setPunto(null);
       setTarjeta(TARJETA_VACIA);
       setPuntos(0);
     } catch (err) {
@@ -373,6 +377,14 @@ export default function CartDrawer() {
               {campo("nombre", "Nombre completo", "text", "name")}
               {campo("telefono", "Teléfono (WhatsApp)", "tel", "tel")}
               {campo("direccion", "Dirección de entrega en Sucre", "text", "street-address")}
+              <BotonUbicacion
+                punto={punto}
+                alUbicar={(p) => {
+                  setPunto(p);
+                  if (p.direccion) setDatos((d) => ({ ...d, direccion: p.direccion! }));
+                }}
+                alQuitar={() => setPunto(null)}
+              />
               {campo("referencia", "Referencia (opcional)")}
             </div>
           ) : (
@@ -475,8 +487,8 @@ export default function CartDrawer() {
               <div><dt>Cliente</dt><dd>{pedido.cliente.nombre}</dd></div>
               <div><dt>WhatsApp</dt><dd>{pedido.cliente.telefono}</dd></div>
               <div><dt>Dirección</dt><dd>{pedido.cliente.direccion}</dd></div>
-              {pedido.cliente.referencia && (
-                <div><dt>Referencia</dt><dd>{pedido.cliente.referencia}</dd></div>
+              {sinUbicacion(pedido.cliente.referencia) && (
+                <div><dt>Referencia</dt><dd>{sinUbicacion(pedido.cliente.referencia)}</dd></div>
               )}
               <div><dt>Método de pago</dt><dd>{pedido.metodo}</dd></div>
             </dl>

@@ -5,11 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/store/authStore";
 import { panelesDe } from "@/lib/supabase";
 import { useRuta } from "@/lib/ruta";
-import Gatito, { esGato } from "./Gatito";
+import Gatito, { gatoDe } from "./Gatito";
 
 /**
  * Cuenta en la barra: sin sesión, un botón "Login" con borde que lleva a /login (y vuelve aquí); con
- * sesión, la inicial con su menú. Las acciones que guardan datos también piden la cuenta solas.
+ * sesión, su gatito con el menú. Las acciones que guardan datos también piden la cuenta solas.
  */
 export default function MenuCuenta() {
   const session = useAuth((s) => s.session);
@@ -50,19 +50,18 @@ export default function MenuCuenta() {
   }
   const nombre = perfil?.nombre || session.user.email?.split("@")[0] || "Mi cuenta";
   const panel = panelesDe(perfil?.rol)[0];
-  const gato = session.user.user_metadata?.avatar;
 
   return (
     <div className="menu-cuenta" ref={ref}>
       <button
         type="button"
-        className={`cart-btn menu-cuenta__boton${esGato(gato) ? " menu-cuenta__boton--gato" : ""}`}
+        className="cart-btn menu-cuenta__boton menu-cuenta__boton--gato"
         aria-haspopup="menu"
         aria-expanded={abierto}
         aria-label={`Cuenta de ${nombre}`}
         onClick={() => setAbierto((a) => !a)}
       >
-        {esGato(gato) ? <Gatito gato={gato} /> : <span aria-hidden="true">{nombre.charAt(0).toUpperCase()}</span>}
+        <Gatito gato={gatoDe(session.user)} />
       </button>
       {abierto && (
         <div className="menu-cuenta__panel" role="menu">

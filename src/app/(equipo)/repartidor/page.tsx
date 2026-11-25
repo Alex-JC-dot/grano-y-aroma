@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { sinUbicacion, ubicacionDe } from "@/lib/ubicacion";
 import { formatBs } from "@/lib/utils";
 import { useAuth } from "@/store/authStore";
 import DialogoEntrega from "@/components/equipo/DialogoEntrega";
@@ -145,7 +146,8 @@ export default function MisEntregas() {
             <ul className="reparto__lista">
               {porEntregar.map((p) => {
                 const tel = numero(p.telefono);
-                const direccion = [p.direccion, p.referencia].filter(Boolean).join(" · ");
+                const direccion = [p.direccion, sinUbicacion(p.referencia)].filter(Boolean).join(" · ");
+                const punto = ubicacionDe(p.referencia);
                 return (
                   <li key={p.id} className="reparto-pedido">
                     <div className="reparto-pedido__cabeza">
@@ -171,8 +173,8 @@ export default function MisEntregas() {
                       <div><dt>Salió</dt><dd>{hora(p.en_camino_en)}</dd></div>
                     </dl>
                     <div className="reparto-pedido__acciones">
-                      {p.direccion && (
-                        <a className="btn btn--secondary" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.direccion}, Sucre, Bolivia`)}`} target="_blank" rel="noreferrer">
+                      {(punto || p.direccion) && (
+                        <a className="btn btn--secondary" href={punto ? `https://www.google.com/maps/dir/?api=1&destination=${punto.lat},${punto.lng}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.direccion}, Sucre, Bolivia`)}`} target="_blank" rel="noreferrer">
                           Cómo llegar
                         </a>
                       )}

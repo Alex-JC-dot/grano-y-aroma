@@ -86,6 +86,16 @@
 }
 .carrito__campo input[aria-invalid="true"] { border-color: var(--error); }
 .carrito__error { margin: 6px 0 0; font-size: 14px; color: var(--error); }
+/* Usar mi ubicación actual (carrito, Club y Mi cuenta). */
+.ubicacion { display: flex; flex-direction: column; gap: 8px; margin-top: -6px; }
+.ubicacion__boton { align-self: flex-start; display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line-fuerte); border-radius: 999px; background: transparent; color: var(--accent); font: 500 15px/1.2 var(--font-figtree), system-ui, sans-serif; cursor: pointer; }
+.ubicacion__boton:hover { border-color: var(--accent); }
+.ubicacion__boton:disabled { opacity: 0.6; }
+.ubicacion__punto, .ubicacion__nota { margin: 0; font-size: 14px; color: var(--muted); }
+.ubicacion__punto { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.ubicacion__punto span { color: var(--exito); }
+.ubicacion__punto a, .ubicacion__punto button { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
 .carrito__pagos { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .carrito__pagos legend { padding: 0; margin-bottom: 10px; font-size: 14px; font-weight: 500; }
 .carrito__pago { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid var(--line-media); border-radius: 10px; cursor: pointer; }

@@ -34,7 +34,8 @@ export default function MapaVisita() {
     let pedido = false;
     const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // En la computadora la tarjeta tapa la izquierda: el punto se corre hacia el espacio libre.
-    const margen = () => (s.clientWidth >= 900 ? { left: Math.min(560, s.clientWidth * 0.4), right: 0, top: 0, bottom: 0 } : { left: 0, right: 0, top: 0, bottom: Math.round(l.clientHeight * 0.42) });
+    const margen = () => (s.clientWidth >= 900 ? { left: Math.min(560, s.clientWidth * 0.4), right: 0, top: 0, bottom: 0 } : { left: 0, right: 0, top: 40, bottom: 0 });
+    const chico = () => s.clientWidth < 900;
 
     const cargar = async () => {
       if (pedido) return;
@@ -45,7 +46,7 @@ export default function MapaVisita() {
         gl.setWorkerUrl(TRABAJADOR);
         const m = new gl.Map({
           container: l,
-          style: estiloMapa(temaActual()),
+          style: estiloMapa(temaActual(), chico()),
           center: PLAZA,
           zoom: quieto ? CERCA : 13.4,
           pitch: quieto ? 48 : 0,
@@ -86,7 +87,7 @@ export default function MapaVisita() {
 
     const ver = new IntersectionObserver((e) => e[0].isIntersecting && cargar(), { rootMargin: "500px 0px" });
     ver.observe(s);
-    const tema = new MutationObserver(() => mapa.current?.setStyle(estiloMapa(temaActual())));
+    const tema = new MutationObserver(() => mapa.current?.setStyle(estiloMapa(temaActual(), chico())));
     tema.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     const medir = () => mapa.current?.setPadding(margen());
     window.addEventListener("resize", medir);

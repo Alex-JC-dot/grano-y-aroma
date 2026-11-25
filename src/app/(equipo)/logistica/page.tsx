@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
+import { enlaceMapa, sinUbicacion, ubicacionDe } from "@/lib/ubicacion";
 import { formatBs } from "@/lib/utils";
 import { TEXTO_PAGO, type PagoEstado } from "@/components/cuenta/PagoPedido";
 import DialogoEtapa from "@/components/equipo/DialogoEtapa";
@@ -165,6 +166,7 @@ export default function PaginaLogistica() {
   }, [cargar]);
 
   const elegido = pedidos.find((p) => p.id === elegidoId) ?? pedidos[0] ?? null;
+  const punto = ubicacionDe(elegido?.referencia);
   const lista = pedidos.filter((p) => filtro === "todos" || p.estado === filtro);
 
   /*
@@ -331,7 +333,7 @@ export default function PaginaLogistica() {
 
                 <dl className="panel__datos panel__datos--3">
                   <div><dt>Productos</dt><dd>{productosDe(elegido)}</dd></div>
-                  <div><dt>Dirección</dt><dd>{elegido.direccion ?? "—"}{elegido.referencia ? ` (${elegido.referencia})` : ""}</dd></div>
+                  <div><dt>Dirección</dt><dd>{elegido.direccion ?? "—"}{sinUbicacion(elegido.referencia) ? ` (${sinUbicacion(elegido.referencia)})` : ""}{punto && <small><a href={enlaceMapa(punto.lat, punto.lng)} target="_blank" rel="noreferrer">Ver ubicación en el mapa</a></small>}</dd></div>
                   <div><dt>Teléfono</dt><dd>{elegido.telefono ?? "—"}</dd></div>
                   <div>
                     <dt>Pago</dt>

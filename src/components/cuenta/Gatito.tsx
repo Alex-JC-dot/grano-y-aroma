@@ -13,7 +13,18 @@ export const GATITOS = {
   naranja: { nombre: "Naranja", fondo: "#5f6b3a", pelo: "#e8924a", sombra: "#d57c35", hocico: "#fbe3c6", oreja: "#f4b7a0", ojo: "#bfe08a", raya: "#c2681f" },
 } as const;
 export type Gato = keyof typeof GATITOS;
-export const esGato = (x: unknown): x is Gato => typeof x === "string" && x in GATITOS;
+const esGato = (x: unknown): x is Gato => typeof x === "string" && x in GATITOS;
+
+/**
+ * El gatito de una cuenta: el que eligió o, si es de antes de los gatitos, uno al azar. El azar sale
+ * de su id, así que a cada persona le toca siempre el mismo, en cualquier equipo.
+ */
+export function gatoDe(usuario: { id: string; user_metadata?: Record<string, unknown> }): Gato {
+  const elegido = usuario.user_metadata?.avatar;
+  if (esGato(elegido)) return elegido;
+  const todos = Object.keys(GATITOS) as Gato[];
+  return todos[[...usuario.id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7) % todos.length];
+}
 
 export default function Gatito({ gato, className = "" }: { gato: Gato; className?: string }) {
   const id = useId().replace(/:/g, "");
