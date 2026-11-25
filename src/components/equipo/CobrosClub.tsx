@@ -18,7 +18,10 @@ type Cobro = {
   estado: "pendiente" | "por_verificar" | "aprobado" | "rechazado";
   cliente: { nombre: string } | null;
   suscripciones: { frecuencia: number; gramos: number } | null;
+  pedido: { codigo: string; estado: string } | null;
 };
+
+const PASO: Record<string, string> = { recibido: "Recibido", preparacion: "En preparación", en_camino: "En camino", entregado: "Entregado", cancelado: "Cancelado" };
 
 const fecha = (iso: string) =>
   new Date(iso + "T12:00:00").toLocaleDateString("es-BO", { day: "numeric", month: "short", year: "numeric" });
@@ -32,7 +35,7 @@ export default function CobrosClub() {
     // perfiles (quien paga y quien verificó) y, sin decir cuál, la consulta no se resuelve.
     const { data, error: e } = await supabase
       .from("cobros_club")
-      .select("id, periodo, monto, estado, cliente:perfiles!cobros_club_cliente_id_fkey(nombre), suscripciones(frecuencia, gramos)")
+      .select("id, periodo, monto, estado, cliente:perfiles!cobros_club_cliente_id_fkey(nombre), suscripciones(frecuencia, gramos), pedido:pedidos(codigo, estado)")
       .order("creado_en", { ascending: false })
       .limit(8);
 
@@ -66,6 +69,7 @@ export default function CobrosClub() {
             <th scope="col">Envío</th>
             <th scope="col" className="num">Monto</th>
             <th scope="col">Estado</th>
+            <th scope="col">Pedido</th>
           </tr>
         </thead>
         <tbody>
@@ -81,6 +85,10 @@ export default function CobrosClub() {
                 <span className={`estado estado--${c.estado === "aprobado" ? "pagado" : "pendiente"}`}>
                   {c.estado === "aprobado" ? "Pagado" : "Esperando el pago"}
                 </span>
+              </td>
+              <td>
+                {c.pedido?.codigo ?? "—"}
+                {c.pedido && <small>{PASO[c.pedido.estado] ?? c.pedido.estado}</small>}
               </td>
             </tr>
           ))}

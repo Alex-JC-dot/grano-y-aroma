@@ -8,6 +8,8 @@ import { formatBs } from "@/lib/utils";
 import { categoriaDe, colorDe, esCafe } from "@/lib/catalogo";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
 import PagoQr, { type PagoEstado } from "@/components/cuenta/PagoPedido";
+import DatosEnvio from "@/components/cuenta/DatosEnvio";
+import Link from "next/link";
 import { useAuth } from "@/store/authStore";
 import PlanesClub, { Onda, PersonajeClub, PLANES, type PlanClub } from "./PlanesClub";
 import { OpcionCafe, OpcionCantidad, OpcionFrecuencia, OpcionMolienda, OpcionSorpresa } from "./OpcionesClub";
@@ -192,6 +194,7 @@ export default function Club() {
   useEffect(() => {
     cargarSub(uid);
   }, [uid]);
+  const perfil = useAuth((s) => s.perfil);
   const sub = useClubStore((s) => s.sub);
   const cobro = useClubStore((s) => s.cobro);
   const errorSub = useClubStore((s) => s.error);
@@ -334,7 +337,7 @@ export default function Club() {
                   <span className={`estado estado--${vigente.estado}`}>{vigente.estado === "activa" ? "Activa" : "En pausa"}</span>
                 )}
               </div>
-              {mensaje && <p className="club__aviso" role="status">{mensaje}</p>}
+              {mensaje && <p className="club__aviso" role="status">{mensaje}{/manos del equipo/.test(mensaje) && <> <Link href="/cuenta" className="link">Síguelo en Mi cuenta</Link></>}</p>}
               {errorSub && <p className="carrito__error" role="alert">{errorSub}</p>}
 
               {/*
@@ -347,6 +350,10 @@ export default function Club() {
                   <p className="club__fecha-nota">
                     Envío del {fechaLarga(deISO(cobro.periodo))} · <strong>{formatBs(cobro.monto)}</strong>
                   </p>
+                  {/* Sin dirección no hay a dónde enviarlo: se pide antes de pagar. */}
+                  {!perfil?.direccion || !perfil?.telefono ? (
+                    <DatosEnvio />
+                  ) : (
                   <PagoQr
                     key={cobro.id}
                     id={cobro.id}
@@ -354,10 +361,11 @@ export default function Club() {
                     estado={cobro.estado}
                     destino="club"
                     alPagar={async () => {
-                      setMensaje(`Pago confirmado por el banco. Tu envío del ${fechaLarga(deISO(cobro.periodo))} quedó programado.`);
+                      setMensaje(`Pago confirmado por el banco. Tu envío del ${fechaLarga(deISO(cobro.periodo))} ya está en manos del equipo.`);
                       await cargarSub(uid);
                     }}
                   />
+                  )}
                 </div>
               )}
               <dl className="panel__datos">
@@ -569,7 +577,7 @@ export default function Club() {
             {[
               ["Eliges", "Frecuencia, cantidad, café y molienda. Puedes cambiarlos antes de cada envío."],
               ["Tostamos", "Tu café sale de un lote recién tostado, con su código de trazabilidad."],
-              ["Te llega", "Te avisamos antes de cada cobro y de cada envío. Pausas cuando quieras."],
+              ["Te llega", "Pagas escaneando el QR y sigues el envío desde tu cuenta, hasta la foto de la entrega."],
             ].map(([t, d], i) => (
               <li key={t} className="paso" data-revelar style={{ "--i": i } as React.CSSProperties}>
                 <span className="paso__num">0{i + 1}</span>
@@ -581,8 +589,8 @@ export default function Club() {
           <ul className="beneficios" data-revelar>
             <li>10 a 15 % menos que en la tienda</li>
             <li>Envío sin costo en Sucre</li>
-            <li>Notas de cata del tostador en cada bolsa</li>
-            <li>Acceso anticipado a las subastas</li>
+            <li>Seguimiento de cada envío en tu cuenta</li>
+            <li>Pausas, saltas o cambias cuando quieras</li>
           </ul>
         </div>
       </section>
@@ -595,7 +603,7 @@ export default function Club() {
           </div>
           <div className="faq" data-revelar>
             {[
-              ["¿Cuándo me cobran?", "Dos días antes de cada envío, con el método de pago que registraste. Te avisamos por correo antes de cada cobro."],
+              ["¿Cuándo me cobran?", "Nunca se cobra solo: tres días antes de cada envío aparece el cobro en tu suscripción y lo pagas escaneando el QR."],
               ["¿Puedo cancelar cuando quiera?", "Sí. No hay permanencia mínima: puedes pausar, saltar un envío o cancelar desde esta página."],
               ["¿Qué es la Sorpresa del tostador?", "Cada envío trae un café distinto, elegido por nuestro tostador entre los lotes recién tostados. Es la forma de probar todos nuestros orígenes."],
               ["¿Envían fuera de Sucre?", "Por ahora el envío sin costo es solo en Sucre. Para otras ciudades escríbenos y te cotizamos el envío."],

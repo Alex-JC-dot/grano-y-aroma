@@ -9,7 +9,7 @@ import { useAuth } from "@/store/authStore";
 import PruebaEntrega from "@/components/cuenta/PruebaEntrega";
 
 /**
- * Logística (RF-29 a RF-31): pedidos de la tienda en línea y de subastas desde Supabase, por
+ * Logística (RF-29 a RF-31): pedidos de la tienda en línea, del Club y de subastas, por
  * estado. Al pasar un pedido al siguiente estado, el cliente lo ve en "Mi cuenta". Realtime
  * trae los pedidos nuevos sin recargar.
  *
@@ -145,7 +145,7 @@ export default function PaginaLogistica() {
           "verifico:perfiles!pedidos_entrega_verificada_por_fkey(nombre)," +
           "reparto:repartidores!pedidos_repartidor_id_fkey(nombre, telefono, vehiculo)",
       )
-      .in("canal", ["web", "subasta"])
+      .in("canal", ["web", "subasta", "club"])
       .order("creado_en", { ascending: false })
       .limit(200);
     setPedidos(((data as unknown as Pedido[]) ?? []).map((p) => ({ ...p, total: Number(p.total) })));
@@ -271,6 +271,7 @@ export default function PaginaLogistica() {
                   )}
                   {porVerificar(p) && esAdmin && <span className="estado estado--camino pedido__pago">Revisar entrega</span>}
                   {p.estado === "en_camino" && p.entrega_observacion && <span className="estado estado--pausada pedido__pago">Entrega devuelta</span>}
+                  {p.canal === "club" && <span className="estado estado--recibido pedido__pago">Envío del Club</span>}
                   <span className="pedido__cliente">{p.canal === "subasta" ? "Subasta ganada" : p.nombre ?? "Cliente"}</span>
                   <span className="pedido__fila pedido__meta">
                     <span>{p.direccion ?? "Sin dirección"}</span>

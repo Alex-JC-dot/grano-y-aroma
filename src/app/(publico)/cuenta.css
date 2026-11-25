@@ -373,6 +373,10 @@
   .inicio .pago-exito__check circle, .inicio .pago-exito__check path { animation: none; stroke-dashoffset: 0; }
 }
 
+.inicio .datos-envio { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 460px; }
+.inicio .datos-envio p { margin: 0; }
+.inicio .datos-envio .btn { align-self: flex-start; }
+
 /* Lo que ve el celular que escanea (/pagar). */
 .inicio.pagar { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 32px 22px; text-align: center; background: var(--bg); color: var(--ink); }
 .pagar__marca { font: 400 24px / 1 var(--f-display); margin: 0 0 18px; }
