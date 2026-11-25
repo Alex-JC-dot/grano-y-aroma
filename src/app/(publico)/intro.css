@@ -10,6 +10,7 @@ html[data-intro="si"] .ga-intro { display: grid; place-items: center; position: 
 html[data-intro="si"] .ga-intro__icono, html[data-intro="si"] .ga-intro__nombre { position: absolute; inset: 0; background: #fbeeda; -webkit-mask: url("/intro-logo.webp") center / 100% 100% no-repeat; mask: url("/intro-logo.webp") center / 100% 100% no-repeat; }
 /* El logo se parte en dos: arriba el ícono, abajo el nombre. */
 html[data-intro="si"] .ga-intro__icono { inset: 0 0 41.6% 0; -webkit-mask-size: 100% 171.23%; mask-size: 100% 171.23%; -webkit-mask-position: 0 0; mask-position: 0 0; }
-html[data-intro="si"] .ga-intro__vacio { opacity: 0.16; }
+html[data-intro="si"] .ga-intro__vacio { opacity: 0.16; animation: ga-intro-asoma 0.7s ease-out both; }
+@keyframes ga-intro-asoma { from { opacity: 0; } }
 html[data-intro="si"] .ga-intro__lleno { clip-path: inset(100% 0 0 0); }
-html[data-intro="si"] .ga-intro__nombre { inset: 58.4% 0 0 0; -webkit-mask-size: 100% 240.38%; mask-size: 100% 240.38%; -webkit-mask-position: 0 100%; mask-position: 0 100%; clip-path: inset(0 100% 0 0); }
+html[data-intro="si"] .ga-intro__nombre { inset: 58.4% 0 0 0; -webkit-mask-size: 100% 240.38%, 100% 100%; mask-size: 100% 240.38%, 100% 100%; -webkit-mask-position: 0 100%, 0 0; mask-position: 0 100%, 0 0; --v: 0%; -webkit-mask-image: url("/intro-logo.webp"), linear-gradient(90deg, #000 calc(var(--v) - 40%), transparent var(--v)); mask-image: url("/intro-logo.webp"), linear-gradient(90deg, #000 calc(var(--v) - 40%), transparent var(--v)); -webkit-mask-composite: source-in; mask-composite: intersect; }

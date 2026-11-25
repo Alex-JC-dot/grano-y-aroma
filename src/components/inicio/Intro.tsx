@@ -13,12 +13,12 @@ import { useEffect, useRef, useState } from "react";
  * Un toque la salta. Con "reducir movimiento" no sale. Y si algo falla, ese mismo script la quita.
  */
 
-const LLENA = 900; // el ícono
-const NOMBRE = 480; // el nombre
-const PAUSA = 300;
-const VACIA = 1000; // el chocolate
+const LLENA = 1150; // el ícono
+const NOMBRE = 850; // el nombre
+const PAUSA = 320;
+const VACIA = 1500; // el chocolate
 
-const suave = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const suave = (t: number) => 0.5 - Math.cos(Math.PI * t) / 2; // sin tirones al empezar ni al terminar
 const limite = (t: number) => Math.max(0, Math.min(1, t));
 
 /** Borde de olas a la altura `y`, hasta el fondo de la pantalla. */
@@ -27,7 +27,7 @@ function olas(w: number, h: number, y: number, alto: number, fase: number) {
   let d = `M0 ${h + 40}V${y + Math.sin(fase) * alto}`;
   for (let i = 1; i <= pasos; i++) {
     const x0 = ((i - 1) / pasos) * w, x1 = (i / pasos) * w;
-    const f = (x: number) => y + Math.sin(fase + (x / w) * 8.6) * alto + Math.sin(fase * 1.7 + (x / w) * 17) * alto * 0.32;
+    const f = (x: number) => y + Math.sin(fase + (x / w) * 6.4) * alto + Math.sin(fase * 1.3 + (x / w) * 11) * alto * 0.22;
     d += `Q${(x0 + x1) / 2} ${2 * f((x0 + x1) / 2) - (f(x0) + f(x1)) / 2} ${x1} ${f(x1)}`;
   }
   return `${d}V${h + 40}Z`;
@@ -56,20 +56,20 @@ export default function Intro() {
       // El ícono se llena desde abajo, con la superficie ondulando.
       const lleno = suave(limite(t / LLENA));
       const nivel = 100 - lleno * 112;
-      const ola = (x: number) => nivel + Math.sin(ahora / 170 + x / 11) * 3.2 * (1 - lleno * 0.6);
+      const ola = (x: number) => nivel + Math.sin(ahora / 260 + x / 13) * 2.6 * (1 - lleno * 0.6);
       icono.style.clipPath = `polygon(${[0, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100].map((x) => `${x}% ${ola(x).toFixed(1)}%`).join(",")},100% 100%,0 100%)`;
-      nombre.style.clipPath = `inset(0 ${(100 - suave(limite((t - LLENA * 0.72) / NOMBRE)) * 100).toFixed(1)}% 0 0)`;
+      nombre.style.setProperty("--v", `${(suave(limite((t - LLENA * 0.72) / NOMBRE)) * 140).toFixed(1)}%`);
 
       if (!vaciar && t > LLENA * 0.72 + NOMBRE + PAUSA) vaciar = ahora;
       else if (!vaciar) chocolate.setAttribute("d", olas(w, h, -120, 0, 0)); // lleno: el degradado es el mismo al vaciarse
       if (vaciar) {
         const p = suave(limite((ahora - vaciar) / VACIA));
-        const alto = 16 + Math.sin(p * Math.PI) * Math.min(46, h * 0.06);
+        const alto = 12 + Math.sin(p * Math.PI) * Math.min(30, h * 0.042);
         const y = -alto * 2 + p * (h + alto * 4);
-        chocolate.setAttribute("d", olas(w, h, y, alto, ahora / 260));
-        caramelo.setAttribute("d", olas(w, h, y - Math.sin(p * Math.PI) * h * 0.11, alto * 0.9, ahora / 320 + 2));
-        logo.style.transform = `translateY(${p * h * 0.42}px) scale(${1 - p * 0.12})`;
-        logo.style.opacity = String(limite(1 - p * 2.1));
+        chocolate.setAttribute("d", olas(w, h, y, alto, ahora / 430));
+        caramelo.setAttribute("d", olas(w, h, y - Math.sin(p * Math.PI) * h * 0.085, alto * 0.9, ahora / 520 + 1.4));
+        logo.style.transform = `translateY(${p * h * 0.3}px) scale(${1 - p * 0.06})`;
+        logo.style.opacity = String(1 - suave(limite(p * 1.9)));
         if (p >= 1) return terminar();
       }
       cuadro = requestAnimationFrame(paso);
