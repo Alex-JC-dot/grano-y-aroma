@@ -41,7 +41,7 @@ export type Subasta = {
 
 export type Puja = { id: number; monto: number; creado_en: string; postor: string; es_mia: boolean };
 export type AvisoSubasta = { tipo: "ok" | "superado" | "ganaste"; titulo: string; texto: string };
-/** La última puja que entró en cualquier lote mientras la página está abierta. */
+/** La última puja que entró en cualquier lote mientras la página está abierta (la anuncia el banner). */
 export type UltimaPuja = { id: number; titulo: string; monto: number; postor: string; cuando: number };
 
 interface SubastasStore {

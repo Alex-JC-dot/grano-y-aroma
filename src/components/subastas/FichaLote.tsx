@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { abierta, nombreCorto, useSubastas, type Puja, type Subasta } from "@/store/subastasStore";
 import { AvisoSubasta, horaDe, useSubastasEnVivo } from "./EnVivo";
 import PanelPuja, { MontoVivo, Podio, Reloj } from "./PanelPuja";
-import { colorLote, Saco } from "./Personajes";
+import { colorLote } from "./colorLote";
 import { Medalla } from "./Subastas";
 import { formatBs } from "@/lib/utils";
 
@@ -98,7 +98,6 @@ function Lote({ lote }: { lote: Subasta }) {
               <p className="ficha__notas">{lote.descripcion}</p>
 
               <div className="slote slote--ficha" style={{ "--cc": color } as React.CSSProperties}>
-                <span className="slote__saco"><Saco color={color} /></span>
                 <div className="slote__cuerpo">
                   <div className="puja-actual">
                     <span>

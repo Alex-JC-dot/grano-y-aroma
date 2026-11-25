@@ -7,7 +7,7 @@ import { Cerradas, ComoFunciona, Pestanas, Proximas, type Pestana } from "./Suba
 import { AvisoSubasta, useSubastasEnVivo } from "./EnVivo";
 import Escenario from "./Escenario";
 import PanelPuja, { MontoVivo, Podio, Reloj } from "./PanelPuja";
-import { colorLote, Saco } from "./Personajes";
+import { colorLote } from "./colorLote";
 import { Onda } from "@/components/club/PlanesClub";
 import { abierta, useSubastas, type Subasta } from "@/store/subastasStore";
 
@@ -29,10 +29,9 @@ export default function Subastas() {
 
   return (
     <>
-      <section className="section page-top subastas" aria-labelledby="subastas-titulo">
+      <Escenario />
+      <section className="section subastas" aria-label="Lotes en subasta">
         <div className="wrap">
-          <Escenario />
-
           <Pestanas
             pestana={pestana}
             setPestana={setPestana}
@@ -65,7 +64,7 @@ export default function Subastas() {
   );
 }
 
-/** Foto con borde ondulado, reloj encima y el saquito del color del lote asomándose. */
+/** Foto con borde ondulado, reloj encima. */
 export function FotoLote({ lote, children, enlace = true }: { lote: Subasta; children?: React.ReactNode; enlace?: boolean }) {
   const foto = lote.imagen && <img src={lote.imagen} alt={lote.imagen_alt ?? ""} loading="lazy" decoding="async" />;
   return (
@@ -100,7 +99,6 @@ function LoteVivo({ lote: a, ahora }: { lote: Subasta; ahora: number }) {
         <Medalla puntaje={a.puntaje} />
         {cerrada ? <span className="slote__cerrando">Cerrando…</span> : <Reloj hasta={a.cierra_en} ahora={ahora} texto="Cierra en" />}
       </FotoLote>
-      <span className="slote__saco"><Saco color={color} /></span>
 
       <div className="slote__cuerpo">
         <p className="slote__datos">{datosLote(a)}</p>

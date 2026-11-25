@@ -1,9 +1,7 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 
 import { useEffect } from "react";
 import { useSubastas } from "@/store/subastasStore";
-import { Martillero } from "./Personajes";
 
 /** Conecta la página a las subastas en vivo y mueve el reloj cada segundo. */
 export function useSubastasEnVivo() {
@@ -19,7 +17,7 @@ export function useSubastasEnVivo() {
 /** Granos de café que caen al ganar. */
 const CONFETI = Array.from({ length: 34 }, (_, k) => ({ x: (k * 37) % 100, d: (k % 9) * 0.16, t: 2.6 + (k % 5) * 0.35, r: (k * 53) % 360, c: k % 4 }));
 
-/** Aviso con su personaje: "Vas primero", "Te superaron" (RF-13) o "¡Ganaste!". */
+/** Aviso: "Vas primero", "Te superaron" (RF-13) o "¡Ganaste!". */
 export function AvisoSubasta() {
   const aviso = useSubastas((s) => s.aviso);
   const setAviso = useSubastas((s) => s.setAviso);
@@ -38,7 +36,7 @@ export function AvisoSubasta() {
           {CONFETI.map((g, k) => <i key={k} data-c={g.c} style={{ left: `${g.x}%`, animationDelay: `${g.d}s`, animationDuration: `${g.t}s`, rotate: `${g.r}deg` }} />)}
         </span>
         <div className="ganaste__caja">
-          <img src="/subastas/ganador.webp" alt="" width={522} height={560} />
+          <svg className="ganaste__copa" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 8h28v14c0 10-6 16-14 16s-14-6-14-16Z" /><path d="M18 12H8c0 10 4 15 11 16M46 12h10c0 10-4 15-11 16M32 38v10M22 56h20l-3-8H25Z" /></svg>
           <strong>{aviso.titulo}</strong>
           <span>{aviso.texto}</span>
           <button type="button" className="btn btn--primary" onClick={() => setAviso(null)}>¡Qué bien!</button>
@@ -46,10 +44,7 @@ export function AvisoSubasta() {
       </div>
     );
   return (
-    <div key={aviso.texto} className={`toast toast--personaje${aviso.tipo === "ok" ? " toast--ok" : ""}`} role={aviso.tipo === "ok" ? "status" : "alert"}>
-      <span className="toast__personaje">
-        {aviso.tipo === "ok" ? <Martillero golpe={1} /> : <img src="/subastas/superado.webp" alt="" width={423} height={560} />}
-      </span>
+    <div key={aviso.texto} className={`toast${aviso.tipo === "ok" ? " toast--ok" : ""}`} role={aviso.tipo === "ok" ? "status" : "alert"}>
       <strong>{aviso.titulo}</strong>
       <span>{aviso.texto}</span>
       <button type="button" className="toast__cerrar" aria-label="Cerrar aviso" onClick={() => setAviso(null)}>×</button>

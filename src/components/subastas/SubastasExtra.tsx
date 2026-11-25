@@ -4,7 +4,7 @@ import { formatBs } from "@/lib/utils";
 import { useAuth } from "@/store/authStore";
 import { useSubastas, type Subasta } from "@/store/subastasStore";
 import { Onda } from "@/components/club/PlanesClub";
-import { colorLote, Saco } from "./Personajes";
+import { colorLote } from "./colorLote";
 import { Reloj } from "./PanelPuja";
 import { datosLote, FotoLote, Medalla } from "./Subastas";
 
@@ -67,7 +67,6 @@ export function Proximas({ lista, ahora }: { lista: Subasta[]; ahora: number }) 
               <Medalla puntaje={p.puntaje} />
               <Reloj hasta={p.abre_en} ahora={ahora} texto="Abre en" />
             </FotoLote>
-            <span className="slote__saco"><Saco color={color} /></span>
             <div className="slote__cuerpo">
               <p className="slote__datos">{datosLote(p)}</p>
               <h2>{p.titulo}</h2>
