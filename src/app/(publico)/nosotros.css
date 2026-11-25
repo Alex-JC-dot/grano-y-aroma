@@ -106,5 +106,6 @@ html[data-revelar-activo="on"] .inicio .curva:not([data-visible]) .curva__hitos 
 @media (max-width: 599px) {
   .inicio .nosotros .cifras__lista { gap: 12px; }
   .inicio .nosotros .cifra { padding: 18px 16px 20px; border-radius: 22px; }
+  .inicio .nosotros .cifra__valor { font-size: clamp(27px, 9.6vw, 40px); }
   .inicio .nosotros :is(.banda-foto, .mapa, .region, .curva, .galeria__foto, .process__item figure) { border-radius: 22px; }
 }
