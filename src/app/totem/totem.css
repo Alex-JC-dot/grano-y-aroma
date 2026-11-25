@@ -422,6 +422,18 @@
 @keyframes lector-invita { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -16px); } }
 @keyframes lector-entra { to { transform: translate(-50%, -78px) scaleY(0.25); opacity: 0.2; } }
 
+/* Elegir cómo pagar, y el QR. */
+.totem__metodos { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 3); width: 100%; max-width: calc(var(--u) * 86); }
+.totem__metodos button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * 1.6); min-height: max(220px, calc(var(--u) * 46)); padding: calc(var(--u) * 3); border: 0; border-radius: calc(var(--u) * 4.4); background: #f8ecdb; color: var(--ink); font-family: var(--f-text); cursor: pointer; transition: transform 0.12s ease; }
+.totem__metodos button:active { transform: scale(0.97); }
+.totem__metodos svg { width: max(76px, calc(var(--u) * 15)); height: max(76px, calc(var(--u) * 15)); color: var(--accent); }
+.totem__metodos strong { font: 400 max(32px, calc(var(--u) * 6)) / 1 var(--f-display); }
+.totem__metodos span { font-size: max(16px, calc(var(--u) * 2.7)); line-height: 1.35; color: #6b5443; }
+.totem__qr { width: min(calc(var(--u) * 58), 46vh); aspect-ratio: 1; padding: calc(var(--u) * 2); border-radius: calc(var(--u) * 3.4); background: #fff; }
+.totem__qr svg { display: block; width: 100%; height: 100%; }
+.totem__qr-espera { display: flex; align-items: center; gap: 12px; margin: 0; font: 500 max(18px, calc(var(--u) * 3)) / 1.2 var(--f-text); color: #e2c9ab; }
+.totem__qr-espera i { width: 14px; height: 14px; border-radius: 50%; background: #e2b07e; animation: pago-late 1.3s ease-in-out infinite; }
+
 .totem__pin { display: flex; gap: 18px; margin: 0; }
 .totem__pin span { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #f8ecdb; }
 .totem__pin span.is-on { background: #f8ecdb; }

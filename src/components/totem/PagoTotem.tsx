@@ -1,15 +1,18 @@
 "use client";
 
 import { formatBs } from "@/lib/utils";
+import QrTotem from "./QrTotem";
 
-/** Pago con tarjeta de débito: lector simulado → PIN → "banco" → aprobado o rechazado. */
-export type EstadoPago = "insertar" | "leyendo" | "pin" | "procesando" | "rechazado";
+/** Se elige QR o tarjeta. Tarjeta: lector simulado → PIN → "banco" → aprobado o rechazado. */
+export type EstadoPago = "elegir" | "qr" | "verificando" | "insertar" | "leyendo" | "pin" | "procesando" | "rechazado";
 
 export default function PagoTotem({
   pago,
   pin,
   total,
   error,
+  alElegir,
+  alEscanear,
   alInsertar,
   alTeclear,
   alBorrar,
@@ -20,6 +23,9 @@ export default function PagoTotem({
   pin: string;
   total: number;
   error: string;
+  alElegir: (metodo: "qr" | "tarjeta") => void;
+  /** El celular avisó que pagó. */
+  alEscanear: () => void;
   alInsertar: () => void;
   alTeclear: (d: string) => void;
   alBorrar: () => void;
@@ -30,7 +36,37 @@ export default function PagoTotem({
     <section className="totem__pago" aria-live="polite">
       <p className="totem__pago-total">Total a pagar <strong>{formatBs(total)}</strong></p>
 
-      {pago === "insertar" || pago === "leyendo" ? (
+      {pago === "elegir" ? (
+        <>
+          <h1>¿Cómo quieres pagar?</h1>
+          <div className="totem__metodos">
+            <button type="button" onClick={() => alElegir("qr")}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM20 14v1.5M14 20h1.5" />
+              </svg>
+              <strong>QR</strong>
+              <span>Escanéalo con tu celular</span>
+            </button>
+            <button type="button" onClick={() => alElegir("tarjeta")}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <rect x="2.5" y="5" width="19" height="14" rx="2.4" />
+                <path d="M2.5 9.5h19M6 15h4" />
+              </svg>
+              <strong>Tarjeta</strong>
+              <span>Débito, con tu PIN</span>
+            </button>
+          </div>
+          {error && <p className="totem__error" role="alert">{error}</p>}
+        </>
+      ) : pago === "qr" ? (
+        <QrTotem total={total} alPagar={alEscanear} />
+      ) : pago === "verificando" ? (
+        <div className="totem__procesando">
+          <span className="totem__spinner" aria-hidden="true" />
+          <h1>Verificando…</h1>
+          <p className="totem__ayuda">Estamos confirmando tu pago</p>
+        </div>
+      ) : pago === "insertar" || pago === "leyendo" ? (
         <>
           <h1>{pago === "leyendo" ? "Leyendo tarjeta…" : "Inserta o acerca tu tarjeta de débito"}</h1>
           {/* El lector simulado: tocar la tarjeta equivale a insertarla en el lector real. */}
