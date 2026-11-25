@@ -14,13 +14,14 @@ import CirculoTotem, { type ManejoCirculo } from "@/components/totem/CirculoTote
 import PagoTotem, { type EstadoPago } from "@/components/totem/PagoTotem";
 import { Flecha } from "@/components/totem/DetalleTotem";
 import FotoTotem from "@/components/totem/FotoTotem";
+import { VERIFICANDO } from "@/components/cuenta/PagoPedido";
 import { LOGO_TICKET, TicketImpresion, TicketVista, turnoTexto, type DatosTicket } from "@/components/totem/TicketTotem";
 
 /**
  * Tótem de autoservicio (EXPOSOFT, migraciones 014 y 016). El cliente, sin cuenta y sin ayuda:
  *
- *   Publicidad → menú con fotos → "Mi pedido" (círculo) → paga con tarjeta de débito (inserta
- *   + PIN) → ticket con su número → "retira en la barra" → vuelve solo al inicio.
+ *   Publicidad → menú con fotos → "Mi pedido" (círculo) → paga con QR (lo escanea con su celular)
+ *   o con tarjeta de débito (inserta + PIN) → ticket con su número → "retira en la barra" → vuelve solo al inicio.
  *
  * El pedido entra a la misma base que la tienda y la caja (mismo stock, mismas ventas) con el
  * canal "totem", y aparece al instante en la pantalla de Barra. El pago con tarjeta se
@@ -39,6 +40,7 @@ type Fase = "inicio" | "menu" | "pedido" | "pago" | "listo";
 const MODOS = ["Para aquí", "Para llevar"] as const;
 
 const INACTIVIDAD = 60_000; // vuelve al inicio sin actividad
+const INACTIVIDAD_QR = 180_000; // sacar el celular y escanear lleva su tiempo
 const AVISO = 12_000; // antes, pregunta "¿Sigues ahí?"
 const VUELTA_TICKET = 25; // segundos con el ticket en pantalla
 
@@ -79,7 +81,7 @@ function Autoservicio() {
   const [orden, setOrden] = useState<LineaTotem[]>([]);
   const [modo, setModo] = useState<(typeof MODOS)[number]>("Para aquí");
   const [origen, setOrigen] = useState({ x: 0, y: 0 });
-  const [pago, setPago] = useState<EstadoPago>("insertar");
+  const [pago, setPago] = useState<EstadoPago>("elegir");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [ticket, setTicket] = useState<DatosTicket | null>(null);
@@ -122,7 +124,7 @@ function Autoservicio() {
     setFase("inicio");
     setOrden([]);
     setModo("Para aquí");
-    setPago("insertar");
+    setPago("elegir");
     setPin("");
     setError("");
     setTicket(null);
@@ -143,10 +145,11 @@ function Autoservicio() {
     window.addEventListener("pointerdown", tocar);
     const reloj = window.setInterval(() => {
       // Mientras el "banco" procesa no se interrumpe.
-      if (pago === "procesando" || pago === "leyendo") return;
+      if (pago === "procesando" || pago === "leyendo" || pago === "verificando") return;
+      const limite = pago === "qr" ? INACTIVIDAD_QR : INACTIVIDAD;
       const quieto = Date.now() - ultimoToque.current;
-      if (quieto > INACTIVIDAD) reiniciar();
-      else if (quieto > INACTIVIDAD - AVISO) setPreguntar(true);
+      if (quieto > limite) reiniciar();
+      else if (quieto > limite - AVISO) setPreguntar(true);
     }, 1000);
     return () => {
       window.removeEventListener("pointerdown", tocar);
@@ -216,8 +219,14 @@ function Autoservicio() {
   const irAPagar = () => {
     setError("");
     setPin("");
-    setPago("insertar");
+    setPago("elegir");
     setFase("pago");
+  };
+
+  const elegirPago = (metodo: "qr" | "tarjeta") => {
+    setError("");
+    setPin("");
+    setPago(metodo === "qr" ? "qr" : "insertar");
   };
 
   // El "lector": el cliente toca la tarjeta (en el tótem real, la inserta en el lector).
@@ -238,17 +247,36 @@ function Autoservicio() {
       setPin("");
       return setPago("rechazado");
     }
-    // Pago aprobado: recién ahora se crea el pedido y se descuenta el stock.
+    await crearPedido("tarjeta");
+  };
+
+  /** El celular avisó que pagó el QR. */
+  const alEscanear = async () => {
+    setPreguntar(false);
+    setPago("verificando");
+    setError("");
+    await espera(VERIFICANDO);
+    await crearPedido("qr");
+  };
+
+  /** Pago aprobado: recién ahora se crea el pedido y se descuenta el stock. */
+  const crearPedido = async (metodo: "qr" | "tarjeta") => {
     const { data, error: e } = await supabase.rpc("confirmar_pedido", {
       items: orden.map((l) => ({ producto_id: l.item.id, cantidad: l.qty, molienda: l.opciones || "Única" })),
       p_canal: "totem",
-      p_metodo: "tarjeta",
+      p_metodo: metodo,
       p_referencia: modo,
     });
     if (e) {
-      setPago("insertar");
+      setPago(metodo === "qr" ? "elegir" : "insertar");
       setPin("");
       return setError(/invalid input value for enum|es_totem/i.test(e.message) ? "Falta la migración 014 en Supabase." : mensajeDeError(e));
+    }
+    // Con QR nace "esperando el pago": el celular ya avisó, así que se marca pagado. Si la red falla, se insiste.
+    for (let i = 0; metodo === "qr" && i < 3; i++) {
+      const { error: sinPagar } = await supabase.rpc("pagar_con_qr", { p_token: data.pago_token });
+      if (!sinPagar) break;
+      await espera(700);
     }
     setTicket({
       turno: data.turno ?? data.id,
@@ -257,9 +285,9 @@ function Autoservicio() {
       lineas: orden.map((l) => ({ nombre: l.item.nombre, detalle: l.opciones, cantidad: l.qty, precio: l.item.precio })),
       modo,
       total: Number(data.total),
-      pago: "Tarjeta de débito",
+      pago: metodo === "qr" ? "QR" : "Tarjeta de débito",
     });
-    setPago("insertar");
+    setPago("elegir");
     setCuenta(VUELTA_TICKET);
     setFase("listo");
   };
@@ -296,7 +324,7 @@ function Autoservicio() {
     );
   }
 
-  const ocupado = pago === "procesando" || pago === "leyendo";
+  const ocupado = pago === "procesando" || pago === "leyendo" || pago === "verificando";
   return (
     <>
       {/* La publicidad sigue detrás mientras el botón crece. */}
@@ -323,7 +351,7 @@ function Autoservicio() {
             type="button"
             className="tvolver tcirculo__volver"
             disabled={fase === "pago" && ocupado}
-            onClick={fase === "pago" ? () => setFase("pedido") : volverAlMenu}
+            onClick={fase !== "pago" ? volverAlMenu : pago === "elegir" ? () => setFase("pedido") : () => { setPin(""); setError(""); setPago("elegir"); }}
           >
             <Flecha /> Volver
           </button>
@@ -358,7 +386,7 @@ function Autoservicio() {
               </ul>
               <div className="tpedido__pie">
                 <span>Total<strong>{formatBs(total)}</strong></span>
-                <button type="button" className="tprincipal" disabled={!orden.length} onClick={irAPagar}>Pagar con tarjeta</button>
+                <button type="button" className="tprincipal" disabled={!orden.length} onClick={irAPagar}>Pagar</button>
               </div>
             </div>
           ) : (
@@ -367,6 +395,8 @@ function Autoservicio() {
               pin={pin}
               total={total}
               error={error}
+              alElegir={elegirPago}
+              alEscanear={alEscanear}
               alInsertar={insertarTarjeta}
               alTeclear={teclear}
               alBorrar={() => setPin((p) => p.slice(0, -1))}
