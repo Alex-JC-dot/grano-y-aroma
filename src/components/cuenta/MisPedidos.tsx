@@ -70,17 +70,23 @@ const productosDe = (p: Pedido) =>
     ? p.nombre ?? "Lote ganado en subasta"
     : (p.canal === "club" ? "Club: " : "") + p.pedido_items.map((i) => `${i.cantidad} × ${i.productos?.nombre ?? "Producto"}${i.molienda && i.molienda !== "Única" ? ` (${i.molienda})` : ""}`).join(", ");
 
+const A_LA_VISTA = 5;
+const terminado = (p: Pedido) => p.estado === "entregado" || p.estado === "cancelado";
+
 export default function MisPedidos({ uid }: { uid: string }) {
   const [pedidos, setPedidos] = useState<Pedido[] | null>(null);
   const [abierto, setAbierto] = useState<number | null>(null);
   const [cancelando, setCancelando] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [todos, setTodos] = useState(false);
+  const [quitando, setQuitando] = useState(false);
 
   const cargar = useCallback(async () => {
     const { data } = await supabase
       .from("pedidos")
       .select("id, codigo, canal, estado, total, nombre, direccion, metodo_pago, pago_estado, pago_nota, repartidor, preparado_por, entrega_foto, entrega_recibido_por, entrega_tipo, entrega_nota, entrega_firma, creado_en, preparacion_en, en_camino_en, entregado_en, cancelado_en, pedido_items(cantidad, molienda, productos(nombre)), reparto:repartidores!pedidos_repartidor_id_fkey(nombre, telefono, vehiculo)")
       .eq("cliente_id", uid)
+      .eq("oculto_cliente", false) // los que el cliente quitó de su lista (migración 025)
       .order("creado_en", { ascending: false });
     setPedidos(((data as unknown as Pedido[]) ?? []).map((p) => ({ ...p, total: Number(p.total) })));
   }, [uid]);
@@ -110,6 +116,18 @@ export default function MisPedidos({ uid }: { uid: string }) {
     usePendiente.getState().cargar();
   };
 
+  /** Quita de la lista los que ya terminaron. La venta sigue guardada en el negocio. */
+  const quitar = async (ids: number[], pregunta: string) => {
+    if (!window.confirm(pregunta)) return;
+    setError("");
+    setQuitando(true);
+    const { error } = await supabase.rpc("ocultar_pedidos", { p_ids: ids });
+    setQuitando(false);
+    if (error) return setError(/ocultar_pedidos/.test(error.message) ? "Falta la migración 025 en Supabase." : mensajeDeError(error));
+    setAbierto(null);
+    cargar();
+  };
+
   const alPagar = () => {
     cargar();
     useAuth.getState().cargarPerfil(); // los puntos de la compra entran al pagar
@@ -124,10 +142,24 @@ export default function MisPedidos({ uid }: { uid: string }) {
       </p>
     );
 
+  const terminados = pedidos.filter(terminado);
+  const visibles = todos ? pedidos : pedidos.slice(0, A_LA_VISTA);
+
   return (
+    <>
+    {terminados.length > 0 && (
+      <button
+        type="button"
+        className="link mis-pedidos__limpiar"
+        disabled={quitando}
+        onClick={() => quitar(terminados.map((p) => p.id), `¿Eliminar de tu lista ${terminados.length === 1 ? "el pedido terminado" : `los ${terminados.length} pedidos terminados`} (entregados y cancelados)?`)}
+      >
+        {quitando ? "Eliminando…" : `Eliminar los terminados (${terminados.length})`}
+      </button>
+    )}
     <ul className="mis-pedidos">
       {error && <li className="carrito__error" role="alert">{error}</li>}
-      {pedidos.map((p) => {
+      {visibles.map((p) => {
         const ver = abierto === p.id;
         const actual = PASOS.findIndex((x) => x.e === p.estado);
         return (
@@ -200,6 +232,11 @@ export default function MisPedidos({ uid }: { uid: string }) {
                   <dt>Total</dt><dd>{formatBs(p.total)}</dd>
                 </dl>
 
+                {terminado(p) && (
+                  <button type="button" className="link mi-pedido__cancelar" disabled={quitando} onClick={() => quitar([p.id], `¿Eliminar el pedido ${p.codigo} de tu lista?`)}>
+                    Eliminar de mi lista
+                  </button>
+                )}
                 {p.estado === "recibido" && p.canal === "web" && (
                   <button type="button" className="link mi-pedido__cancelar" disabled={cancelando === p.id} onClick={() => cancelar(p)}>
                     {cancelando === p.id ? "Cancelando…" : "Cancelar pedido"}
@@ -211,5 +248,11 @@ export default function MisPedidos({ uid }: { uid: string }) {
         );
       })}
     </ul>
+    {pedidos.length > A_LA_VISTA && (
+      <button type="button" className="btn btn--secondary mis-pedidos__mas" onClick={() => setTodos((t) => !t)}>
+        {todos ? "Ver menos" : `Ver los ${pedidos.length} pedidos`}
+      </button>
+    )}
+    </>
   );
 }
