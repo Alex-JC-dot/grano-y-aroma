@@ -229,6 +229,7 @@ Las migraciones están en [`supabase/migrations`](supabase/migrations) y se ejec
 | `019` | El cobro del Club se confirma solo, sin el admin |
 | `020` | El código del pedido nunca se repite |
 | `021` | El pago se confirma solo al escanear el QR |
+| `022` | Subastas para la feria: cinco en vivo y dos próximas |
 
 Todas se pueden ejecutar más de una vez sin duplicar ni romper nada. El orden importa: de la `009` en adelante, cada una agrega reglas a funciones que define la anterior.
 

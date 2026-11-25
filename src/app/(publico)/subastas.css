@@ -25,6 +25,13 @@
 .inicio .section.subastas { padding-top: 40px; }
 .inicio .subastas .subastas__pestanas { margin: 0 0 32px; }
 .inicio .slotes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 58px 28px; padding-bottom: 34px; }
+/* La última fila incompleta queda centrada. */
+@media (min-width: 1181px) {
+  .inicio .slotes:not(.slotes--pocos) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .inicio .slotes:not(.slotes--pocos) > * { grid-column: span 2; }
+  .inicio .slotes:not(.slotes--pocos) > :last-child:nth-child(3n + 1) { grid-column: 3 / span 2; }
+  .inicio .slotes:not(.slotes--pocos) > :nth-last-child(2):nth-child(3n + 1) { grid-column: 2 / span 2; }
+}
 .inicio .slotes--pocos { grid-template-columns: repeat(auto-fit, minmax(0, 520px)); justify-content: center; }
 .inicio .slote, .inicio .spaso { --cc: #b5743c; } /* un solo color: el caramelo */
 .inicio .slote { --c3: var(--cc); --boton: var(--cc); --boton-tinta: #fff8ee; position: relative; display: flex; flex-direction: column; border: 3px solid var(--cc); border-radius: 28px; background: var(--surface); transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); }

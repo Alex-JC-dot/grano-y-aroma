@@ -23,7 +23,7 @@ export default function Subastas() {
 
   // En vivo: activas que aún no vencen (y las recién vencidas hasta que el cierre las mueva).
   const enVivo = subastas.filter((s) => s.estado === "activa" || (s.estado === "proxima" && new Date(s.abre_en).getTime() <= ahora));
-  const proximas = subastas.filter((s) => s.estado === "proxima" && new Date(s.abre_en).getTime() > ahora);
+  const proximas = subastas.filter((s) => s.estado === "proxima" && new Date(s.abre_en).getTime() > ahora).sort((a, b) => a.abre_en.localeCompare(b.abre_en));
   const cerradas = subastas.filter((s) => s.estado === "cerrada").reverse();
 
   return (
