@@ -232,6 +232,7 @@ Las migraciones están en [`supabase/migrations`](supabase/migrations) y se ejec
 | `022` | Subastas para la feria: cinco en vivo y dos próximas |
 | `023` | El Club y las subastas llegan hasta la entrega; puntos protegidos |
 | `024` | Los puntos se dan al pagar; lo que no se paga en 30 minutos se cancela |
+| `025` | El cliente limpia su lista de pedidos terminados |
 
 Todas se pueden ejecutar más de una vez sin duplicar ni romper nada. El orden importa: de la `009` en adelante, cada una agrega reglas a funciones que define la anterior.
 

@@ -392,6 +392,9 @@
 @media (max-width: 420px) { .inicio .pago-qr { flex-direction: column; align-items: flex-start; } }
 
 /* ---------- Mis pedidos ---------- */
+.inicio .mis-pedidos__limpiar { display: block; margin: 0 0 14px auto; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 15px; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.inicio .mis-pedidos__limpiar:hover { color: var(--peligro); }
+.inicio .mis-pedidos__mas { margin-top: 16px; }
 .inicio .mis-pedidos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .inicio .mi-pedido { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
 .inicio .mi-pedido__cabeza {
