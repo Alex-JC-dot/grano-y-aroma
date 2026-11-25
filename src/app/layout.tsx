@@ -37,11 +37,23 @@ export const metadata: Metadata = {
  */
 const FIJAR_TEMA = `(function(){try{var t=localStorage.getItem("ga-tema");if(t!=="dark"&&t!=="light"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","light")}})()`;
 
+/**
+ * Decide si sale la animación de entrada (components/inicio/Intro.tsx), también antes del primer
+ * pintado. Sale una sola vez por visita (pestaña) y solo al entrar al sitio por el Inicio:
+ *  · no, si ya se vio o si la visita empezó en otra página;
+ *  · no, si se llega a una sección (/#contacto) o desde un enlace del propio sitio;
+ *  · no, si se pidió reducir movimiento.
+ * Con /?intro se fuerza una vez, para mostrarla: al terminar, Intro borra el ?intro de la dirección
+ * para que no se repita. Pase lo que pase, a los 7 segundos se quita sola.
+ */
+const DECIDIR_INTRO = `(function(){try{var d=document.documentElement,l=location,f=/[?&]intro\b/.test(l.search),v=sessionStorage.getItem("ga-intro"),i=document.referrer.indexOf(l.origin+"/")===0;sessionStorage.setItem("ga-intro","1");if(l.pathname!=="/")return;if(!f&&(v||i||l.hash||window.matchMedia("(prefers-reduced-motion: reduce)").matches))return;d.setAttribute("data-intro","si");setTimeout(function(){if(d.getAttribute("data-intro")==="si")d.setAttribute("data-intro","fin")},7000)}catch(e){}})()`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${fraunces.variable} ${figtree.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: FIJAR_TEMA }} />
+        <script dangerouslySetInnerHTML={{ __html: DECIDIR_INTRO }} />
       </head>
       {/*
         suppressHydrationWarning también en <body>, no solo en <html>: el atributo solo vale

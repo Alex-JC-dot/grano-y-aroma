@@ -165,13 +165,27 @@
 .inicio .cplan__boton:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
 
-@media (max-width: 1023px) {
-  .inicio .cplanes { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: min(78vw, 340px); gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin-inline: calc(var(--gut) * -1); padding: 132px var(--gut) 44px; perspective: none; }
-  .inicio .cplanes > li { scroll-snap-align: center; }
+/* Tablet: las tres juntas, más compactas. Celular: una debajo de otra. Nunca se esconde ninguna. */
+@media (max-width: 1023px) and (min-width: 760px) {
+  .inicio .cplanes { gap: 18px; padding-top: 84px; }
+  .inicio .cplan__escena { height: 176px; }
+  .inicio .cplan__personaje { height: 214px; bottom: calc(100% - 164px); }
+  .inicio .cplan--descubre .cplan__personaje { height: 168px; bottom: calc(100% - 158px); }
+  .inicio .cplan__orbita { width: 220px; height: 220px; margin: -110px; }
+  .inicio .cplan__num { font-size: 140px; }
+  .inicio .cplan__sello { top: -92px; }
+  .inicio .cplan__cuerpo { padding: 12px 14px 50px; }
+  .inicio .cplan h3 { font-size: 29px; }
+  .inicio .cplan__lema, .inicio .cplan__lista { font-size: 14px; }
+  .inicio .cplan__lista li { padding-left: 29px; }
+  .inicio .cplan__precio strong { font-size: 31px; }
+  .inicio .cplan__boton { min-width: 0; width: max-content; max-width: 92%; padding: 0 20px; font-size: 15px; }
+}
+@media (max-width: 759px) {
+  .inicio .cplanes { grid-template-columns: minmax(0, 440px); justify-content: center; gap: 172px; padding-top: 96px; perspective: none; }
 }
 @media (max-width: 480px) {
   .inicio .cplan__cuerpo { padding-inline: 18px; }
-  .inicio .cplan__sello { top: -118px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .inicio .cplan, .inicio .cplan__personaje, .inicio .cplan__orbita, .inicio .personaje i, .inicio .cplan:hover .cplan__personaje img { animation: none; transition: none; }

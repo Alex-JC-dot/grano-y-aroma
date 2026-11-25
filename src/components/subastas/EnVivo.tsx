@@ -14,20 +14,37 @@ export function useSubastasEnVivo() {
   }, [tick]);
 }
 
-/** Aviso flotante: "Vas primero" o "Te superaron" (RF-13). */
+/** Granos de café que caen al ganar. */
+const CONFETI = Array.from({ length: 34 }, (_, k) => ({ x: (k * 37) % 100, d: (k % 9) * 0.16, t: 2.6 + (k % 5) * 0.35, r: (k * 53) % 360, c: k % 4 }));
+
+/** Aviso: "Vas primero", "Te superaron" (RF-13) o "¡Ganaste!". */
 export function AvisoSubasta() {
   const aviso = useSubastas((s) => s.aviso);
   const setAviso = useSubastas((s) => s.setAviso);
 
   useEffect(() => {
     if (!aviso) return;
-    const t = window.setTimeout(() => setAviso(null), 7000);
+    const t = window.setTimeout(() => setAviso(null), aviso.tipo === "ganaste" ? 14000 : 7000);
     return () => window.clearTimeout(t);
   }, [aviso, setAviso]);
 
   if (!aviso) return null;
+  if (aviso.tipo === "ganaste")
+    return (
+      <div className="ganaste" role="alertdialog" aria-label={aviso.titulo} onClick={() => setAviso(null)}>
+        <span className="ganaste__confeti" aria-hidden="true">
+          {CONFETI.map((g, k) => <i key={k} data-c={g.c} style={{ left: `${g.x}%`, animationDelay: `${g.d}s`, animationDuration: `${g.t}s`, rotate: `${g.r}deg` }} />)}
+        </span>
+        <div className="ganaste__caja">
+          <svg className="ganaste__copa" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 8h28v14c0 10-6 16-14 16s-14-6-14-16Z" /><path d="M18 12H8c0 10 4 15 11 16M46 12h10c0 10-4 15-11 16M32 38v10M22 56h20l-3-8H25Z" /></svg>
+          <strong>{aviso.titulo}</strong>
+          <span>{aviso.texto}</span>
+          <button type="button" className="btn btn--primary" onClick={() => setAviso(null)}>¡Qué bien!</button>
+        </div>
+      </div>
+    );
   return (
-    <div className={`toast${aviso.tipo === "ok" ? " toast--ok" : ""}`} role={aviso.tipo === "ok" ? "status" : "alert"}>
+    <div key={aviso.texto} className={`toast${aviso.tipo === "ok" ? " toast--ok" : ""}`} role={aviso.tipo === "ok" ? "status" : "alert"}>
       <strong>{aviso.titulo}</strong>
       <span>{aviso.texto}</span>
       <button type="button" className="toast__cerrar" aria-label="Cerrar aviso" onClick={() => setAviso(null)}>×</button>
