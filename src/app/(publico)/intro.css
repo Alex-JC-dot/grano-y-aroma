@@ -7,10 +7,13 @@ html[data-intro="si"] .ga-intro { display: grid; place-items: center; position: 
 .ga-intro__caramelo { fill: #b06a35; }
 .ga-intro__chocolate { fill: url(#ga-intro-chocolate); }
 .ga-intro__logo { position: relative; width: min(62vw, 46vh, 400px); aspect-ratio: 1000 / 931; will-change: transform, opacity; }
-html[data-intro="si"] .ga-intro__icono, html[data-intro="si"] .ga-intro__nombre { position: absolute; inset: 0; background: #fbeeda; -webkit-mask: url("/intro-logo.webp") center / 100% 100% no-repeat; mask: url("/intro-logo.webp") center / 100% 100% no-repeat; }
+html[data-intro="si"] .ga-intro__icono, html[data-intro="si"] .ga-intro__nombre { position: absolute; inset: 0; background: #ecd5b0; -webkit-mask: url("/intro-logo.webp") center / 100% 100% no-repeat; mask: url("/intro-logo.webp") center / 100% 100% no-repeat; }
 /* El logo se parte en dos: arriba el ícono, abajo el nombre. */
 html[data-intro="si"] .ga-intro__icono { inset: 0 0 41.6% 0; -webkit-mask-size: 100% 171.23%; mask-size: 100% 171.23%; -webkit-mask-position: 0 0; mask-position: 0 0; }
 html[data-intro="si"] .ga-intro__vacio { opacity: 0.16; animation: ga-intro-asoma 0.7s ease-out both; }
 @keyframes ga-intro-asoma { from { opacity: 0; } }
 html[data-intro="si"] .ga-intro__lleno { clip-path: inset(100% 0 0 0); }
 html[data-intro="si"] .ga-intro__nombre { inset: 58.4% 0 0 0; -webkit-mask-size: 100% 240.38%, 100% 100%; mask-size: 100% 240.38%, 100% 100%; -webkit-mask-position: 0 100%, 0 0; mask-position: 0 100%, 0 0; --v: 0%; -webkit-mask-image: url("/intro-logo.webp"), linear-gradient(90deg, #000 calc(var(--v) - 40%), transparent var(--v)); mask-image: url("/intro-logo.webp"), linear-gradient(90deg, #000 calc(var(--v) - 40%), transparent var(--v)); -webkit-mask-composite: source-in; mask-composite: intersect; }
+/* El destello: una franja de luz en diagonal, recortada con la forma del logo. */
+html[data-intro="si"] .ga-intro__brillo { position: absolute; inset: 0; opacity: 0; filter: drop-shadow(0 0 9px rgba(255, 232, 184, 0.85)); }
+html[data-intro="si"] .ga-intro__brillo i { position: absolute; inset: 0; background: linear-gradient(112deg, transparent 38%, rgba(255, 255, 255, 0.55) 45%, #fff 50%, rgba(255, 255, 255, 0.55) 55%, transparent 62%) var(--b, 88%) 0 / 260% 100% no-repeat; -webkit-mask: url("/intro-logo.webp") center / 100% 100% no-repeat; mask: url("/intro-logo.webp") center / 100% 100% no-repeat; }

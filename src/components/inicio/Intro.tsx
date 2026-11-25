@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
  * La animación con la que se abre el sitio, solo en el Inicio y una vez por visita.
  *
  * Pantalla de chocolate con el logo: el ícono se llena como una taza, el nombre aparece de
- * izquierda a derecha y el chocolate se vacía con olas hasta dejar ver la página.
+ * izquierda a derecha, un destello cruza el logo y el chocolate se vacía con olas hasta dejar ver la página.
  *
  * Si toca o no lo decide un script del layout ANTES del primer pintado (data-intro="si" en
  * <html>), para que no se vea la página un instante y luego la intro encima. Aquí solo se anima.
@@ -15,7 +15,8 @@ import { useEffect, useRef, useState } from "react";
 
 const LLENA = 1150; // el ícono
 const NOMBRE = 850; // el nombre
-const PAUSA = 320;
+const BRILLO = 950; // el destello que cruza el logo
+const PAUSA = 780; // desde que está el nombre; el destello casi termina
 const VACIA = 1500; // el chocolate
 
 const suave = (t: number) => 0.5 - Math.cos(Math.PI * t) / 2; // sin tirones al empezar ni al terminar
@@ -43,6 +44,7 @@ export default function Intro() {
     if (!c || html.dataset.intro !== "si") return;
     const icono = c.querySelector<HTMLElement>(".ga-intro__lleno")!;
     const nombre = c.querySelector<HTMLElement>(".ga-intro__nombre")!;
+    const brillo = c.querySelector<HTMLElement>(".ga-intro__brillo")!;
     const logo = c.querySelector<HTMLElement>(".ga-intro__logo")!;
     const [caramelo, chocolate] = c.querySelectorAll("path");
     let cuadro = 0;
@@ -59,6 +61,10 @@ export default function Intro() {
       const ola = (x: number) => nivel + Math.sin(ahora / 260 + x / 13) * 2.6 * (1 - lleno * 0.6);
       icono.style.clipPath = `polygon(${[0, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100].map((x) => `${x}% ${ola(x).toFixed(1)}%`).join(",")},100% 100%,0 100%)`;
       nombre.style.setProperty("--v", `${(suave(limite((t - LLENA * 0.72) / NOMBRE)) * 140).toFixed(1)}%`);
+
+      const b = limite((t - LLENA * 0.72 - NOMBRE + 60) / BRILLO);
+      brillo.style.setProperty("--b", `${(88 - suave(b) * 76).toFixed(1)}%`);
+      brillo.style.opacity = String(Math.sin(Math.PI * b));
 
       if (!vaciar && t > LLENA * 0.72 + NOMBRE + PAUSA) vaciar = ahora;
       else if (!vaciar) chocolate.setAttribute("d", olas(w, h, -120, 0, 0)); // lleno: el degradado es el mismo al vaciarse
@@ -117,6 +123,7 @@ export default function Intro() {
         <span className="ga-intro__icono ga-intro__vacio" />
         <span className="ga-intro__icono ga-intro__lleno" />
         <span className="ga-intro__nombre" />
+        <span className="ga-intro__brillo"><i /></span>
       </div>
     </div>
   );
