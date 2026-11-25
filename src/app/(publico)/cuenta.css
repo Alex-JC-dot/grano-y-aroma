@@ -348,8 +348,14 @@
 .inicio .pago-qr__espera i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pago-late 1.3s ease-in-out infinite; }
 @keyframes pago-late { 50% { transform: scale(0.45); opacity: 0.35; } }
 /* En la computadora se escanea; en el celular no se puede escanear la propia pantalla. */
+.inicio .pago-qr__acciones { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; align-self: stretch; width: 100%; margin-bottom: 12px; }
 .inicio .pago-qr__celular { display: none; }
-@media (hover: none) and (pointer: coarse) and (max-width: 900px) { .inicio .pago-qr__celular { display: flex; width: 100%; justify-content: center; margin-bottom: 12px; } }
+.inicio .pago-qr__bajar { display: inline-flex; align-items: center; justify-content: center; gap: 9px; }
+.inicio .pago-qr__ayuda { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+@media (hover: none) and (pointer: coarse) and (max-width: 900px) {
+  .inicio .pago-qr__celular { display: flex; width: 100%; justify-content: center; text-align: center; }
+  .inicio .pago-qr__bajar { width: 100%; }
+}
 
 .inicio .pago-exito { align-self: stretch; display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 18px 0; padding: 26px 18px; border-radius: 14px; background: var(--exito-bg); color: var(--exito); text-align: center; animation: pago-entra 0.4s var(--ease) both; }
 .inicio .pago-exito strong { font: 400 30px / 1.15 var(--f-display); }
