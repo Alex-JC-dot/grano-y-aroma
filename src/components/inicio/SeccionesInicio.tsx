@@ -104,45 +104,7 @@ export function AsiTrabajamos() {
   );
 }
 
-const MAPA = "https://www.openstreetmap.org/search?query=Centro%20hist%C3%B3rico%2C%20Sucre%2C%20Bolivia";
-
-export function Visita() {
-  return (
-    <section className="section" id="visita" aria-labelledby="visita-titulo">
-      <div className="wrap visit">
-        <div className="visit__panel" data-revelar>
-          <h2 id="visita-titulo">Visítanos en Sucre</h2>
-          <p className="visit__place">
-            <a href={MAPA} className="link" target="_blank" rel="noreferrer">
-              Centro histórico, Sucre
-            </a>
-          </p>
-          <p className="visit__note">Cafetería y tostaduría en el mismo local.</p>
-          {/* Horario supuesto: reemplazar por el horario real del negocio. */}
-          <dl className="hours" data-assumed>
-            <dt>Lunes a viernes</dt>
-            <dd>8:00 a 20:30</dd>
-            <dt>Sábado</dt>
-            <dd>9:00 a 20:30</dd>
-            <dt>Domingo</dt>
-            <dd>Cerrado</dd>
-          </dl>
-          <a href={MAPA} className="btn btn--secondary" target="_blank" rel="noreferrer">
-            Ver la zona en el mapa
-          </a>
-        </div>
-        <figure className="visit__photo" data-revelar style={{ "--i": 1 } as React.CSSProperties}>
-          <img
-            src="/images/home/local.webp"
-            alt="La barra del local: máquina de espresso, molinos y bolsas de café en repisas bajo vigas de madera"
-            loading="lazy"
-            decoding="async"
-          />
-        </figure>
-      </div>
-    </section>
-  );
-}
+const MAPA = "/nosotros#visita";
 
 export function PieInicio() {
   return (
@@ -165,9 +127,7 @@ export function PieInicio() {
           <div>
             <h3>Visita</h3>
             <p>
-              <a href={MAPA} className="link" target="_blank" rel="noreferrer">
-                Centro histórico, Sucre
-              </a>
+              <Link href={MAPA} className="link">Plaza 25 de Mayo, Sucre</Link>
             </p>
             <p>Cafetería y tostaduría</p>
           </div>

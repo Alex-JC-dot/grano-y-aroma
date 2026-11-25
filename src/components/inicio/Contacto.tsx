@@ -83,7 +83,7 @@ export default function Contacto() {
             </div>
             <div>
               <dt>Ubicación</dt>
-              <dd>Centro histórico, Sucre</dd>
+              <dd>Plaza 25 de Mayo, Sucre</dd>
             </div>
           </dl>
         </div>

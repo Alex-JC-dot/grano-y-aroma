@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AsiTrabajamos, Visita } from "@/components/inicio/SeccionesInicio";
+import { AsiTrabajamos } from "@/components/inicio/SeccionesInicio";
 import Galeria from "@/components/nosotros/Galeria";
 import MapaOrigenes from "@/components/inicio/MapaOrigenes";
 import Cifras from "@/components/nosotros/Cifras";
+import MapaVisita from "@/components/nosotros/MapaVisita";
 import CurvaTueste from "@/components/nosotros/CurvaTueste";
 
 export const metadata: Metadata = {
@@ -52,7 +53,7 @@ export default function PaginaNosotros() {
       <AsiTrabajamos />
       <CurvaTueste />
       <Galeria />
-      <Visita />
+      <MapaVisita />
     </>
   );
 }
