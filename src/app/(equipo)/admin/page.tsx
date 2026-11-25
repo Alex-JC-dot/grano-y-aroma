@@ -54,6 +54,8 @@ type CobroClub = {
   id: number;
   monto: number;
   periodo: string;
+  /** El pedido que nació al pagarlo (migración 023); null en los cobros de antes. */
+  pedido_id: number | null;
   verificado_en: string;
   cliente: { nombre: string } | null;
   suscripciones: { gramos: number; frecuencia: number; cafe: string } | null;
@@ -91,7 +93,7 @@ export default function PaginaPanel() {
         .order("creado_en", { ascending: false }),
       supabase
         .from("cobros_club")
-        .select("id, monto, periodo, verificado_en, cliente:perfiles!cobros_club_cliente_id_fkey(nombre), suscripciones(gramos, frecuencia, cafe)")
+        .select("id, monto, periodo, pedido_id, verificado_en, cliente:perfiles!cobros_club_cliente_id_fkey(nombre), suscripciones(gramos, frecuencia, cafe)")
         .eq("estado", "aprobado")
         .gte("verificado_en", desde)
         .order("verificado_en", { ascending: false }),
@@ -145,7 +147,7 @@ export default function PaginaPanel() {
   const max = Math.max(1, ...canales.map((c) => c.monto));
   const bolsas = lista.flatMap((p) => p.pedido_items).filter((i) => i.productos && ["grano", "molido"].includes(i.productos.categoria)).reduce((s, i) => s + i.cantidad, 0);
 
-  const kgClub = club.reduce((s, c) => s + (c.suscripciones?.gramos ?? 0), 0) / 1000;
+  const kgClub = club.filter((c) => !c.pedido_id).reduce((s, c) => s + (c.suscripciones?.gramos ?? 0), 0) / 1000;
 
   const ventasPorProducto = new Map<string, { nombre: string; unidades: number; monto: number }>();
   for (const i of lista.flatMap((p) => p.pedido_items)) {

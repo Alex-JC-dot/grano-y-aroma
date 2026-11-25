@@ -7,6 +7,7 @@ import { formatBs } from "@/lib/utils";
 import { useAuth } from "@/store/authStore";
 import PagoQr, { TEXTO_PAGO, type PagoEstado } from "./PagoPedido";
 import PruebaEntrega from "./PruebaEntrega";
+import DatosEnvio from "./DatosEnvio";
 
 /**
  * Mis pedidos (Mi cuenta): cada pedido con su línea de tiempo, el estado del pago y, si
@@ -66,7 +67,7 @@ const hora = (iso: string | null) =>
 const productosDe = (p: Pedido) =>
   p.canal === "subasta" && !p.pedido_items.length
     ? p.nombre ?? "Lote ganado en subasta"
-    : p.pedido_items.map((i) => `${i.cantidad} × ${i.productos?.nombre ?? "Producto"}${i.molienda && i.molienda !== "Única" ? ` (${i.molienda})` : ""}`).join(", ");
+    : (p.canal === "club" ? "Club: " : "") + p.pedido_items.map((i) => `${i.cantidad} × ${i.productos?.nombre ?? "Producto"}${i.molienda && i.molienda !== "Única" ? ` (${i.molienda})` : ""}`).join(", ");
 
 export default function MisPedidos({ uid }: { uid: string }) {
   const [pedidos, setPedidos] = useState<Pedido[] | null>(null);
@@ -177,7 +178,11 @@ export default function MisPedidos({ uid }: { uid: string }) {
                 {p.estado !== "cancelado" && p.metodo_pago === "qr" && p.pago_estado !== "no_aplica" && (
                   <div className="mi-pedido__pago">
                     <h3>Pago por QR · {TEXTO_PAGO[p.pago_estado]}</h3>
-                    <PagoQr id={p.id} total={p.total} estado={p.pago_estado} alPagar={cargar} />
+                    {p.canal !== "web" && p.pago_estado === "pendiente" && !p.direccion ? (
+                      <DatosEnvio pedido={p.id} alGuardar={cargar} />
+                    ) : (
+                      <PagoQr id={p.id} total={p.total} estado={p.pago_estado} alPagar={cargar} />
+                    )}
                   </div>
                 )}
 
