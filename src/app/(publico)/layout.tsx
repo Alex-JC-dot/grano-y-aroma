@@ -1,5 +1,6 @@
 import "./publico.css";
 import "./paginas.css";
+import "./intro.css";
 import "./club-subastas.css";
 import "./subastas.css";
 import "./mapa.css";

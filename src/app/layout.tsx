@@ -37,11 +37,19 @@ export const metadata: Metadata = {
  */
 const FIJAR_TEMA = `(function(){try{var t=localStorage.getItem("ga-tema");if(t!=="dark"&&t!=="light"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","light")}})()`;
 
+/**
+ * Decide si sale la animación de entrada (components/inicio/Intro.tsx), también antes del primer
+ * pintado: solo en el Inicio, una vez por visita (pestaña) y si no se pidió reducir movimiento.
+ * Con /?intro se fuerza, para mostrarla. Pase lo que pase, a los 7 segundos se quita sola.
+ */
+const DECIDIR_INTRO = `(function(){try{var d=document.documentElement,f=/[?&]intro\\b/.test(location.search);if(location.pathname!=="/")return;if(!f&&(sessionStorage.getItem("ga-intro")||window.matchMedia("(prefers-reduced-motion: reduce)").matches))return;sessionStorage.setItem("ga-intro","1");d.setAttribute("data-intro","si");setTimeout(function(){if(d.getAttribute("data-intro")==="si")d.setAttribute("data-intro","fin")},7000)}catch(e){}})()`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${fraunces.variable} ${figtree.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: FIJAR_TEMA }} />
+        <script dangerouslySetInnerHTML={{ __html: DECIDIR_INTRO }} />
       </head>
       {/*
         suppressHydrationWarning también en <body>, no solo en <html>: el atributo solo vale

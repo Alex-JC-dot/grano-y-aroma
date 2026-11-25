@@ -1,0 +1,15 @@
+/* Animación de entrada (components/inicio/Intro.tsx). Solo existe con data-intro="si". */
+.ga-intro { display: none; }
+html[data-intro="si"] { background: #2d170e; }
+html[data-intro="si"] body { overflow: hidden; }
+html[data-intro="si"] .ga-intro { display: grid; place-items: center; position: fixed; inset: 0; z-index: 200; cursor: pointer; touch-action: none; }
+.ga-intro__liquido { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ga-intro__caramelo { fill: #b06a35; }
+.ga-intro__chocolate { fill: url(#ga-intro-chocolate); }
+.ga-intro__logo { position: relative; width: min(62vw, 46vh, 400px); aspect-ratio: 1000 / 931; will-change: transform, opacity; }
+html[data-intro="si"] .ga-intro__icono, html[data-intro="si"] .ga-intro__nombre { position: absolute; inset: 0; background: #fbeeda; -webkit-mask: url("/intro-logo.webp") center / 100% 100% no-repeat; mask: url("/intro-logo.webp") center / 100% 100% no-repeat; }
+/* El logo se parte en dos: arriba el ícono, abajo el nombre. */
+html[data-intro="si"] .ga-intro__icono { inset: 0 0 41.6% 0; -webkit-mask-size: 100% 171.23%; mask-size: 100% 171.23%; -webkit-mask-position: 0 0; mask-position: 0 0; }
+html[data-intro="si"] .ga-intro__vacio { opacity: 0.16; }
+html[data-intro="si"] .ga-intro__lleno { clip-path: inset(100% 0 0 0); }
+html[data-intro="si"] .ga-intro__nombre { inset: 58.4% 0 0 0; -webkit-mask-size: 100% 240.38%; mask-size: 100% 240.38%; -webkit-mask-position: 0 100%; mask-position: 0 100%; clip-path: inset(0 100% 0 0); }
