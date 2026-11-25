@@ -3,15 +3,17 @@
 /* eslint-disable @next/next/no-img-element -- export estático: next/image no optimiza aquí */
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/store/authStore";
-import { abierta, minimoDe, nombreCorto, segundosA, useSubastas, type Puja, type Subasta } from "@/store/subastasStore";
-import { AvisoSubasta, horaDe, tiempo, useSubastasEnVivo } from "./EnVivo";
+import { useEffect } from "react";
+import { abierta, nombreCorto, useSubastas, type Puja, type Subasta } from "@/store/subastasStore";
+import { AvisoSubasta, horaDe, useSubastasEnVivo } from "./EnVivo";
+import PanelPuja, { MontoVivo, Podio, Reloj } from "./PanelPuja";
+import { colorLote, Saco } from "./Personajes";
+import { Medalla } from "./Subastas";
 import { formatBs } from "@/lib/utils";
 
 /**
  * Ficha de un lote en subasta: /subastas/lote?l=<id>.
- * Puja en vivo con Supabase (misma regla: Bs. 20 sobre la actual), rueda de catación, historia
+ * Puja en vivo con Supabase (el mínimo lo pone cada lote), rueda de catación, historia
  * del lote, gráfica de cómo subió el precio e historial completo de pujas, todo desde la base.
  */
 
@@ -47,40 +49,16 @@ const SIN_PUJAS: Puja[] = [];
 function Lote({ lote }: { lote: Subasta }) {
   const ahora = useSubastas((s) => s.ahora);
   const pujas = useSubastas((s) => s.pujas[lote.id] ?? SIN_PUJAS);
-  const registrar = useSubastas((s) => s.pujar);
-  const setAvisoFlotante = useSubastas((s) => s.setAviso);
-  const yo = useAuth((s) => s.session?.user.id);
-  const [monto, setMonto] = useState("");
-  const [aviso, setAviso] = useState<{ texto: string; error: boolean } | null>(null);
-  const [enviando, setEnviando] = useState(false);
 
   const proxima = lote.estado === "proxima" && new Date(lote.abre_en).getTime() > ahora;
   const enCurso = abierta(lote, ahora);
   const cerrada = !proxima && !enCurso;
-  const seg = segundosA(proxima ? lote.abre_en : lote.cierra_en, ahora);
-  const minimo = minimoDe(lote);
+  const color = colorLote(lote);
   const hayPujas = lote.num_pujas > 0;
-  const voyPrimero = !!yo && lote.lider_id === yo;
-  const ganador = lote.ganador_nombre ?? lote.lider_nombre;
 
   useEffect(() => {
     document.title = `${lote.titulo} · Subastas · Grano y Aroma`;
   }, [lote.titulo]);
-
-  const pedirCuenta = useAuth((s) => s.pedirCuenta);
-  const pujar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const m = Number(monto);
-    if (!m || m < minimo) return setAviso({ texto: `Escribe al menos ${formatBs(minimo)}.`, error: true });
-    if (!(await pedirCuenta("Para pujar necesitas una cuenta. Tu monto se mantiene."))) return;
-    setEnviando(true);
-    const fallo = await registrar(lote.id, m);
-    setEnviando(false);
-    if (fallo) return setAviso({ texto: fallo, error: true });
-    setAviso({ texto: `Tu puja de ${formatBs(m)} va primera.`, error: false });
-    setAvisoFlotante({ tipo: "ok", titulo: "Vas primero", texto: `Tu puja de ${formatBs(m)} va primera en ${nombreCorto(lote.titulo)}.` });
-    setMonto("");
-  };
 
   const datos: [string, string | null][] = [
     ["Finca", lote.finca],
@@ -105,9 +83,8 @@ function Lote({ lote }: { lote: Subasta }) {
             <div className="ficha__visual">
               <figure className="lote-ficha__foto">
                 {lote.imagen && <img src={lote.imagen} alt={lote.imagen_alt ?? ""} />}
-                <span className={`lote__reloj${enCurso && seg < 3600 ? " is-urgente" : ""}`}>
-                  {proxima ? `Abre en ${tiempo(seg)}` : enCurso ? `Cierra en ${tiempo(seg)}` : "Cerrada"}
-                </span>
+                <Medalla puntaje={lote.puntaje} />
+                {cerrada ? <span className="slote__cerrando">Cerrada</span> : <Reloj hasta={proxima ? lote.abre_en : lote.cierra_en} ahora={ahora} texto={proxima ? "Abre en" : "Cierra en"} />}
               </figure>
             </div>
 
@@ -120,48 +97,24 @@ function Lote({ lote }: { lote: Subasta }) {
               <h1 id="lote-titulo" className="ficha__titulo">{lote.titulo}</h1>
               <p className="ficha__notas">{lote.descripcion}</p>
 
-              <div className="ficha__compra lote-ficha__puja">
-                <div className="lote-ficha__actual">
-                  <span className="lote__etiqueta">{hayPujas ? (cerrada ? "Precio final" : "Puja actual") : "Precio de salida"}</span>
-                  <span className="ficha__precio">{formatBs(lote.puja_actual ?? lote.precio_base)}</span>
-                  <span className="lote__etiqueta">
-                    {lote.num_pujas === 1 ? "1 puja" : `${lote.num_pujas} pujas`}
-                    {!cerrada && lote.lider_nombre && ` · va primero ${voyPrimero ? "tu puja" : lote.lider_nombre}`}
-                  </span>
-                </div>
-                {proxima ? (
-                  <p className="lote__resultado">Esta subasta abre pronto. Desde la página de subastas puedes pedir que te avisemos.</p>
-                ) : enCurso ? (
-                  voyPrimero ? (
-                    <p className="lote__aviso" role="status">Vas primero. Te avisamos si alguien te supera.</p>
+              <div className="slote slote--ficha" style={{ "--cc": color } as React.CSSProperties}>
+                <span className="slote__saco"><Saco color={color} /></span>
+                <div className="slote__cuerpo">
+                  <div className="puja-actual">
+                    <span>
+                      {hayPujas ? (cerrada ? "Precio final" : "Puja actual") : "Precio de salida"}
+                      {hayPujas && ` · ${lote.num_pujas === 1 ? "1 puja" : `${lote.num_pujas} pujas`}`}
+                    </span>
+                    <strong><MontoVivo valor={lote.puja_actual ?? lote.precio_base} /></strong>
+                    <small>Sube de {lote.incremento.toLocaleString("es-BO")} en {lote.incremento.toLocaleString("es-BO")}</small>
+                  </div>
+                  {!proxima && <Podio id={lote.id} />}
+                  {proxima ? (
+                    <p className="lote__resultado">Esta subasta abre pronto. Desde la página de subastas puedes pedir que te avisemos.</p>
                   ) : (
-                    <form className="lote__form" onSubmit={pujar} noValidate>
-                      <label htmlFor="puja-ficha">Tu puja en Bs. (mínimo {minimo})</label>
-                      <div className="lote__fila">
-                        <input
-                          id="puja-ficha"
-                          type="number"
-                          inputMode="numeric"
-                          min={minimo}
-                          step={10}
-                          value={monto}
-                          placeholder={String(minimo)}
-                          onChange={(e) => setMonto(e.target.value)}
-                          aria-invalid={aviso?.error || undefined}
-                          aria-describedby="puja-ficha-aviso"
-                        />
-                        <button type="submit" className="btn btn--primary" disabled={enviando}>
-                          {enviando ? "Pujando…" : "Pujar"}
-                        </button>
-                      </div>
-                      <p id="puja-ficha-aviso" className={`lote__aviso${aviso?.error ? " is-error" : ""}`} role="status">{aviso?.texto}</p>
-                    </form>
-                  )
-                ) : (
-                  <p className="lote__resultado">
-                    {ganador ? `Ganó ${voyPrimero ? "tu puja" : ganador} con ${formatBs(lote.puja_actual ?? 0)}.` : "Cerró sin pujas."}
-                  </p>
-                )}
+                    <PanelPuja lote={lote} />
+                  )}
+                </div>
               </div>
 
               <h2 className="ficha__subtitulo">El lote</h2>

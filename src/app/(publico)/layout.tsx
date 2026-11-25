@@ -1,6 +1,7 @@
 import "./publico.css";
 import "./paginas.css";
 import "./club-subastas.css";
+import "./subastas.css";
 import "./mapa.css";
 import "./carrito.css";
 import "./nosotros.css";

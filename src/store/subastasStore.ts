@@ -40,7 +40,9 @@ export type Subasta = {
 };
 
 export type Puja = { id: number; monto: number; creado_en: string; postor: string; es_mia: boolean };
-export type AvisoSubasta = { tipo: "ok" | "superado"; titulo: string; texto: string };
+export type AvisoSubasta = { tipo: "ok" | "superado" | "ganaste"; titulo: string; texto: string };
+/** La última puja que entró en cualquier lote mientras la página está abierta. */
+export type UltimaPuja = { id: number; titulo: string; monto: number; postor: string; cuando: number };
 
 interface SubastasStore {
   subastas: Subasta[];
@@ -50,6 +52,7 @@ interface SubastasStore {
   error: string;
   ahora: number;
   aviso: AvisoSubasta | null;
+  ultima: UltimaPuja | null;
   conectar: () => () => void;
   cargarPujas: (id: number) => Promise<void>;
   cargarAvisos: () => Promise<void>;
@@ -77,6 +80,14 @@ export const abierta = (s: Subasta, ahora: number) =>
   s.estado !== "cerrada" && new Date(s.abre_en).getTime() <= ahora && new Date(s.cierra_en).getTime() > ahora;
 export const nombreCorto = (titulo: string) => titulo.split(" — ")[0];
 
+const anunciar = (s: Subasta, yo: string | null | undefined): UltimaPuja => ({
+  id: s.id,
+  titulo: s.titulo,
+  monto: s.puja_actual ?? s.precio_base,
+  postor: yo && s.lider_id === yo ? "Tu puja" : s.lider_nombre ?? "Alguien",
+  cuando: Date.now(),
+});
+
 export const useSubastas = create<SubastasStore>((set, get) => ({
   subastas: [],
   pujas: {},
@@ -85,6 +96,7 @@ export const useSubastas = create<SubastasStore>((set, get) => ({
   error: "",
   ahora: Date.now(),
   aviso: null,
+  ultima: null,
 
   conectar: () => {
     const cargar = async () => {
@@ -111,11 +123,19 @@ export const useSubastas = create<SubastasStore>((set, get) => ({
           subastas: antes ? st.subastas.map((s) => (s.id === nueva.id ? nueva : s)) : [...st.subastas, nueva],
         }));
         if (nueva.num_pujas !== antes?.num_pujas) get().cargarPujas(nueva.id);
+        if (antes && nueva.num_pujas > antes.num_pujas) set({ ultima: anunciar(nueva, yo) });
+        if (yo && antes && antes.estado !== "cerrada" && nueva.estado === "cerrada" && nueva.lider_id === yo) {
+          get().setAviso({
+            tipo: "ganaste",
+            titulo: "¡Ganaste la subasta!",
+            texto: `${nombreCorto(nueva.titulo)} es tuyo por Bs. ${(nueva.puja_actual ?? 0).toLocaleString("es-BO")}. Tu pedido ya está en Mi cuenta.`,
+          });
+        }
         if (yo && antes?.lider_id === yo && nueva.lider_id && nueva.lider_id !== yo) {
           get().setAviso({
             tipo: "superado",
             titulo: "Te superaron",
-            texto: `${nueva.lider_nombre ?? "Otro postor"} pujó ${nueva.puja_actual} Bs. en ${nombreCorto(nueva.titulo)}. Puedes volver a pujar.`,
+            texto: `${nueva.lider_nombre ?? "Otro postor"} pujó Bs. ${(nueva.puja_actual ?? 0).toLocaleString("es-BO")} en ${nombreCorto(nueva.titulo)}. Puedes volver a pujar.`,
           });
         }
       })
@@ -158,7 +178,9 @@ export const useSubastas = create<SubastasStore>((set, get) => ({
       return "No pudimos registrar tu puja. Revisa tu conexión y vuelve a intentar.";
     }
     const nueva = normalizar(data as Subasta);
-    set((st) => ({ subastas: st.subastas.map((s) => (s.id === id ? nueva : s)) }));
+    // Realtime también la traerá; se anuncia una sola vez.
+    const anunciada = (get().subastas.find((s) => s.id === id)?.num_pujas ?? 0) >= nueva.num_pujas;
+    set((st) => ({ subastas: st.subastas.map((s) => (s.id === id ? nueva : s)), ...(anunciada ? {} : { ultima: anunciar(nueva, nueva.lider_id) }) }));
     get().cargarPujas(id);
     return null;
   },
