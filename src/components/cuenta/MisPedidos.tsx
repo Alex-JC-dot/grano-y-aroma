@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import { useAuth } from "@/store/authStore";
+import { usePendiente } from "@/store/pendienteStore";
 import PagoQr, { TEXTO_PAGO, type PagoEstado } from "./PagoPedido";
 import PruebaEntrega from "./PruebaEntrega";
 import DatosEnvio from "./DatosEnvio";
@@ -106,6 +107,13 @@ export default function MisPedidos({ uid }: { uid: string }) {
     if (error) return setError(mensajeDeError(error));
     cargar();
     useAuth.getState().cargarPerfil(); // los puntos canjeados vuelven al saldo
+    usePendiente.getState().cargar();
+  };
+
+  const alPagar = () => {
+    cargar();
+    useAuth.getState().cargarPerfil(); // los puntos de la compra entran al pagar
+    usePendiente.getState().cargar();
   };
 
   if (pedidos === null) return <p aria-busy="true">Cargando pedidos…</p>;
@@ -142,7 +150,7 @@ export default function MisPedidos({ uid }: { uid: string }) {
             {ver && (
               <div className="mi-pedido__detalle">
                 {p.estado === "cancelado" ? (
-                  <p className="caja__sub">Cancelado el {hora(p.cancelado_en)}.</p>
+                  <p className="caja__sub">Cancelado el {hora(p.cancelado_en)}.{p.pago_nota && ` ${p.pago_nota}.`}</p>
                 ) : (
                   <ol className="linea-tiempo">
                     {PASOS.map((x, i) => (
@@ -181,7 +189,7 @@ export default function MisPedidos({ uid }: { uid: string }) {
                     {p.canal !== "web" && p.pago_estado === "pendiente" && !p.direccion ? (
                       <DatosEnvio pedido={p.id} alGuardar={cargar} />
                     ) : (
-                      <PagoQr id={p.id} total={p.total} estado={p.pago_estado} alPagar={cargar} />
+                      <PagoQr id={p.id} total={p.total} estado={p.pago_estado} alPagar={alPagar} alVencer={cargar} />
                     )}
                   </div>
                 )}

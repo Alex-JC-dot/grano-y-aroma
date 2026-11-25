@@ -4,6 +4,7 @@ import { useRuta } from "@/lib/ruta";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
+import { usePendiente } from "@/store/pendienteStore";
 import MenuCuenta from "@/components/cuenta/MenuCuenta";
 import BotonTema from "@/components/ui/BotonTema";
 
@@ -18,6 +19,7 @@ const ENLACES = [
 /** Barra: la marca a la izquierda, los enlaces al centro y carrito + "Comprar café" a la derecha. */
 export default function NavInicio() {
   const cantidad = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
+  const sinPagar = usePendiente((s) => !!s.pedido);
   const abrirCarrito = useCartStore((s) => s.toggleCart);
   const ruta = useRuta();
   const [menu, setMenu] = useState(false);
@@ -65,12 +67,12 @@ export default function NavInicio() {
             type="button"
             className="cart-btn"
             onClick={abrirCarrito}
-            aria-label={cantidad ? `Abrir carrito, ${cantidad} productos` : "Abrir carrito"}
+            aria-label={(cantidad ? `Abrir carrito, ${cantidad} productos` : "Abrir carrito") + (sinPagar ? ", tienes un pedido sin pagar" : "")}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 7h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 7Zm4 0V6a3 3 0 0 1 6 0v1" stroke="currentColor" strokeWidth="1.5" />
             </svg>
-            {cantidad > 0 && <span className="cart-btn__count">{cantidad}</span>}
+            {cantidad > 0 ? <span className="cart-btn__count">{cantidad}</span> : sinPagar && <span className="cart-btn__count" title="Tienes un pedido sin pagar">!</span>}
           </button>
           <Link href="/tienda" className="btn btn--primary nav__comprar">
             Comprar café

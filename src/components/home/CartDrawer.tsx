@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { useAuth } from "@/store/authStore";
+import { fechaComprobante, MINUTOS_PARA_PAGAR, usePendiente, type Comprobante } from "@/store/pendienteStore";
 import { formatBs } from "@/lib/utils";
 import { mensajeDeError, supabase } from "@/lib/supabase";
 import BolsaVisual from "@/components/tienda/BolsaVisual";
@@ -31,29 +32,6 @@ const PASOS = ["Carrito", "Entrega", "Pago"];
 type Datos = { nombre: string; telefono: string; direccion: string; referencia: string };
 const VACIO: Datos = { nombre: "", telefono: "", direccion: "", referencia: "" };
 
-/** Lo que queda registrado al confirmar: el carrito se vacía enseguida. */
-type Comprobante = {
-  id: number;
-  /** Pago por QR: se confirma solo cuando el cliente escanea el código. */
-  porQr: boolean;
-  /** Falso solo mientras se espera que escaneen el QR. */
-  pagado: boolean;
-  /** Últimos dígitos, si pagó con tarjeta. */
-  tarjeta: string;
-  numero: string;
-  fecha: string;
-  lineas: { nombre: string; detalle: string; cantidad: number; precio: number }[];
-  /** Lo que sumaron los productos, antes del canje. */
-  subtotal: number;
-  descuento: number;
-  puntosUsados: number;
-  puntosGanados: number;
-  /** Lo que el cliente paga de verdad: subtotal menos descuento. */
-  total: number;
-  metodo: string;
-  cliente: Datos;
-};
-
 export default function CartDrawer() {
   const { items, isOpen, toggleCart, removeItem, updateQuantity, clearCart } = useCartStore();
   const total = useCartStore((s) => s.total());
@@ -62,7 +40,13 @@ export default function CartDrawer() {
   const [datos, setDatos] = useState<Datos>(VACIO);
   const [errores, setErrores] = useState<Partial<Record<keyof Datos, string>>>({});
   const [pago, setPago] = useState<"qr" | "tarjeta">("qr");
-  const [pedido, setPedido] = useState<Comprobante | null>(null);
+  const [confirmado, setConfirmado] = useState<Comprobante | null>(null);
+  const pendiente = usePendiente((s) => s.pedido);
+  const [verPendiente, setVerPendiente] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const uid = useAuth((s) => s.session?.user.id ?? null);
+  // Lo que se acaba de confirmar o, al volver, el pedido que quedó esperando el pago.
+  const pedido = confirmado ?? (isOpen && pendiente && (verPendiente || items.length === 0) ? pendiente : null);
   const [enviando, setEnviando] = useState(false);
   const [errorPedido, setErrorPedido] = useState("");
   const [tarjeta, setTarjeta] = useState<DatosTarjeta>(TARJETA_VACIA);
@@ -78,6 +62,16 @@ export default function CartDrawer() {
   const descuento = bsPorPuntos(canje);
   const aPagar = total - descuento;
 
+  // El pedido sin pagar se busca al entrar, al abrir el carrito y al volver a la pestaña.
+  useEffect(() => {
+    const buscar = () => void usePendiente.getState().cargar();
+    buscar();
+    // Con el QR a la vista no: ese ya se entera solo y tiene que llegar a mostrar "¡Pago exitoso!".
+    const volver = () => !document.hidden && !isOpen && buscar();
+    document.addEventListener("visibilitychange", volver);
+    return () => document.removeEventListener("visibilitychange", volver);
+  }, [uid, isOpen]);
+
   // Al abrir, el foco va al botón de cerrar; Escape cierra.
   useEffect(() => {
     if (!isOpen) return;
@@ -89,10 +83,39 @@ export default function CartDrawer() {
 
   const cerrar = () => {
     toggleCart();
-    if (pedido) {
-      setPedido(null);
+    setVerPendiente(false);
+    setErrorPedido("");
+    if (confirmado) {
+      setConfirmado(null);
       setPaso(0);
     }
+  };
+
+  /** Pagado: se queda a la vista hasta que el cliente cierre. */
+  const alPagar = (p: Comprobante) => {
+    setConfirmado((x) => (x && x.id !== p.id ? x : { ...p, pagado: true }));
+    usePendiente.getState().guardar(null);
+    useAuth.getState().cargarPerfil(); // los puntos entran al pagar
+  };
+
+  const alVencer = (p: Comprobante) => {
+    setConfirmado({ ...p, vencido: true });
+    usePendiente.getState().guardar(null);
+    useAuth.getState().cargarPerfil();
+  };
+
+  const cancelarPendiente = async (p: Comprobante) => {
+    if (!window.confirm(`¿Cancelar el pedido ${p.numero}? Todavía no se pagó.`)) return;
+    setErrorPedido("");
+    setCancelando(true);
+    const { error } = await supabase.rpc("cancelar_pedido", { p_pedido: p.id });
+    setCancelando(false);
+    if (error) return setErrorPedido(mensajeDeError(error));
+    usePendiente.getState().guardar(null);
+    setConfirmado(null);
+    setVerPendiente(false);
+    setPaso(0);
+    useAuth.getState().cargarPerfil(); // los puntos canjeados vuelven al saldo
   };
 
   const validar = () => {
@@ -159,13 +182,13 @@ export default function CartDrawer() {
       const id = useAuth.getState().session?.user.id;
       if (id) await supabase.from("perfiles").update({ telefono: datos.telefono.trim(), direccion: datos.direccion.trim() }).eq("id", id);
       await useAuth.getState().cargarPerfil();
-      setPedido({
+      const nuevo: Comprobante = {
         id: data.id,
         porQr: pago === "qr",
-        pagado: pago !== "qr",
+        pagado: data.pago_estado ? data.pago_estado === "aprobado" : pago !== "qr",
         tarjeta: pago === "tarjeta" ? tarjeta.numero.slice(-4) : "",
         numero: data.codigo ?? numeroDocumento("GA"),
-        fecha: new Date().toLocaleDateString("es-BO", { day: "numeric", month: "long", year: "numeric" }),
+        fecha: fechaComprobante(new Date()),
         lineas,
         // Las cifras del canje salen de lo que devolvió la base, no de la cuenta del navegador:
         // ella es la que decide cuántos puntos entraron y es lo que quedó guardado.
@@ -176,7 +199,9 @@ export default function CartDrawer() {
         total: Number(data.total),
         metodo: pago === "qr" ? "QR Bolivia" : "Tarjeta de débito o crédito",
         cliente,
-      });
+      };
+      setConfirmado(nuevo);
+      usePendiente.getState().guardar(nuevo.pagado ? null : nuevo);
       clearCart();
       setDatos(VACIO);
       setTarjeta(TARJETA_VACIA);
@@ -217,7 +242,7 @@ export default function CartDrawer() {
       >
         <header className="carrito__cabeza">
           <div>
-            <h2 id="carrito-titulo">{pedido ? (pedido.pagado ? "Pedido confirmado" : "Paga tu pedido") : PASOS[paso]}</h2>
+            <h2 id="carrito-titulo">{pedido ? (pedido.vencido ? "Pedido cancelado" : pedido.pagado ? "Pedido confirmado" : "Paga tu pedido") : PASOS[paso]}</h2>
             {!pedido && (
               <ol className="carrito__pasos" aria-label={`Paso ${paso + 1} de 3`}>
                 {PASOS.map((p, i) => (
@@ -248,15 +273,16 @@ export default function CartDrawer() {
               <p className="carrito__numero">{pedido.numero}</p>
               {pedido.porQr ? (
                 <>
-                  {!pedido.pagado && <p>Tu pedido está reservado. Escanea el QR con tu celular: el pago se confirma solo.</p>}
+                  {!pedido.pagado && !pedido.vencido && <p>Tu pedido está reservado por {MINUTOS_PARA_PAGAR} minutos. Escanea el QR con tu celular: el pago se confirma solo.</p>}
                   <PagoQr
                     key={pedido.id}
                     id={pedido.id}
                     total={pedido.total}
                     estado={pedido.pagado ? "aprobado" : "pendiente"}
-                    alPagar={() => setPedido((x) => (x && x.id === pedido.id ? { ...x, pagado: true } : x))}
+                    alPagar={() => alPagar(pedido)}
+                    alVencer={() => alVencer(pedido)}
                   />
-                  {!pedido.pagado && <p className="carrito__nota">Si ahora no puedes, págalo después desde Mi cuenta.</p>}
+                  {!pedido.pagado && !pedido.vencido && <p className="carrito__nota">Si cierras esta ventana, el QR te espera aquí, en el carrito, y en Mi cuenta.</p>}
                 </>
               ) : (
                 <>
@@ -277,22 +303,29 @@ export default function CartDrawer() {
               </dl>
               <p className="carrito__nota">
                 {pedido.descuento > 0 && `Canjeaste ${enPuntos(pedido.puntosUsados)} por ${formatBs(pedido.descuento)} de descuento. `}
-                Sumaste {enPuntos(pedido.puntosGanados)}. Puedes seguir tu pedido en Mi cuenta.
+                {pedido.pagado ? `Sumaste ${enPuntos(pedido.puntosGanados)}. ` : `Al pagar sumas ${enPuntos(pedido.puntosGanados)}. `}
+                Puedes seguir tu pedido en Mi cuenta.
               </p>
               <div className="carrito__acciones-listo">
-                <button
+                {pedido.pagado && <button
                   type="button"
                   className="btn btn--secondary"
                   onClick={() => imprimirDocumento(`Comprobante ${pedido.numero} - Grano y Aroma`)}
                 >
                   Descargar comprobante
-                </button>
+                </button>}
                 <Link href="/cuenta" className="btn btn--secondary" onClick={cerrar}>
                   Ver mi pedido
                 </Link>
                 <button type="button" className="btn btn--primary" onClick={cerrar}>
                   Seguir comprando
                 </button>
+                {!pedido.pagado && !pedido.vencido && (
+                  <button type="button" className="carrito__volver" disabled={cancelando} onClick={() => cancelarPendiente(pedido)}>
+                    {cancelando ? "Cancelando…" : "Cancelar este pedido"}
+                  </button>
+                )}
+                {errorPedido && <p className="carrito__error" role="alert">{errorPedido}</p>}
               </div>
             </div>
           ) : paso === 0 ? (
@@ -302,6 +335,13 @@ export default function CartDrawer() {
                 <Link href="/tienda" className="btn btn--secondary" onClick={toggleCart}>Ver los cafés</Link>
               </div>
             ) : (
+              <>
+              {pendiente && (
+                <div className="carrito__pendiente">
+                  <p><strong>Tienes un pedido sin pagar</strong>{pendiente.numero} · {formatBs(pendiente.total)}</p>
+                  <button type="button" className="btn btn--secondary" onClick={() => setVerPendiente(true)}>Ver el QR</button>
+                </div>
+              )}
               <ul className="carrito__lista">
                 {items.map((it) => (
                   <li key={`${it.id}-${it.selectedGrind}`} className="carrito__linea">
@@ -326,6 +366,7 @@ export default function CartDrawer() {
                   </li>
                 ))}
               </ul>
+              </>
             )
           ) : paso === 1 ? (
             <div className="carrito__form">

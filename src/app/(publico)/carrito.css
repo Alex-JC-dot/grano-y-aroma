@@ -49,6 +49,11 @@
 .carrito__numero { margin: 0; font: 400 36px/1 var(--font-fraunces), Georgia, serif; letter-spacing: 0.02em; }
 .carrito__listo p { margin: 0; }
 
+.carrito__pendiente { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 16px 0 4px; padding: 14px 16px; border: 1px solid var(--accent); border-radius: 10px; }
+.carrito__pendiente p { margin: 0; font-size: 14px; color: var(--muted); }
+.carrito__pendiente strong { display: block; font-size: 16px; font-weight: 500; color: var(--ink); }
+.carrito .carrito__pendiente .btn { flex: none; height: 42px; padding: 0 16px; }
+
 .carrito__lista { list-style: none; margin: 0; padding: 0; }
 .carrito__linea { display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: start; }
 .carrito__mini .bolsa { border-radius: 8px; }
