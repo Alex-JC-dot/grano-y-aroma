@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function PaginaNosotros() {
   return (
-    <>
+    <div className="nosotros">
       <section className="section page-top" aria-labelledby="nosotros-titulo">
         <div className="wrap intro">
           <h1 id="nosotros-titulo" data-revelar>
@@ -54,6 +54,6 @@ export default function PaginaNosotros() {
       <CurvaTueste />
       <Galeria />
       <MapaVisita />
-    </>
+    </div>
   );
 }

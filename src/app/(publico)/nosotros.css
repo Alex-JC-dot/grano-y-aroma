@@ -86,3 +86,25 @@ html[data-revelar-activo="on"] .inicio .curva:not([data-visible]) .curva__hitos 
   .inicio .galeria__foto--ancha { grid-column: 1 / -1; aspect-ratio: 4 / 3; }
   .inicio .galeria__foto--ancha img { position: static; }
 }
+
+/* El contorno caramelo de la tarjeta del mapa, en todos los bloques de la página. */
+.inicio .nosotros { --contorno: #b5743c; }
+.inicio .nosotros :is(.banda-foto, .mapa, .region, .curva, .galeria__foto, .process__item figure) { border: 3px solid var(--contorno); border-radius: 28px; box-sizing: border-box; }
+.inicio .nosotros :is(.region, .galeria__foto, .process__item figure) { transition: box-shadow 0.3s var(--ease), transform 0.3s var(--ease), opacity 0.6s var(--ease); }
+.inicio .nosotros :is(.region, .galeria__foto, .process__item figure):hover { box-shadow: 0 24px 44px -24px rgba(43, 21, 12, 0.7); }
+.inicio .nosotros .region.is-on { box-shadow: 0 0 0 4px var(--bg), 0 0 0 7px var(--contorno); }
+.inicio .nosotros .region.is-on .region__texto { background: var(--contorno); color: #fff8ee; }
+.inicio .nosotros .region.is-on .region__detalle { color: rgba(255, 248, 238, 0.85); }
+.inicio .nosotros .region__texto { border-radius: 16px; }
+.inicio .nosotros .mapa img { border-radius: 20px; }
+.inicio .nosotros .curva__num { background: var(--contorno); color: #fff8ee; }
+.inicio .nosotros .curva__hito circle { fill: var(--contorno); }
+/* Las cifras, en cuatro tarjetas. */
+.inicio .nosotros .cifras__lista { padding: 0; border: 0; gap: 20px; }
+.inicio .nosotros .cifra { padding: 26px 26px 28px; border: 3px solid var(--contorno); border-radius: 28px; background: var(--surface); }
+.inicio .nosotros .cifra__valor { color: var(--accent); }
+@media (max-width: 599px) {
+  .inicio .nosotros .cifras__lista { gap: 12px; }
+  .inicio .nosotros .cifra { padding: 18px 16px 20px; border-radius: 22px; }
+  .inicio .nosotros :is(.banda-foto, .mapa, .region, .curva, .galeria__foto, .process__item figure) { border-radius: 22px; }
+}
