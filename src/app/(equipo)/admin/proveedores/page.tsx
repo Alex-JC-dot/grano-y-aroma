@@ -332,12 +332,12 @@ export default function PaginaProveedores() {
       ) : (
         <>
           {abiertaOrden && (
-            <section className="panel admin-form">
+            <section className="panel admin-form admin-form--orden">
               <h2>Nueva orden de compra</h2>
 
               <div className="carrito__campo">
                 <label htmlFor="orden-prov">Proveedor</label>
-                <select id="orden-prov" value={provElegido ?? ""} onChange={(e) => setProvElegido(Number(e.target.value) || null)} disabled={guardando}>
+                <select id="orden-prov" className="tueste-form__select" value={provElegido ?? ""} onChange={(e) => setProvElegido(Number(e.target.value) || null)} disabled={guardando}>
                   <option value="">Elige un proveedor</option>
                   {activos.map((p) => (
                     <option key={p.id} value={p.id}>{p.nombre}{p.region ? ` · ${p.region}` : ""}</option>
@@ -380,7 +380,7 @@ export default function PaginaProveedores() {
                 </div>
               ))}
 
-              <button type="button" className="link" onClick={() => setItems([...items, { ...ITEM_VACIO }])}>
+              <button type="button" className="btn btn--secondary orden-agregar" onClick={() => setItems([...items, { ...ITEM_VACIO }])}>
                 + Agregar otro lote
               </button>
 
@@ -453,7 +453,7 @@ export default function PaginaProveedores() {
                   {o.notas && <p className="caja__sub">{o.notas}</p>}
 
                   {o.estado === "recibida" ? (
-                    <p className="caja__comprobante"><strong>Recibida el {fecha(o.recibida_en)}</strong> · los lotes ya están en Bodega</p>
+                    <p className="caja__comprobante"><strong>Recibida el {fecha(o.recibida_en)}</strong> Los lotes ya están en Bodega.</p>
                   ) : o.estado === "cancelada" ? (
                     <p className="caja__sub">Orden cancelada.</p>
                   ) : (
