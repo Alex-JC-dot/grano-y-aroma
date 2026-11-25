@@ -2,16 +2,22 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { create } from "zustand";
-import { supabase } from "@/lib/supabase";
+import { mensajeDeError, supabase } from "@/lib/supabase";
 import { products } from "@/lib/data";
 import { formatBs } from "@/lib/utils";
-import { categoriaDe, esCafe } from "@/lib/catalogo";
+import { categoriaDe, colorDe, esCafe } from "@/lib/catalogo";
 import VideoUnaVez from "@/components/inicio/VideoUnaVez";
+import PagoQr, { type PagoEstado } from "@/components/cuenta/PagoPedido";
+import DatosEnvio from "@/components/cuenta/DatosEnvio";
+import Link from "next/link";
 import { useAuth } from "@/store/authStore";
+import PlanesClub, { Onda, PersonajeClub, PLANES, type PlanClub } from "./PlanesClub";
+import { OpcionCafe, OpcionCantidad, OpcionFrecuencia, OpcionMolienda, OpcionSorpresa } from "./OpcionesClub";
 
 /**
  * Club Grano y Aroma (Suscripciones, RF-06 a RF-09).
  *
+ * - Tres tarjetas de plan (PlanesClub) llenan el formulario de un toque.
  * - Se arma en 4 pasos (frecuencia, cantidad, café, molienda) con el precio por envío, el
  *   ahorro frente a la tienda y las próximas fechas de envío y cobro calculadas al momento.
  * - La suscripción se guarda en Supabase, ligada a la cuenta del cliente (tabla suscripciones):
@@ -88,8 +94,12 @@ type FilaSub = {
   inicio: string;
   saltos: number;
   pausa_hasta: string | null;
+  pago_estado: PagoEstado;
 };
-type SubGuardada = Suscripcion & { id?: number };
+type SubGuardada = Suscripcion & { id?: number; pagoEstado: PagoEstado };
+/** El cobro que falta pagar, si hay alguno. */
+type CobroClub = { id: number; periodo: string; monto: number; estado: PagoEstado };
+
 const aSub = (x: FilaSub): SubGuardada => ({
   id: x.id,
   frecuencia: x.frecuencia,
@@ -100,12 +110,17 @@ const aSub = (x: FilaSub): SubGuardada => ({
   inicio: x.inicio,
   saltos: x.saltos,
   pausaHasta: x.pausa_hasta,
+  pagoEstado: x.pago_estado ?? "pendiente",
 });
 
-const useClubStore = create<{ sub: SubGuardada | null }>(() => ({ sub: null }));
+const useClubStore = create<{ sub: SubGuardada | null; cobro: CobroClub | null; error: string }>(() => ({
+  sub: null,
+  cobro: null,
+  error: "",
+}));
 
 async function cargarSub(uid: string | null) {
-  if (!uid) return useClubStore.setState({ sub: null });
+  if (!uid) return useClubStore.setState({ sub: null, cobro: null, error: "" });
   const { data } = await supabase
     .from("suscripciones")
     .select("*")
@@ -114,38 +129,62 @@ async function cargarSub(uid: string | null) {
     .order("creado_en", { ascending: false })
     .limit(1)
     .maybeSingle();
-  useClubStore.setState({ sub: data ? aSub(data as FilaSub) : null });
+  const sub = data ? aSub(data as FilaSub) : null;
+
+  // El cobro más próximo que todavía no está aprobado: es el que hay que pagar.
+  // No se filtra por cliente: lo hace la política de RLS de la tabla (migración 014b).
+  let cobro: CobroClub | null = null;
+  if (sub?.id) {
+    const { data: c } = await supabase
+      .from("cobros_club")
+      .select("id, periodo, monto, estado")
+      .eq("suscripcion_id", sub.id)
+      .neq("estado", "aprobado")
+      .order("periodo", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (c) cobro = { ...(c as CobroClub), monto: Number(c.monto) };
+  }
+  useClubStore.setState({ sub, cobro, error: "" });
 }
 
-/** Guarda la suscripción en la cuenta (null = cancelar). La base solo deja tocar la propia (RLS). */
+/**
+ * Guarda la suscripción (null = cancelar).
+ *
+ * El precio NO viaja desde aquí. Antes se calculaba en el navegador y se insertaba tal cual,
+ * así que cualquiera con la consola abierta podía suscribirse por Bs. 0. Ahora la base recibe
+ * solo lo que el cliente eligió —plan, café, molienda, fechas— y ella pone el precio y crea el
+ * cobro (migración 014b). El navegador ya ni siquiera tiene permiso de escribir en la tabla.
+ */
 async function guardar(s: Suscripcion | null) {
   const uid = useAuth.getState().session?.user.id;
   if (!uid) return;
-  const actual = useClubStore.getState().sub;
+
   if (!s) {
-    useClubStore.setState({ sub: null });
-    if (actual?.id) await supabase.from("suscripciones").update({ estado: "cancelada" }).eq("id", actual.id);
+    useClubStore.setState({ sub: null, cobro: null, error: "" });
+    const { error } = await supabase.rpc("cancelar_suscripcion");
+    if (error) useClubStore.setState({ error: mensajeDeError(error) });
+    await cargarSub(uid);
     return;
   }
-  const fila = {
-    frecuencia: s.frecuencia,
-    gramos: s.gramos,
-    cafe: s.cafe,
-    molienda: s.molienda,
-    estado: s.estado,
-    inicio: s.inicio,
-    saltos: s.saltos,
-    pausa_hasta: s.pausaHasta,
-    precio: precios(s.cafe, s.gramos, s.frecuencia).club,
-    proximo_envio: aISO(proximosEnvios(s, 1)[0]),
-  };
-  useClubStore.setState({ sub: { ...s, id: actual?.id } });
-  if (actual?.id) {
-    await supabase.from("suscripciones").update(fila).eq("id", actual.id);
-  } else {
-    const { data } = await supabase.from("suscripciones").insert({ ...fila, cliente_id: uid }).select().single();
-    if (data) useClubStore.setState({ sub: aSub(data as FilaSub) });
-  }
+
+  // Se pinta enseguida lo que eligió y después se reconcilia con lo que respondió la base.
+  const actual = useClubStore.getState().sub;
+  useClubStore.setState({ sub: { ...s, id: actual?.id, pagoEstado: actual?.pagoEstado ?? "pendiente" }, error: "" });
+
+  const { error } = await supabase.rpc("guardar_suscripcion", {
+    p_frecuencia: s.frecuencia,
+    p_gramos: s.gramos,
+    p_cafe: s.cafe,
+    p_molienda: s.molienda,
+    p_inicio: s.inicio,
+    p_saltos: s.saltos,
+    p_pausa_hasta: s.pausaHasta,
+    p_estado: s.estado,
+    p_proximo_envio: aISO(proximosEnvios(s, 1)[0]),
+  });
+  if (error) useClubStore.setState({ error: mensajeDeError(error) });
+  await cargarSub(uid);
 }
 
 const sinSuscripcion = () => () => {};
@@ -155,7 +194,10 @@ export default function Club() {
   useEffect(() => {
     cargarSub(uid);
   }, [uid]);
+  const perfil = useAuth((s) => s.perfil);
   const sub = useClubStore((s) => s.sub);
+  const cobro = useClubStore((s) => s.cobro);
+  const errorSub = useClubStore((s) => s.error);
   // Las fechas dependen del día de hoy: se escriben en el navegador, no al compilar la página.
   const enNavegador = useSyncExternalStore(sinSuscripcion, () => true, () => false);
 
@@ -168,6 +210,7 @@ export default function Club() {
   const [verPausa, setVerPausa] = useState(false);
   const cancelarRef = useRef<HTMLDialogElement>(null);
   const formRef = useRef<HTMLElement>(null);
+  const resumenRef = useRef<HTMLSpanElement>(null);
 
   const p = precios(cafe, gramos, frecuencia);
   const vigente = sub && sub.estado !== "cancelada" ? sub : null;
@@ -182,13 +225,57 @@ export default function Club() {
     if (!vigente) await cargarSub(useAuth.getState().session?.user.id ?? null);
     const ya = useClubStore.getState().sub;
     if (ya && ya.estado !== "cancelada") {
-      guardar({ ...ya, frecuencia, gramos, cafe, molienda });
+      await guardar({ ...ya, frecuencia, gramos, cafe, molienda });
       setMensaje("Guardamos los cambios: se aplican desde tu próximo envío.");
     } else {
-      guardar({ frecuencia, gramos, cafe, molienda, estado: "activa", inicio: aISO(sumarDias(hoy(), 3)), saltos: 0, pausaHasta: null });
-      setMensaje("¡Bienvenido al Club! Tu primer envío sale en 3 días.");
+      await guardar({ frecuencia, gramos, cafe, molienda, estado: "activa", inicio: aISO(sumarDias(hoy(), 3)), saltos: 0, pausaHasta: null });
+      setMensaje("¡Bienvenido al Club! Escanea el QR con tu celular para pagar el primer envío: queda programado al instante.");
     }
-    document.getElementById("mi-suscripcion")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // Se espera a que la base responda y a que React pinte: lo que hay que mostrar es el QR,
+    // y antes de eso el bloque del cobro todavía no existe en la página. Sin esa espera el
+    // salto caía en la cabecera del panel y había que bajar a buscar el QR a mano.
+    window.setTimeout(() => {
+      const destino = document.getElementById("cobro-del-club") ?? document.getElementById("mi-suscripcion");
+      destino?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+  };
+
+  const plan = PLANES.find((x) => x.gramos === gramos && x.frecuencia === frecuencia) ?? null;
+  // El personaje del resumen: el del plan o, en una combinación propia, el de esa cantidad.
+  const mascota = plan ?? PLANES.find((x) => x.gramos === gramos)!;
+
+  /** Elegir una tarjeta: llena el formulario, y el personaje vuela hasta "Tu envío". */
+  const elegirPlan = (x: PlanClub, personaje: Element | null) => {
+    setFrecuencia(x.frecuencia);
+    setGramos(x.gramos);
+    setMensaje("");
+    const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("configurar")?.scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "start" });
+    const img = personaje?.querySelector("img");
+    if (!img || quieto) return;
+    const a = img.getBoundingClientRect();
+    const copia = img.cloneNode() as HTMLImageElement;
+    Object.assign(copia.style, { position: "fixed", left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px`, margin: "0", zIndex: "60", pointerEvents: "none" });
+    document.querySelector(".inicio")?.appendChild(copia);
+    resumenRef.current?.style.setProperty("visibility", "hidden");
+    // La página se está desplazando: se sigue al destino cuadro a cuadro.
+    const inicio = performance.now();
+    const paso = (ahora: number) => {
+      const t = Math.min(1, (ahora - inicio) / 950);
+      const k = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const b = resumenRef.current?.querySelector("img")?.getBoundingClientRect();
+      if (b && b.width) {
+        const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+        const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+        const escala = 1 + (b.height / a.height - 1) * k;
+        copia.style.transform = `translate(${dx * k}px, ${dy * k - Math.sin(Math.PI * t) * 60}px) scale(${escala}) rotate(${Math.sin(Math.PI * t) * -10}deg)`;
+      }
+      if (t < 1) return requestAnimationFrame(paso);
+      copia.remove();
+      resumenRef.current?.style.removeProperty("visibility");
+    };
+    requestAnimationFrame(paso);
   };
 
   const editar = () => {
@@ -243,9 +330,44 @@ export default function Club() {
             <div className="panel">
               <div className="panel__cabeza">
                 <h2 id="mi-sub-titulo">Tu suscripción</h2>
-                <span className={`estado estado--${vigente.estado}`}>{vigente.estado === "activa" ? "Activa" : "En pausa"}</span>
+                {/* Con un envío sin pagar no se anuncia como "Activa". */}
+                {cobro ? (
+                  <span className="estado estado--pendiente">Falta pagar</span>
+                ) : (
+                  <span className={`estado estado--${vigente.estado}`}>{vigente.estado === "activa" ? "Activa" : "En pausa"}</span>
+                )}
               </div>
-              {mensaje && <p className="club__aviso" role="status">{mensaje}</p>}
+              {mensaje && <p className="club__aviso" role="status">{mensaje}{/manos del equipo/.test(mensaje) && <> <Link href="/cuenta" className="link">Síguelo en Mi cuenta</Link></>}</p>}
+              {errorSub && <p className="carrito__error" role="alert">{errorSub}</p>}
+
+              {/*
+                Cobro del envío: se escanea el QR y el pago se confirma solo, el mismo
+                recorrido que un pedido de la tienda (RF-07, migración 019).
+              */}
+              {cobro && (
+                <div className="club__cobro" id="cobro-del-club">
+                  <h3>Paga este envío</h3>
+                  <p className="club__fecha-nota">
+                    Envío del {fechaLarga(deISO(cobro.periodo))} · <strong>{formatBs(cobro.monto)}</strong>
+                  </p>
+                  {/* Sin dirección no hay a dónde enviarlo: se pide antes de pagar. */}
+                  {!perfil?.direccion || !perfil?.telefono ? (
+                    <DatosEnvio />
+                  ) : (
+                  <PagoQr
+                    key={cobro.id}
+                    id={cobro.id}
+                    total={cobro.monto}
+                    estado={cobro.estado}
+                    destino="club"
+                    alPagar={async () => {
+                      setMensaje(`Pago confirmado por el banco. Tu envío del ${fechaLarga(deISO(cobro.periodo))} ya está en manos del equipo.`);
+                      await cargarSub(uid);
+                    }}
+                  />
+                  )}
+                </div>
+              )}
               <dl className="panel__datos">
                 <div><dt>Café</dt><dd>{nombreCafe(vigente.cafe)}</dd></div>
                 <div><dt>Cada envío</dt><dd>{nombreCantidad(vigente.gramos)} · {vigente.molienda}</dd></div>
@@ -262,7 +384,7 @@ export default function Club() {
                         <li key={i}>
                           <span>{fechaLarga(f)}</span>
                           <span className="club__fecha-nota">
-                            {i === 0 ? `cobro de ${formatBs(ps.club)} el ${fechaLarga(sumarDias(f, -2))}` : formatBs(ps.club)}
+                            {formatBs(ps.club)}{cobro?.periodo === aISO(f) && " · falta pagar"}
                           </span>
                         </li>
                       ))}
@@ -270,7 +392,7 @@ export default function Club() {
                   ) : (
                     <p className="panel__nota">Pausada sin fecha: no se te cobrará hasta que la reactives.</p>
                   )}
-                  <p className="club__fecha-nota">Te avisamos por correo dos días antes de cada cobro y el día de cada envío.</p>
+                  <p className="club__fecha-nota">El cobro de cada envío aparece aquí tres días antes y se paga por QR.</p>
                 </div>
                 <div className="club__ahorro">
                   {enviosHechos > 0 ? (
@@ -347,11 +469,24 @@ export default function Club() {
         </section>
       )}
 
-      {/* 2. Configurador */}
+      {/* 2. Planes */}
+      <section className="section" aria-labelledby="planes-titulo">
+        <div className="wrap">
+          <div className="head" data-revelar>
+            <h2 id="planes-titulo">Elige tu plan</h2>
+            <div>
+              <p>Tres formas de empezar. Después puedes cambiar el café, la cantidad o la molienda.</p>
+            </div>
+          </div>
+          <PlanesClub cafe={nombreCafe(cafe)} elegido={plan?.id ?? null} precio={(x) => precios(cafe, x.gramos, x.frecuencia)} alElegir={elegirPlan} />
+        </div>
+      </section>
+
+      {/* 3. Configurador */}
       <section ref={formRef} className="section" id="configurar" aria-labelledby="config-titulo">
         <div className="wrap">
           <div className="head" data-revelar>
-            <h2 id="config-titulo">{vigente ? "Cambia tu suscripción" : "Arma tu suscripción"}</h2>
+            <h2 id="config-titulo">{vigente ? "Cambia tu suscripción" : "Personaliza tu plan"}</h2>
             <div>
               <p>Cuatro elecciones y listo. El precio y las fechas se calculan al momento.</p>
             </div>
@@ -359,79 +494,74 @@ export default function Club() {
 
           <div className="club__config">
             <div className="club__pasos">
-              <fieldset className="club__paso desde-izq" data-revelar>
+              <fieldset className="club__paso" data-revelar>
                 <legend><span>1</span> Cada cuánto</legend>
-                <div className="planes planes--club">
-                  {([30, 15] as Frecuencia[]).map((f, i) => (
-                    <label key={f} className={`plan ${i ? "desde-der" : "desde-izq"}${frecuencia === f ? " is-on" : ""}`} data-revelar style={{ "--i": i + 1 } as React.CSSProperties}>
-                      <input type="radio" name="frecuencia" checked={frecuencia === f} onChange={() => setFrecuencia(f)} />
-                      <span className="plan__nombre">Cada {f} días</span>
-                      <span className="plan__ahorro">{Math.round(DESCUENTO[f] * 100)} % menos que en la tienda</span>
-                    </label>
+                <div className="copcs copcs--2">
+                  {([30, 15] as Frecuencia[]).map((f) => (
+                    <OpcionFrecuencia key={f} dias={f} descuento={Math.round(DESCUENTO[f] * 100)} activa={frecuencia === f} alElegir={() => setFrecuencia(f)} />
                   ))}
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso desde-izq" data-revelar>
+              <fieldset className="club__paso" data-revelar>
                 <legend><span>2</span> Cuánto café por envío</legend>
-                <div className="filtros__opciones">
+                <div className="copcs copcs--3 copcs--alto">
                   {CANTIDADES.map((c) => (
-                    <button key={c.g} type="button" className={`chip${gramos === c.g ? " is-on" : ""}`} aria-pressed={gramos === c.g} onClick={() => setGramos(c.g)}>
-                      {c.label}
-                    </button>
+                    <OpcionCantidad key={c.g} gramos={c.g} etiqueta={c.label} activa={gramos === c.g} alElegir={() => setGramos(c.g)} />
                   ))}
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso desde-izq" data-revelar>
+              <fieldset className="club__paso" data-revelar>
                 <legend><span>3</span> Qué café</legend>
-                <div className="club__cafes">
-                  <button type="button" data-revelar className={`club__cafe club__cafe--sorpresa desde-izq${cafe === "sorpresa" ? " is-on" : ""}`} aria-pressed={cafe === "sorpresa"} onClick={() => setCafe("sorpresa")}>
-                    <strong>Sorpresa del tostador</strong>
-                    <span>Un café distinto en cada envío, elegido de los lotes recién tostados · {formatBs(PRECIO_SORPRESA)} los 250 g</span>
-                  </button>
-                  {CAFES.map((c, i) => (
-                    <button key={c.id} type="button" data-revelar style={{ "--i": Math.floor(i / 2) + 1 } as React.CSSProperties} className={`club__cafe ${i % 2 ? "desde-der" : "desde-izq"}${cafe === c.id ? " is-on" : ""}`} aria-pressed={cafe === c.id} onClick={() => setCafe(c.id)}>
-                      <strong>{c.name}</strong>
-                      <span>{c.region} · {formatBs(c.price)} los 250 g</span>
-                    </button>
+                <OpcionSorpresa precio={PRECIO_SORPRESA} colores={CAFES.map(colorDe)} activa={cafe === "sorpresa"} alElegir={() => setCafe("sorpresa")} />
+                <div className="copcs copcs--3 copcs--alto">
+                  {CAFES.map((c) => (
+                    <OpcionCafe key={c.id} cafe={c} activa={cafe === c.id} alElegir={() => setCafe(c.id)} />
                   ))}
                 </div>
               </fieldset>
 
-              <fieldset className="club__paso desde-izq" data-revelar>
+              <fieldset className="club__paso" data-revelar>
                 <legend><span>4</span> Molienda</legend>
-                <div className="filtros__opciones">
+                <div className="copcs copcs--5">
                   {MOLIENDAS.map((m) => (
-                    <button key={m} type="button" className={`chip${molienda === m ? " is-on" : ""}`} aria-pressed={molienda === m} onClick={() => setMolienda(m)}>
-                      {m}
-                    </button>
+                    <OpcionMolienda key={m} nombre={m} activa={molienda === m} alElegir={() => setMolienda(m)} />
                   ))}
                 </div>
               </fieldset>
             </div>
 
-            <aside className="club__resumen desde-der" data-revelar aria-live="polite">
-              <h3>Tu envío</h3>
-              <p className="club__linea">{nombreCafe(cafe)} · {nombreCantidad(gramos)} · {molienda}</p>
-              <dl className="club__cuentas">
-                <dt>En la tienda</dt><dd><s>{formatBs(p.tienda)}</s></dd>
-                <dt>Con el Club</dt><dd className="club__total">{formatBs(p.club)}</dd>
-                <dt>Ahorras</dt><dd className="club__ahorra">{formatBs(p.ahorro)} por envío</dd>
-                <dt>Envío en Sucre</dt><dd>Sin costo</dd>
-              </dl>
-              {!vigente && (
-                <div className="club__primeros">
-                  <span>Primeros envíos</span>
-                  <ol>
-                    {fechasNuevas.map((f, i) => <li key={i}>{enNavegador ? fechaLarga(f) : "…"}</li>)}
-                  </ol>
-                </div>
-              )}
-              <button type="button" className="btn btn--primary club__boton" onClick={suscribir}>
-                {vigente ? "Guardar cambios" : `Suscribirme · ${formatBs(p.club)} por envío`}
+            <aside className={`cplan club__resumen cplan--${mascota.id}`} data-revelar aria-live="polite">
+              <div className="cplan__escena" aria-hidden="true">
+                <span className="cplan__sol" />
+                <Onda />
+              </div>
+              <span ref={resumenRef} className="club__personaje">
+                <PersonajeClub key={mascota.id} plan={mascota} className="cplan__personaje" />
+              </span>
+              <div className="club__resumen-cuerpo">
+                <h3>{plan ? `Plan ${plan.nombre}` : "Plan a tu medida"}</h3>
+                <p className="club__linea">{nombreCafe(cafe)} · {nombreCantidad(gramos)} · {molienda} · cada {frecuencia} días</p>
+                <dl className="club__cuentas">
+                  <dt>En la tienda</dt><dd><s>{formatBs(p.tienda)}</s></dd>
+                  <dt>Con el Club</dt><dd className="club__total">{formatBs(p.club)}</dd>
+                  <dt>Ahorras</dt><dd className="club__ahorra">{formatBs(p.ahorro)} por envío</dd>
+                  <dt>Envío en Sucre</dt><dd>Sin costo</dd>
+                </dl>
+                {!vigente && (
+                  <div className="club__primeros">
+                    <span>Primeros envíos</span>
+                    <ol>
+                      {fechasNuevas.map((f, i) => <li key={i}>{enNavegador ? fechaLarga(f) : "…"}</li>)}
+                    </ol>
+                  </div>
+                )}
+                <p className="club__fecha-nota">Pago de demostración: no se cobra nada real.</p>
+              </div>
+              <button type="button" className="cplan__boton" onClick={suscribir}>
+                {vigente ? "Guardar cambios" : `Suscribirme · ${formatBs(p.club)}`}
               </button>
-              <p className="club__fecha-nota">Pago de demostración: no se realiza ningún cobro real.</p>
             </aside>
           </div>
         </div>
@@ -447,7 +577,7 @@ export default function Club() {
             {[
               ["Eliges", "Frecuencia, cantidad, café y molienda. Puedes cambiarlos antes de cada envío."],
               ["Tostamos", "Tu café sale de un lote recién tostado, con su código de trazabilidad."],
-              ["Te llega", "Te avisamos antes de cada cobro y de cada envío. Pausas cuando quieras."],
+              ["Te llega", "Pagas escaneando el QR y sigues el envío desde tu cuenta, hasta la foto de la entrega."],
             ].map(([t, d], i) => (
               <li key={t} className="paso" data-revelar style={{ "--i": i } as React.CSSProperties}>
                 <span className="paso__num">0{i + 1}</span>
@@ -459,8 +589,8 @@ export default function Club() {
           <ul className="beneficios" data-revelar>
             <li>10 a 15 % menos que en la tienda</li>
             <li>Envío sin costo en Sucre</li>
-            <li>Notas de cata del tostador en cada bolsa</li>
-            <li>Acceso anticipado a las subastas</li>
+            <li>Seguimiento de cada envío en tu cuenta</li>
+            <li>Pausas, saltas o cambias cuando quieras</li>
           </ul>
         </div>
       </section>
@@ -473,7 +603,7 @@ export default function Club() {
           </div>
           <div className="faq" data-revelar>
             {[
-              ["¿Cuándo me cobran?", "Dos días antes de cada envío, con el método de pago que registraste. Te avisamos por correo antes de cada cobro."],
+              ["¿Cuándo me cobran?", "Nunca se cobra solo: tres días antes de cada envío aparece el cobro en tu suscripción y lo pagas escaneando el QR."],
               ["¿Puedo cancelar cuando quiera?", "Sí. No hay permanencia mínima: puedes pausar, saltar un envío o cancelar desde esta página."],
               ["¿Qué es la Sorpresa del tostador?", "Cada envío trae un café distinto, elegido por nuestro tostador entre los lotes recién tostados. Es la forma de probar todos nuestros orígenes."],
               ["¿Envían fuera de Sucre?", "Por ahora el envío sin costo es solo en Sucre. Para otras ciudades escríbenos y te cotizamos el envío."],

@@ -1,9 +1,12 @@
 import "./publico.css";
 import "./paginas.css";
+import "./intro.css";
 import "./club-subastas.css";
+import "./subastas.css";
 import "./mapa.css";
 import "./carrito.css";
 import "./nosotros.css";
+import "./mapa-visita.css";
 import CartDrawer from "@/components/home/CartDrawer";
 import NavInicio from "@/components/inicio/NavInicio";
 import { PieInicio } from "@/components/inicio/SeccionesInicio";

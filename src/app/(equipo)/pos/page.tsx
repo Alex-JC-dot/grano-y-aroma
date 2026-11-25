@@ -8,11 +8,15 @@ import HojaDocumento from "@/components/ui/HojaDocumento";
 import BotonesDocumento from "@/components/ui/BotonesDocumento";
 import { fechaISO, imprimirDocumento } from "@/lib/documento";
 import type { HojaExcel } from "@/lib/excel";
+import CobroSimulado from "@/components/equipo/CobroSimulado";
 
 /**
  * Caja de la cafetería (Punto de Venta, RF-17 a RF-21): la barra y los productos de la tienda
  * salen de Supabase; cada cobro pasa por confirmar_pedido() con canal "caja", que descuenta el
  * stock compartido con la tienda en línea. El cierre de caja suma las ventas del día por método.
+ *
+ * QR y tarjeta abren una pantalla de cobro SIMULADO (CobroSimulado): el QR con el monto o el
+ * formulario de la tarjeta. La venta se registra recién cuando ese cobro "se aprueba".
  *
  * La caja emite dos documentos: el comprobante de venta (RF-18) y el cierre de caja (RF-19),
  * en PDF y el cierre también en Excel. Solo uno puede estar marcado como imprimible a la vez:
@@ -31,6 +35,14 @@ const METODOS: { v: Metodo; label: string }[] = [
 const ORDEN_GRUPOS = ["Bebidas calientes", "Métodos", "Bebidas frías", "Pastelería", "Otros", "Tienda"];
 const grupoDe = (i: Item) => (i.categoria === "bebida" ? i.grupo ?? "Otros" : "Tienda");
 
+/** Una venta del día, para el detalle del Excel. */
+type VentaTurno = {
+  codigo: string;
+  creado_en: string;
+  metodo_pago: Metodo;
+  total: number;
+  pedido_items: { cantidad: number; precio: number; productos: { nombre: string } | null }[];
+};
 type Turno = Record<Metodo, { monto: number; ventas: number }>;
 const TURNO_VACIO: Turno = { efectivo: { monto: 0, ventas: 0 }, qr: { monto: 0, ventas: 0 }, tarjeta: { monto: 0, ventas: 0 } };
 
@@ -50,10 +62,13 @@ export default function PaginaCaja() {
   const [orden, setOrden] = useState<Linea[]>([]);
   const [metodo, setMetodo] = useState<Metodo>("efectivo");
   const [turno, setTurno] = useState<Turno>(TURNO_VACIO);
+  const [ventas, setVentas] = useState<VentaTurno[]>([]);
   const [venta, setVenta] = useState<Venta | null>(null);
   const [impresion, setImpresion] = useState<{ tipo: "venta" | "cierre"; titulo: string; n: number } | null>(null);
   const [error, setError] = useState("");
   const [cobrando, setCobrando] = useState(false);
+  // Pantalla de cobro simulado abierta (QR o tarjeta).
+  const [cobro, setCobro] = useState<"qr" | "tarjeta" | null>(null);
   const cierreRef = useRef<HTMLDialogElement>(null);
 
   const cargar = useCallback(async () => {
@@ -69,14 +84,22 @@ export default function PaginaCaja() {
   const cargarTurno = useCallback(async () => {
     const desde = new Date();
     desde.setHours(0, 0, 0, 0);
-    const { data } = await supabase.from("pedidos").select("metodo_pago, total").eq("canal", "caja").gte("creado_en", desde.toISOString());
+    const { data } = await supabase
+      .from("pedidos")
+      .select("codigo, creado_en, metodo_pago, total, estado, pedido_items(cantidad, precio, productos(nombre))")
+      .eq("canal", "caja")
+      .neq("estado", "cancelado")
+      .gte("creado_en", desde.toISOString())
+      .order("creado_en");
     const t: Turno = { efectivo: { monto: 0, ventas: 0 }, qr: { monto: 0, ventas: 0 }, tarjeta: { monto: 0, ventas: 0 } };
-    for (const p of (data as { metodo_pago: Metodo; total: number }[]) ?? []) {
+    const ventas = (data as unknown as VentaTurno[]) ?? [];
+    for (const p of ventas) {
       if (!t[p.metodo_pago]) continue;
       t[p.metodo_pago].monto += Number(p.total);
       t[p.metodo_pago].ventas += 1;
     }
     setTurno(t);
+    setVentas(ventas);
   }, []);
 
   useEffect(() => {
@@ -88,7 +111,11 @@ export default function PaginaCaja() {
   }, [cargar, cargarTurno]);
 
   const grupos = ["Todos", ...ORDEN_GRUPOS.filter((g) => items.some((i) => grupoDe(i) === g))];
-  const visibles = items.filter((i) => cat === "Todos" || grupoDe(i) === cat);
+  // En "Todos" va primero la barra (lo que más se vende en el local: espresso, americano,
+  // cappuccino…) y al final las bolsas y accesorios de la tienda, en el orden de las pestañas.
+  const visibles = items
+    .filter((i) => cat === "Todos" || grupoDe(i) === cat)
+    .sort((a, b) => ORDEN_GRUPOS.indexOf(grupoDe(a)) - ORDEN_GRUPOS.indexOf(grupoDe(b)));
   const total = orden.reduce((s, i) => s + i.precio * i.qty, 0);
   const unidades = orden.reduce((s, i) => s + i.qty, 0);
 
@@ -117,7 +144,15 @@ export default function PaginaCaja() {
   const cambiar = (id: string, d: number) =>
     setOrden((o) => o.map((x) => (x.id === id ? { ...x, qty: Math.min(x.stock, x.qty + d) } : x)).filter((x) => x.qty > 0));
 
-  const cobrar = async () => {
+  /** Efectivo se registra directo; QR y tarjeta pasan antes por su pantalla de cobro simulado. */
+  const cobrar = () => {
+    setError("");
+    if (metodo === "efectivo") return void registrarVenta();
+    setCobro(metodo);
+  };
+
+  /** Registra la venta en la base. Devuelve false si no se pudo (sin stock, sin sesión…). */
+  const registrarVenta = async (): Promise<boolean> => {
     setCobrando(true);
     setError("");
     const { data, error } = await supabase.rpc("confirmar_pedido", {
@@ -126,7 +161,10 @@ export default function PaginaCaja() {
       p_metodo: metodo,
     });
     setCobrando(false);
-    if (error) return setError(mensajeDeError(error));
+    if (error) {
+      setError(mensajeDeError(error));
+      return false;
+    }
     // El detalle se copia de la orden antes de vaciarla; si no, el comprobante saldría vacío.
     setVenta({
       numero: data.codigo,
@@ -138,12 +176,25 @@ export default function PaginaCaja() {
     setOrden([]);
     cargar();
     cargarTurno();
+    return true;
   };
 
   const totalTurno = Object.values(turno).reduce((s, x) => s + x.monto, 0);
   const ventasTurno = Object.values(turno).reduce((s, x) => s + x.ventas, 0);
 
-  /** Hoja de Excel del cierre de caja (RF-19). */
+  const productosTurno = () => {
+    const filas = new Map<string, { nombre: string; unidades: number; monto: number }>();
+    for (const i of ventas.flatMap((v) => v.pedido_items)) {
+      const nombre = i.productos?.nombre ?? "—";
+      const f = filas.get(nombre) ?? { nombre, unidades: 0, monto: 0 };
+      f.unidades += i.cantidad;
+      f.monto += Number(i.precio) * i.cantidad;
+      filas.set(nombre, f);
+    }
+    return [...filas.values()].sort((a, b) => b.monto - a.monto);
+  };
+
+  /** Hojas de Excel del cierre de caja (RF-19): totales, producto por producto y venta por venta. */
   const hojasCierre = (): HojaExcel[] => [
     {
       nombre: "Cierre de caja",
@@ -160,7 +211,39 @@ export default function PaginaCaja() {
         monto: turno[m.v].monto,
         ticket: turno[m.v].ventas ? turno[m.v].monto / turno[m.v].ventas : 0,
         parte: totalTurno ? turno[m.v].monto / totalTurno : 0,
-      })),
+      })).concat({ metodo: "TOTAL", ventas: ventasTurno, monto: totalTurno, ticket: ventasTurno ? totalTurno / ventasTurno : 0, parte: totalTurno ? 1 : 0 }),
+    },
+    {
+      nombre: "Productos vendidos",
+      columnas: [
+        { titulo: "Producto", clave: "nombre" },
+        { titulo: "Unidades", clave: "unidades", formato: "entero" },
+        { titulo: "Ventas", clave: "monto", formato: "moneda" },
+      ],
+      filas: productosTurno(),
+    },
+    {
+      nombre: "Ventas una por una",
+      columnas: [
+        { titulo: "Hora", clave: "hora" },
+        { titulo: "Código", clave: "codigo" },
+        { titulo: "Pago", clave: "pago" },
+        { titulo: "Producto", clave: "producto" },
+        { titulo: "Cantidad", clave: "cantidad", formato: "entero" },
+        { titulo: "Precio", clave: "precio", formato: "moneda" },
+        { titulo: "Subtotal", clave: "subtotal", formato: "moneda" },
+      ],
+      filas: ventas.flatMap((v) =>
+        v.pedido_items.map((i) => ({
+          hora: new Date(v.creado_en).toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit", hour12: false }),
+          codigo: v.codigo,
+          pago: METODOS.find((m) => m.v === v.metodo_pago)?.label ?? v.metodo_pago,
+          producto: i.productos?.nombre ?? "—",
+          cantidad: i.cantidad,
+          precio: Number(i.precio),
+          subtotal: Number(i.precio) * i.cantidad,
+        })),
+      ),
     },
   ];
 
@@ -255,6 +338,10 @@ export default function PaginaCaja() {
           </button>
         </div>
       </aside>
+
+      {cobro && (
+        <CobroSimulado metodo={cobro} total={total} alConfirmar={registrarVenta} alCerrar={() => setCobro(null)} />
+      )}
 
       <dialog ref={cierreRef} className="dialogo" aria-labelledby="cierre-titulo">
         <div className="dialogo__cabeza">

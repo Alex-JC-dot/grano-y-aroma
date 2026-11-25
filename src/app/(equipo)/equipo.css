@@ -7,17 +7,28 @@
 .equipo { min-height: 100vh; display: grid; grid-template-columns: 260px minmax(0, 1fr); }
 
 /* ---------- Barra lateral ---------- */
+/*
+ * Fija a la altura de la pantalla y con scroll propio: con todos los módulos del admin (y en
+ * pantallas bajas) la lista no entra, y sin overflow lo de abajo (Logística, Salir, el tema)
+ * quedaba cortado sin forma de llegar.
+ */
 .equipo__menu {
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
   padding: 28px 20px;
   background: var(--surface);
   border-right: 1px solid var(--line);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
+.equipo__menu > * { flex-shrink: 0; }
 .equipo__marca { display: flex; flex-direction: column; gap: 4px; color: var(--ink); text-decoration: none; font: 400 22px/1 var(--f-display); }
 .equipo__marca span { font: 500 13px/1 var(--f-text); color: var(--muted); }
 .equipo__menu ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -124,7 +135,7 @@
 .dato--boton.is-on { box-shadow: inset 0 0 0 2px var(--ink); }
 
 /* Tablas */
-.tabla-marco { overflow-x: auto; border-radius: var(--r-card); background: var(--surface); }
+.tabla-marco { position: relative; overflow-x: auto; border-radius: var(--r-card); background: var(--surface); }
 .tabla-marco--plano { background: transparent; border-radius: 0; }
 .tabla { width: 100%; border-collapse: collapse; font-size: 15px; }
 .tabla th { text-align: left; padding: 14px 20px; font: 500 13px/1.2 var(--f-text); color: var(--muted); border-bottom: 1px solid var(--line); }
@@ -278,7 +289,10 @@
 .pedido__fila { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .pedido__cliente { font: 400 19px/1.2 var(--f-display); }
 .pedido__meta { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.detalle { position: sticky; top: 24px; }
+/* La lista y el detalle se desplazan cada uno por su lado: para ver la foto y la firma de un
+   pedido no hace falta pasar por todos los demás. */
+.pedidos, .detalle { position: sticky; top: 24px; max-height: calc(100dvh - 88px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-fuerte) transparent; }
+.pedidos { padding-right: 8px; }
 .inicio .panel__datos--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .inicio .panel__datos--3 dd { font: 500 16px/1.4 var(--f-text); }
 .avance { display: grid; grid-template-columns: repeat(4, 1fr); list-style: none; margin: 8px 0 28px; padding: 0; counter-reset: paso; }
@@ -294,14 +308,15 @@
 /* ---------- Pantallas medianas y celular ---------- */
 @media (max-width: 1100px) {
   .equipo__dos, .logistica { grid-template-columns: 1fr; }
-  .detalle { position: static; }
+  .pedidos { position: static; max-height: 46dvh; }
+  .detalle { position: static; max-height: none; scroll-margin-top: 72px; }
   .caja { grid-template-columns: 1fr; }
   .caja__orden { position: static; height: auto; border-left: 0; border-top: 1px solid var(--line); }
   .atajos { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 860px) {
   .equipo { display: block; }
-  .equipo__menu { position: sticky; top: 0; z-index: 20; height: auto; flex-direction: row; align-items: center; gap: 16px; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .equipo__menu { position: sticky; top: 0; z-index: 20; height: auto; flex-direction: row; align-items: center; gap: 16px; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; }
   .equipo__marca { font-size: 18px; flex: none; }
   .equipo__marca span { display: none; }
   .equipo__menu ul { flex-direction: row; }
@@ -428,3 +443,262 @@
 [data-theme="dark"] .tueste-form__select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23f0e8e0' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
 }
+
+/* ---------- Logística: revisión del pago y WhatsApp ---------- */
+.pedido__pago { align-self: flex-start; margin-top: 4px; }
+.revision-pago { margin: 0 0 18px; padding: 16px 18px; border-radius: 10px; background: var(--aviso-tenue); border: 1px solid var(--aviso-bg); }
+.revision-pago p { margin: 0 0 12px; line-height: 1.5; }
+.revision-pago p:last-child { margin-bottom: 0; }
+.revision-pago .link { border: 0; background: none; padding: 0; font: 500 15px var(--f-text); color: var(--peligro); cursor: pointer; }
+.revision-pago__nota { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; max-width: 460px; }
+.logistica__whatsapp { margin-top: 14px; }
+.panel__datos dd small { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
+
+/* ---------- Selector de foto: recuadro para subir ---------- */
+.foto-subir { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 1.5px dashed var(--line-maxima); background: var(--surface-hundida); color: var(--ink); font: 500 14px var(--f-text); cursor: pointer; }
+.foto-subir:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.foto-subir:disabled { cursor: wait; opacity: 0.7; }
+.foto-subir__ayuda { margin-top: 8px; }
+
+/* ---------- Prueba de entrega (migración 010) ---------- */
+
+/* Diálogo con el que el repartidor cierra una entrega. */
+.dialogo.entrega { width: min(100% - 32px, 560px); max-height: 92vh; display: flex; flex-direction: column; gap: 0; }
+.entrega__cuerpo { flex: 1; overflow-y: auto; margin: 18px 0; display: flex; flex-direction: column; gap: 22px; }
+.entrega__bloque h3 { margin: 0 0 4px; font: 500 12px/1.4 var(--f-text); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.entrega__bloque .caja__sub { margin: 0 0 12px; }
+.entrega__bloque .carrito__campo { margin-top: 12px; }
+
+/* Botón grande de cámara: el repartidor lo toca de pie, con una mano ocupada. */
+.entrega__camara {
+  width: 100%;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  border: 1.5px dashed var(--line-fuerte);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 16px var(--f-text);
+  cursor: pointer;
+  transition: border-color var(--t-rapida) var(--ease), background-color var(--t-rapida) var(--ease);
+}
+.entrega__camara:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-tenue); }
+.entrega__camara:disabled { opacity: 0.6; cursor: default; }
+
+.entrega__vista { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.entrega__vista img { width: 100%; max-height: 260px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+.entrega__vista .link { border: 0; background: none; padding: 0; font: 500 15px var(--f-text); color: var(--accent); cursor: pointer; }
+
+.entrega__quien { margin: 14px 0 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
+.entrega__quien legend { padding: 0 0 8px; font: 500 12px/1.4 var(--f-text); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.entrega__opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-media);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color var(--t-rapida) var(--ease), background-color var(--t-rapida) var(--ease);
+}
+.entrega__opcion:hover { border-color: var(--line-hover); }
+.entrega__opcion.is-on { border-color: var(--accent); background: var(--accent-tenue); }
+.entrega__opcion input { margin-top: 3px; accent-color: var(--accent); }
+.entrega__opcion strong { display: block; font-weight: 500; }
+.entrega__opcion small { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
+
+.entrega__acciones { display: flex; gap: 10px; }
+.entrega__acciones .btn { flex: 1; width: auto; }
+
+/* Constancia ya registrada, en el detalle del pedido. */
+.prueba { margin: 0 0 16px; padding: 16px 18px; border-radius: 10px; background: var(--exito-bg); border: 1px solid var(--line); }
+.prueba__titulo { margin: 0 0 12px; font-size: 15px; }
+.prueba__datos .panel__datos { margin: 0; }
+.prueba__foto {
+  margin-top: 12px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: 500 15px var(--f-text);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Visor de comprobantes y fotos de entrega. */
+.dialogo.visor { width: min(100% - 32px, 620px); max-height: 92vh; display: flex; flex-direction: column; }
+.visor__cuerpo { flex: 1; overflow: auto; margin: 16px 0; min-height: 180px; display: grid; place-items: center; }
+.visor__img { max-width: 100%; max-height: 62vh; border-radius: 10px; border: 1px solid var(--line); }
+.visor__pdf { margin: 0; text-align: center; line-height: 1.6; }
+
+@media (max-width: 639px) {
+  .entrega__acciones { flex-direction: column-reverse; }
+  .dialogo.entrega, .dialogo.visor { width: calc(100% - 20px); }
+}
+
+/* ---------- Firma en la entrega (migración 011) ---------- */
+.firma { margin-top: 10px; }
+.firma__lienzo {
+  display: block;
+  width: 100%;
+  height: 150px;
+  border: 1.5px dashed var(--line-fuerte);
+  border-radius: 10px;
+  background: #fff;
+  cursor: crosshair;
+  /* Sin esto el navegador se queda el trazo como gesto de desplazamiento y la firma sale cortada. */
+  touch-action: none;
+}
+.firma__pie { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 6px; font-size: 13px; color: var(--muted); }
+.firma__pie .link { border: 0; background: none; padding: 0; font: 500 13px var(--f-text); color: var(--peligro); cursor: pointer; }
+
+/* ---------- Avance del pedido con su detalle ---------- */
+.avance--detalle { align-items: flex-start; }
+.avance--detalle .avance__texto { display: flex; flex-direction: column; gap: 2px; }
+.avance--detalle .avance__texto strong { font-weight: 500; }
+.avance--detalle .avance__texto small { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+.prueba__archivos { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+
+/* ---------- Proveedores y órdenes de compra ---------- */
+.admin-form { margin-bottom: 24px; }
+.admin-form h2 { margin: 0 0 16px; font: 400 24px/1.2 var(--f-display); }
+.admin-form__sub { margin: 20px 0 10px; font: 500 12px/1.4 var(--f-text); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.admin-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 20px; margin-bottom: 18px; }
+
+.orden-linea {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px 16px;
+  align-items: end;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.orden-linea__quitar { border: 0; background: none; padding: 0 0 10px; font: 500 14px var(--f-text); color: var(--peligro); cursor: pointer; text-align: left; }
+
+.ordenes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 20px; }
+.orden { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.orden__cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+.orden__cabeza strong { display: block; font: 400 20px/1.2 var(--f-display); }
+.orden__cabeza small { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
+.orden .caja__sub { margin: 12px 0; }
+.orden .equipo__fila { margin-top: 14px; }
+
+@media (max-width: 639px) {
+  .orden-linea { grid-template-columns: 1fr; }
+  .admin-form__grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Usuarios: cinco roles ---------- */
+.tarjetas-dato--5 { grid-template-columns: repeat(5, 1fr); }
+.tarjetas-dato--6 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1100px) { .tarjetas-dato--5 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 860px) { .tarjetas-dato--5, .tarjetas-dato--6 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+
+/* ---------- Logística: revisión de la entrega ---------- */
+.revision-entrega { margin-top: 16px; }
+
+/* ---------- Mis entregas (repartidor) ---------- */
+.reparto { max-width: 860px; }
+.reparto__cabeza { align-items: center; justify-content: flex-start; gap: 18px; }
+/* El ícono es una máscara: toma el color del texto, así se ve bien en modo claro y oscuro. */
+.reparto__icono, .reparto__ilustracion {
+  display: block; flex: none; background: var(--ink);
+  -webkit-mask: url("/images/equipo/repartidor.png") center / contain no-repeat;
+  mask: url("/images/equipo/repartidor.png") center / contain no-repeat;
+}
+.reparto__icono { width: 84px; height: 73px; }
+.reparto__ilustracion { width: 150px; height: 130px; margin-bottom: 8px; opacity: 0.55; }
+.reparto__titulo { margin: 8px 0 14px; font: 400 24px/1.2 var(--f-display); }
+.reparto__vacio { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; text-align: center; }
+.reparto__vacio p { margin: 0; }
+.reparto__lista, .reparto__hechos { list-style: none; margin: 0 0 28px; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.reparto-pedido { padding: 20px; border-radius: var(--r-card); background: var(--surface); display: flex; flex-direction: column; gap: 14px; }
+.reparto-pedido__cabeza { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 18px; }
+.reparto-pedido__datos { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+.reparto-pedido__datos dt { font-size: 13px; color: var(--muted); }
+.reparto-pedido__datos dd { margin: 2px 0 0; line-height: 1.45; }
+.reparto-pedido__datos dd small { color: var(--muted); }
+.reparto-pedido__acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.reparto-pedido__entregar { width: 100%; min-height: 52px; font-size: 17px; }
+.reparto-pedido .pago-aviso { margin: 0; }
+.reparto__hechos li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; background: var(--surface); }
+.reparto__hechos li > span:first-child { display: flex; flex-direction: column; gap: 2px; }
+.reparto__hechos small { color: var(--muted); }
+@media (max-width: 640px) {
+  .reparto__icono { width: 64px; height: 56px; }
+  .reparto-pedido { padding: 16px; }
+  .reparto-pedido__datos { grid-template-columns: 1fr; }
+  .reparto-pedido__acciones .btn { flex: 1 1 0; padding-inline: 10px; }
+}
+
+/* ---------- Caja: cobro simulado con QR o tarjeta ---------- */
+.dialogo.cobro { width: min(100% - 32px, 480px); max-height: 94vh; display: flex; flex-direction: column; }
+.dialogo.cobro .dialogo__cabeza .caja__sub { margin: 6px 0 0; }
+.cobro__cuerpo { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.cobro__cuerpo .pago-qr { margin: 0 auto; }
+.cobro__resultado { margin: 22px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.cobro__resultado strong { font: 400 26px/1.15 var(--f-display); }
+.cobro__resultado span:last-child { color: var(--muted); }
+.cobro__check { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; font-size: 30px; color: #fff; background: var(--exito); animation: cobro-pop 0.35s var(--ease) both; }
+.cobro__resultado--mal .cobro__check { background: var(--peligro); }
+@keyframes cobro-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cobro__check { animation: none; } }
+
+/* ---------- Barra: pedidos del tótem (Nuevos → Preparando → Listos) ---------- */
+.barra .equipo__cabeza { align-items: flex-start; }
+.barra__resumen { min-width: 200px; }
+.barra__columnas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.barra__col { padding: 16px; border-radius: var(--r-card); background: var(--surface); min-height: 320px; }
+.barra__col h2 { display: flex; justify-content: space-between; align-items: center; margin: 0 0 14px; font: 400 24px / 1.1 var(--f-display); }
+.barra__col h2 span { min-width: 34px; height: 34px; display: grid; place-items: center; padding: 0 10px; border-radius: 999px; background: var(--bg); font: 600 16px var(--f-text); }
+.barra__col--nuevos h2 span { background: var(--aviso-bg); }
+.barra__col--listos h2 span { background: var(--exito-bg); }
+.barra__col > ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.barra-pedido { padding: 16px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; animation: barra-entra 0.35s var(--ease) both; }
+.barra-pedido.is-tarde { border-color: var(--aviso-fuerte); box-shadow: inset 4px 0 0 var(--aviso-fuerte); }
+.barra-pedido__cabeza { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.barra-pedido__cabeza strong { font: 400 34px / 1 var(--f-display); }
+.barra-pedido__cabeza span { font-size: 14px; color: var(--muted); }
+.barra-pedido__items { list-style: none; margin: 0; padding: 0; font-size: 17px; line-height: 1.5; }
+.barra-pedido__items small { display: block; padding-left: 26px; font-size: 15px; color: var(--aviso-fuerte); }
+.barra-pedido__modo { align-self: flex-start; padding: 4px 12px; border-radius: 999px; background: var(--surface); font-size: 14px; font-weight: 600; }
+.barra-pedido__modo.is-llevar { background: var(--accent); color: var(--accent-ink); }
+.barra-pedido__boton { width: 100%; min-height: 52px; font-size: 18px; }
+.barra__col--listos .barra-pedido__boton { background: var(--exito-solido); }
+@keyframes barra-entra { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .barra-pedido { animation: none; } }
+@media (max-width: 1000px) { .barra__columnas { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Productos: interruptor "En el tótem" ---------- */
+.interruptor { position: relative; width: 48px; height: 28px; padding: 0; border: 0; border-radius: 999px; background: var(--line-maxima, var(--line)); cursor: pointer; transition: background 0.2s var(--ease); }
+.interruptor::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); transition: transform 0.2s var(--ease); }
+.interruptor[aria-checked="true"] { background: var(--exito-solido); }
+.interruptor[aria-checked="true"]::after { transform: translateX(20px); }
+.interruptor:disabled { opacity: 0.5; cursor: default; }
+.interruptor:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.is-inactivo .interruptor { opacity: 0.45; }
+.admin-prod__totem { display: flex; align-items: flex-start; gap: 12px; margin-top: 16px; padding: 14px 16px; border-radius: 10px; background: var(--accent-tenue); cursor: pointer; }
+.admin-prod__totem input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent); }
+.admin-prod__totem span { display: flex; flex-direction: column; gap: 2px; }
+.admin-prod__totem small { color: var(--muted); }
+.admin-sub__foto img[src^="/totem/"] { object-fit: contain; padding: 6px; }
+
+/* Cobros del Club (RF-07), en el panel. */
+.estado--pendiente { background: var(--aviso-bg); color: var(--aviso); text-transform: none; }
+.estado--pagado { background: var(--exito-bg); color: var(--exito); text-transform: none; }
+
+/* La etiqueta de estado es una píldora: si se parte en dos líneas, el fondo se rompe. */
+.cobros__tabla .estado { display: inline-block; white-space: nowrap; }
+.cobros__tabla td:nth-child(2),
+.cobros__tabla td:nth-child(3) { white-space: nowrap; }
+.cobros__tabla td small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }

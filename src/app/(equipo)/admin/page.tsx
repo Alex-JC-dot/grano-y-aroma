@@ -6,13 +6,18 @@ import { supabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/utils";
 import BotonesDocumento from "@/components/ui/BotonesDocumento";
 import HojaDocumento from "@/components/ui/HojaDocumento";
+import CobrosClub from "@/components/equipo/CobrosClub";
 import type { HojaExcel } from "@/lib/excel";
 
 /**
  * Panel general del administrador (RF-33 a RF-36): ventas reales por canal y período,
  * productos más vendidos, merma por lote de tueste y mensajes del formulario de contacto.
  *
- * El reporte se descarga en Excel y en PDF con las mismas cifras reales del período. El
+ * Solo cuenta lo cobrado: un pedido por QR que todavía no se pagó no es una venta. Los envíos
+ * pagados del Club entran en su propio canal.
+ *
+ * El reporte se descarga en Excel (totales, producto por producto en cada canal y venta por venta)
+ * y en PDF con las mismas cifras reales del período. El
  * bloque imprimible va al final, marcado con solo-papel: no se ve en pantalla, pero el
  * diálogo de impresión lo toma y produce el PDF con membrete.
  */
@@ -26,16 +31,39 @@ const PERIODOS: { v: Periodo; label: string; dias: number }[] = [
 const CANALES: { v: string; label: string }[] = [
   { v: "web", label: "Tienda en línea" },
   { v: "caja", label: "Caja de la cafetería" },
+  { v: "totem", label: "Tótem de autoservicio" },
   { v: "club", label: "Club (suscripciones)" },
   { v: "subasta", label: "Subastas" },
 ];
 
 type Pedido = {
+  codigo: string;
+  creado_en: string;
   canal: string;
   total: number;
+  descuento: number;
   estado: string;
-  pedido_items: { cantidad: number; precio: number; producto_id: string; productos: { nombre: string; categoria: string } | null }[];
+  pago_estado: string | null;
+  metodo_pago: string | null;
+  nombre: string | null;
+  turno: number | null;
+  pedido_items: { cantidad: number; precio: number; molienda: string | null; producto_id: string; productos: { nombre: string; categoria: string } | null }[];
 };
+/** Un envío del Club ya pagado. */
+type CobroClub = {
+  id: number;
+  monto: number;
+  periodo: string;
+  /** El pedido que nació al pagarlo (migración 023); null en los cobros de antes. */
+  pedido_id: number | null;
+  verificado_en: string;
+  cliente: { nombre: string } | null;
+  suscripciones: { gramos: number; frecuencia: number; cafe: string } | null;
+};
+const SIN_COBRAR = ["pendiente", "por_verificar", "rechazado"];
+const METODO: Record<string, string> = { qr: "QR", tarjeta: "Tarjeta", efectivo: "Efectivo" };
+const ESTADO: Record<string, string> = { recibido: "Recibido", preparacion: "En preparación", en_camino: "En camino", entregado: "Entregado" };
+const hora = (iso: string) => new Date(iso).toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit", hour12: false });
 type Tueste = { codigo: string; kg_verde: number; kg_tostado: number; puntaje: number | null };
 type Mensaje = { id: number; nombre: string; email: string; telefono: string | null; motivo: string; mensaje: string; leido: boolean; creado_en: string };
 
@@ -49,18 +77,33 @@ const ATAJOS = [
 export default function PaginaPanel() {
   const [periodo, setPeriodo] = useState<Periodo>("mes");
   const [pedidos, setPedidos] = useState<Pedido[] | null>(null);
+  const [club, setClub] = useState<CobroClub[]>([]);
   const [tuestes, setTuestes] = useState<Tueste[]>([]);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [abierto, setAbierto] = useState<number | null>(null);
 
   const cargar = useCallback(async (p: Periodo) => {
     const desde = new Date(Date.now() - PERIODOS.find((x) => x.v === p)!.dias * 86_400_000).toISOString();
-    const { data } = await supabase
-      .from("pedidos")
-      .select("canal, total, estado, pedido_items(cantidad, precio, producto_id, productos(nombre, categoria))")
-      .gte("creado_en", desde)
-      .neq("estado", "cancelado");
-    setPedidos(((data as unknown as Pedido[]) ?? []).map((x) => ({ ...x, total: Number(x.total) })));
+    const [{ data }, { data: cobros }] = await Promise.all([
+      supabase
+        .from("pedidos")
+        .select("codigo, creado_en, canal, total, descuento, estado, pago_estado, metodo_pago, nombre, turno, pedido_items(cantidad, precio, molienda, producto_id, productos(nombre, categoria))")
+        .gte("creado_en", desde)
+        .neq("estado", "cancelado")
+        .order("creado_en", { ascending: false }),
+      supabase
+        .from("cobros_club")
+        .select("id, monto, periodo, pedido_id, verificado_en, cliente:perfiles!cobros_club_cliente_id_fkey(nombre), suscripciones(gramos, frecuencia, cafe)")
+        .eq("estado", "aprobado")
+        .gte("verificado_en", desde)
+        .order("verificado_en", { ascending: false }),
+    ]);
+    setClub(((cobros as unknown as CobroClub[]) ?? []).map((x) => ({ ...x, monto: Number(x.monto) })));
+    setPedidos(
+      ((data as unknown as Pedido[]) ?? [])
+        .filter((x) => !SIN_COBRAR.includes(x.pago_estado ?? ""))
+        .map((x) => ({ ...x, total: Number(x.total), descuento: Number(x.descuento ?? 0) })),
+    );
   }, []);
 
   useEffect(() => {
@@ -76,6 +119,18 @@ export default function PaginaPanel() {
     return () => window.clearTimeout(t);
   }, [cargar]);
 
+  // Cada venta (tienda, caja, tótem…) actualiza el panel sola, sin recargar.
+  useEffect(() => {
+    const canal = supabase
+      .channel("panel-ventas")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, () => cargar(periodo))
+      .on("postgres_changes", { event: "*", schema: "public", table: "cobros_club" }, () => cargar(periodo))
+      .subscribe();
+    return () => {
+      supabase.removeChannel(canal);
+    };
+  }, [cargar, periodo]);
+
   const elegir = (p: Periodo) => {
     setPeriodo(p);
     setPedidos(null);
@@ -84,13 +139,15 @@ export default function PaginaPanel() {
 
   const lista = pedidos ?? [];
   const canales = CANALES.map((c) => {
-    const del = lista.filter((p) => p.canal === c.v);
+    const del: { total: number }[] = c.v === "club" ? club.map((x) => ({ total: x.monto })) : lista.filter((p) => p.canal === c.v);
     return { ...c, monto: del.reduce((s, p) => s + p.total, 0), pedidos: del.length };
   });
   const ingresos = canales.reduce((s, c) => s + c.monto, 0);
-  const n = lista.length;
+  const n = canales.reduce((s, c) => s + c.pedidos, 0);
   const max = Math.max(1, ...canales.map((c) => c.monto));
   const bolsas = lista.flatMap((p) => p.pedido_items).filter((i) => i.productos && ["grano", "molido"].includes(i.productos.categoria)).reduce((s, i) => s + i.cantidad, 0);
+
+  const kgClub = club.filter((c) => !c.pedido_id).reduce((s, c) => s + (c.suscripciones?.gramos ?? 0), 0) / 1000;
 
   const ventasPorProducto = new Map<string, { nombre: string; unidades: number; monto: number }>();
   for (const i of lista.flatMap((p) => p.pedido_items)) {
@@ -105,8 +162,28 @@ export default function PaginaPanel() {
     { label: "Ingresos", valor: formatBs(ingresos) },
     { label: "Pedidos", valor: n.toLocaleString("es-BO") },
     { label: "Ticket promedio", valor: n ? formatBs(ingresos / n) : "—" },
-    { label: "Café vendido", valor: `${(bolsas / 4).toLocaleString("es-BO")} kg` },
+    { label: "Café vendido", valor: `${(bolsas / 4 + kgClub).toLocaleString("es-BO")} kg` },
   ];
+
+  const nombreCanal = (v: string) => CANALES.find((c) => c.v === v)?.label ?? v;
+  const clienteDe = (p: Pedido) => (p.turno != null ? `Turno #${String(p.turno).padStart(3, "0")}` : p.nombre ?? (p.canal === "caja" ? "Mostrador" : "—"));
+
+  /** Cada producto en cada canal, para la hoja "Productos por canal". */
+  const productosPorCanal = () => {
+    const filas = new Map<string, { canal: string; nombre: string; unidades: number; monto: number }>();
+    for (const p of lista)
+      for (const i of p.pedido_items) {
+        const clave = `${p.canal}|${i.producto_id}`;
+        const f = filas.get(clave) ?? { canal: p.canal, nombre: i.productos?.nombre ?? i.producto_id, unidades: 0, monto: 0 };
+        f.unidades += i.cantidad;
+        f.monto += Number(i.precio) * i.cantidad;
+        filas.set(clave, f);
+      }
+    const orden = CANALES.map((c) => c.v);
+    return [...filas.values()]
+      .sort((a, b) => orden.indexOf(a.canal) - orden.indexOf(b.canal) || b.monto - a.monto)
+      .map((f) => ({ ...f, canal: nombreCanal(f.canal) }));
+  };
 
   /** Hojas del Excel; solo se arman al pulsar "Descargar Excel". Los importes van como números. */
   const hojasExcel = (): HojaExcel[] => [
@@ -125,6 +202,90 @@ export default function PaginaPanel() {
         monto: c.monto,
         ticket: c.pedidos ? c.monto / c.pedidos : 0,
         parte: ingresos ? c.monto / ingresos : 0,
+      })).concat({ canal: "TOTAL", pedidos: n, monto: ingresos, ticket: n ? ingresos / n : 0, parte: ingresos ? 1 : 0 }),
+    },
+    {
+      nombre: "Productos por canal",
+      columnas: [
+        { titulo: "Canal", clave: "canal" },
+        { titulo: "Producto", clave: "nombre" },
+        { titulo: "Unidades", clave: "unidades", formato: "entero" },
+        { titulo: "Ventas", clave: "monto", formato: "moneda" },
+      ],
+      filas: productosPorCanal(),
+    },
+    {
+      nombre: "Ventas una por una",
+      columnas: [
+        { titulo: "Fecha", clave: "fecha", formato: "fecha" },
+        { titulo: "Hora", clave: "hora" },
+        { titulo: "Código", clave: "codigo" },
+        { titulo: "Canal", clave: "canal" },
+        { titulo: "Cliente", clave: "cliente" },
+        { titulo: "Pago", clave: "pago" },
+        { titulo: "Estado", clave: "estado" },
+        { titulo: "Subtotal", clave: "subtotal", formato: "moneda" },
+        { titulo: "Descuento", clave: "descuento", formato: "moneda" },
+        { titulo: "Total", clave: "total", formato: "moneda" },
+      ],
+      filas: lista.map((p) => ({
+        fecha: new Date(p.creado_en),
+        hora: hora(p.creado_en),
+        codigo: p.codigo,
+        canal: nombreCanal(p.canal),
+        cliente: clienteDe(p),
+        pago: METODO[p.metodo_pago ?? ""] ?? p.metodo_pago ?? "—",
+        // En la caja el producto se entrega en el momento: su pedido no pasa por Logística.
+        estado: p.canal === "caja" ? "Entregado" : ESTADO[p.estado] ?? p.estado,
+        subtotal: p.total + p.descuento,
+        descuento: p.descuento,
+        total: p.total,
+      })),
+    },
+    {
+      nombre: "Detalle por producto",
+      columnas: [
+        { titulo: "Fecha", clave: "fecha", formato: "fecha" },
+        { titulo: "Hora", clave: "hora" },
+        { titulo: "Código", clave: "codigo" },
+        { titulo: "Canal", clave: "canal" },
+        { titulo: "Producto", clave: "producto" },
+        { titulo: "Opciones", clave: "opciones" },
+        { titulo: "Cantidad", clave: "cantidad", formato: "entero" },
+        { titulo: "Precio", clave: "precio", formato: "moneda" },
+        { titulo: "Subtotal", clave: "subtotal", formato: "moneda" },
+      ],
+      filas: lista.flatMap((p) =>
+        p.pedido_items.map((i) => ({
+          fecha: new Date(p.creado_en),
+          hora: hora(p.creado_en),
+          codigo: p.codigo,
+          canal: nombreCanal(p.canal),
+          producto: i.productos?.nombre ?? i.producto_id,
+          opciones: i.molienda && i.molienda !== "Única" ? i.molienda : "",
+          cantidad: i.cantidad,
+          precio: Number(i.precio),
+          subtotal: Number(i.precio) * i.cantidad,
+        })),
+      ),
+    },
+    {
+      nombre: "Envíos del Club",
+      columnas: [
+        { titulo: "Pagado el", clave: "pagado", formato: "fecha" },
+        { titulo: "Cliente", clave: "cliente" },
+        { titulo: "Envío", clave: "envio", formato: "fecha" },
+        { titulo: "Cantidad (g)", clave: "gramos", formato: "entero" },
+        { titulo: "Cada (días)", clave: "dias", formato: "entero" },
+        { titulo: "Monto", clave: "monto", formato: "moneda" },
+      ],
+      filas: club.map((c) => ({
+        pagado: new Date(c.verificado_en),
+        cliente: c.cliente?.nombre ?? "—",
+        envio: new Date(c.periodo + "T12:00:00"),
+        gramos: c.suscripciones?.gramos ?? null,
+        dias: c.suscripciones?.frecuencia ?? null,
+        monto: c.monto,
       })),
     },
     {
@@ -306,6 +467,12 @@ export default function PaginaPanel() {
               ))}
             </ul>
           )}
+        </section>
+
+        {/* Solo para supervisar: los pagos del Club se confirman solos (migración 019). */}
+        <section className="panel" aria-labelledby="cobros-club-titulo">
+          <h2 id="cobros-club-titulo">Cobros del Club</h2>
+          <CobrosClub />
         </section>
       </div>
 

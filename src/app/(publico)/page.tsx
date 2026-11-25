@@ -1,3 +1,4 @@
+import Intro from "@/components/inicio/Intro";
 import HeroScroll from "@/components/inicio/HeroScroll";
 import { Destacados, ClubYSubastas } from "@/components/inicio/AdelantosInicio";
 import { Proceso } from "@/components/inicio/SeccionesInicio";
@@ -11,6 +12,7 @@ export default function Inicio() {
 
   return (
     <>
+      <Intro />
       <HeroScroll precioDesde={precioDesde} />
       <Destacados />
       <MapaOrigenes />

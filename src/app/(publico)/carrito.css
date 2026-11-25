@@ -120,3 +120,56 @@
 /* Confirmación del pedido: descargar el comprobante y seguir comprando. */
 .carrito__acciones-listo { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
 .carrito__acciones-listo .btn { width: 100%; }
+
+
+/* ---------- Tarjeta simulada (Caja y carrito de la tienda) ---------- */
+.tarjeta-form { display: flex; flex-direction: column; gap: 14px; }
+.tarjeta-form__fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tarjeta-form__aviso { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--surface); font-size: 13px; line-height: 1.5; color: var(--muted); }
+.tarjeta-form__aviso strong { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* La tarjeta que se va llenando mientras se escriben los datos. */
+.tarjeta-sim {
+  position: relative;
+  aspect-ratio: 1.586;
+  max-width: 340px;
+  width: 100%;
+  margin: 0 auto 4px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  color: #f6eee4;
+  background: radial-gradient(120% 140% at 0% 0%, #7a4a2c 0%, #3b2418 55%, #1f140e 100%);
+  box-shadow: 0 14px 30px -14px rgba(20, 12, 8, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  font-variant-numeric: tabular-nums;
+}
+.tarjeta-sim__chip { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #e9c98a, #b48a45); }
+.tarjeta-sim__marca { position: absolute; top: 20px; right: 22px; font: 600 15px var(--f-text); letter-spacing: 0.02em; }
+.tarjeta-sim__numero { align-self: center; font: 500 clamp(17px, 4.6vw, 21px) / 1 var(--f-text); letter-spacing: 0.08em; white-space: nowrap; }
+.tarjeta-sim__pie { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.9; }
+.tarjeta-sim__pie span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.carrito__tarjeta { margin: 0; padding: 0; border: 0; min-width: 0; }
+.carrito__tarjeta legend { padding: 0; margin-bottom: 10px; font-size: 14px; font-weight: 500; }
+.carrito__tarjeta .tarjeta-sim { max-width: 300px; }
+
+/* Canje de puntos en el paso de pago (RF-32). Solo tokens: el modo oscuro sale gratis. */
+.carrito__puntos { margin: 0; padding: 16px; min-width: 0; border: 1px solid var(--line); border-radius: 10px; }
+.carrito__puntos legend { margin-left: -6px; padding: 0 6px; font-size: 14px; font-weight: 500; }
+.carrito__puntos-saldo { margin: 0 0 14px; font-size: 14px; color: var(--muted); }
+.carrito__puntos-saldo strong { font-size: 16px; color: var(--ink); }
+.carrito__puntos-control { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+.carrito__puntos-control label { font-size: 14px; color: var(--muted); }
+.carrito__puntos-control input[type="range"] { width: 100%; accent-color: var(--accent); }
+.carrito__puntos-valor { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 88px; line-height: 1.15; }
+.carrito__puntos-valor strong { font-size: 14px; font-weight: 500; }
+.carrito__puntos-valor small { font-size: 13px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.carrito__puntos-atajos { display: flex; gap: 16px; margin-top: 12px; }
+.carrito__puntos-atajos button {
+  border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: 13px;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.carrito__puntos-atajos button:hover:not(:disabled) { color: var(--ink); }
+.carrito__puntos-atajos button:disabled { opacity: 0.4; cursor: default; text-decoration: none; }
+
+/* Precio anterior tachado cuando hay descuento por puntos. */
+.carrito__total strong s { margin-right: 10px; font-size: 17px; color: var(--soft); text-decoration-thickness: 1px; }
